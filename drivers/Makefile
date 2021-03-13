@@ -1,11 +1,7 @@
-PROGRAMS:=bin/atad bin/fbd bin/ps2d
+PROGRAMS:=$(DESTDIR)/boot/atad $(DESTDIR)/sbin/fbd $(DESTDIR)/sbin/ps2d
 
-install: $(PROGRAMS)
-	cp bin/atad $(DESTDIR)/boot
-	cp bin/fbd $(DESTDIR)/sbin
-	cp bin/ps2d $(DESTDIR)/sbin
+all: $(PROGRAMS)
 .SECONDEXPANSION:
-$(PROGRAMS): $$(patsubst %.c, %.o, $$(wildcard $$(patsubst bin/%d, %, $$@)/*.c))
-	mkdir -p bin
+$(PROGRAMS): $$(patsubst %.c, %.o, $$(wildcard $$(notdir $$@)/*.c))
 	$(CC) -s -o $@ $^
 -include $(wildcard */*.d)

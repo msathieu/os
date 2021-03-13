@@ -1,15 +1,9 @@
-PROGRAMS:=bin/lvmd bin/mbrd bin/svfsd bin/tmpd bin/vfsd
+PROGRAMS:=$(DESTDIR)/boot/lvmd $(DESTDIR)/boot/mbrd $(DESTDIR)/boot/svfsd $(DESTDIR)/sbin/tmpd $(DESTDIR)/boot/vfsd
 
-install: $(PROGRAMS)
-	cp bin/lvmd $(DESTDIR)/boot
-	cp bin/mbrd $(DESTDIR)/boot
-	cp bin/svfsd $(DESTDIR)/boot
-	cp bin/tmpd $(DESTDIR)/sbin
-	cp bin/vfsd $(DESTDIR)/boot
+all: $(PROGRAMS)
 .SECONDEXPANSION:
-bin/svfsd: LDFLAGS:= -lmonocypher
-$(PROGRAMS): $$(patsubst %.c, %.o, $$(wildcard $$(patsubst bin/%d, %, $$@)/*.c)) $(patsubst %.key, %.o, $(wildcard public.key))
-	mkdir -p bin
+$(DESTDIR)/boot/svfsd: LDFLAGS:= -lmonocypher
+$(PROGRAMS): $$(patsubst %.c, %.o, $$(wildcard $$(notdir $$@)/*.c)) $(patsubst %.key, %.o, $(wildcard public.key))
 	$(CC) -s -o $@ $^ $(LDFLAGS)
 %.o: %.key
 	$(OBJCOPY) -O elf64-x86-64 -I binary $< $@

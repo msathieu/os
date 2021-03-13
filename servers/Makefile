@@ -1,14 +1,7 @@
-PROGRAMS:=bin/argd bin/envd bin/ipcd bin/kbdd bin/logd bin/ttyd
+PROGRAMS:=$(DESTDIR)/boot/argd $(DESTDIR)/sbin/envd $(DESTDIR)/boot/ipcd $(DESTDIR)/sbin/kbdd $(DESTDIR)/boot/logd $(DESTDIR)/sbin/ttyd
 
-install: $(PROGRAMS)
-	cp bin/argd $(DESTDIR)/boot
-	cp bin/envd $(DESTDIR)/sbin
-	cp bin/ipcd $(DESTDIR)/boot
-	cp bin/kbdd $(DESTDIR)/sbin
-	cp bin/logd $(DESTDIR)/boot
-	cp bin/ttyd $(DESTDIR)/sbin
+all: $(PROGRAMS)
 .SECONDEXPANSION:
-$(PROGRAMS): $$(patsubst %.c, %.o, $$(wildcard $$(patsubst bin/%d, %, $$@)/*.c))
-	mkdir -p bin
+$(PROGRAMS): $$(patsubst %.c, %.o, $$(wildcard $$(notdir $$@)/*.c))
 	$(CC) -s -o $@ $^
 -include $(wildcard */*.d)

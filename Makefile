@@ -29,7 +29,7 @@ build:
 	mkdir -p sysroot/boot sysroot/sbin sysroot/bin sysroot/lib sysroot/usr
 	-cp -n public.key kernel
 	$(MAKE) -Ckernel
-	$(MAKE) all -Ctools
+	$(MAKE) -Ctools
 	$(MAKE) install-headers -Clibc
 	$(MAKE) -Clibc
 	$(MAKE) -Clibraries
