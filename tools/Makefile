@@ -23,11 +23,11 @@ build-toolchain: $(BINUTILS).tar.gz $(GCC).tar.gz
 	cd toolchain && tar -xf ../$(GCC).tar.gz
 	mkdir -p toolchain/os-binutils-$(BINUTILS)/build
 	cd toolchain/os-binutils-$(BINUTILS)/build && ../configure --target=x86_64-os --with-sysroot=$(DESTDIR) --prefix=$(CURDIR)/toolchain
-	cd toolchain/os-binutils-$(BINUTILS)/build && $(MAKE)
+	cd toolchain/os-binutils-$(BINUTILS)/build && CFLAGS= $(MAKE)
 	unset DESTDIR && cd toolchain/os-binutils-$(BINUTILS)/build && $(MAKE) install-strip
 	mkdir -p toolchain/os-gcc-$(GCC)/build
 	cd toolchain/os-gcc-$(GCC)/build && ../configure --target=x86_64-os --with-sysroot=$(DESTDIR) --enable-languages=c --prefix=$(CURDIR)/toolchain
-	cd toolchain/os-gcc-$(GCC)/build && $(MAKE) all-gcc all-target-libgcc
+	cd toolchain/os-gcc-$(GCC)/build && CFLAGS= $(MAKE) all-gcc all-target-libgcc
 	unset DESTDIR && cd toolchain/os-gcc-$(GCC)/build && $(MAKE) install-strip-gcc install-strip-target-libgcc
 clean:
 	rm -rf toolchain/os-binutils-$(BINUTILS) toolchain/os-gcc-$(GCC) *.tar.gz
