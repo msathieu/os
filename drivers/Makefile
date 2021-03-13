@@ -14,6 +14,4 @@ install: all
 	cp bin/ps2d $(DESTDIR)/sbin
 format:
 	clang-format -i $(wildcard */*.c) $(wildcard include/*/*.h)
-clean:
-	rm -rf bin $(wildcard */*.o) $(wildcard */*.d)
 -include $(wildcard */*.d)

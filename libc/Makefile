@@ -1,7 +1,7 @@
 CC:=x86_64-os-gcc
 AS:=x86_64-os-as
 AR:=x86_64-os-ar
-CFLAGS:=-ffreestanding -Wall -Wextra -Werror -O2 -MMD -I$(DESTDIR)/usr/include
+CFLAGS:=-ffreestanding -Wall -Wextra -Werror -O2 -MMD -isystem$(DESTDIR)/usr/include
 
 CFILES:=$(wildcard freestanding/*/*.c) $(wildcard */*.c)
 SFILES:=$(wildcard os/*.s)
@@ -20,6 +20,4 @@ install: install-headers all
 format:
 	clang-format -i $(CFILES) $(wildcard include/*.h) $(wildcard include/*/*.h)
 	$(MAKE) format -Cfreestanding
-clean:
-	rm -f $(OFILES) $(OFILES:.o=.d) libc.a crt0.o
 -include $(OFILES:.o=.d)

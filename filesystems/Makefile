@@ -20,6 +20,4 @@ install: all
 	cp bin/vfsd $(DESTDIR)/boot
 format:
 	clang-format -i $(wildcard */*.c) $(wildcard include/*/*.h)
-clean:
-	rm -rf public.key bin $(wildcard */*.o) $(wildcard */*.d)
 -include $(wildcard */*.d)

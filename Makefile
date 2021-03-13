@@ -70,16 +70,5 @@ analyze:
 	scan-build --status-bugs --use-cc=x86_64-os-gcc $(MAKE) install -Csh
 	scan-build --status-bugs --use-cc=x86_64-os-gcc $(MAKE) install -Ccoreutils
 clean:
-	rm -rf sysroot boot system svfs.img os.iso
-	$(MAKE) clean -Cloader-mb
-	$(MAKE) clean -Ckernel
+	rm -rf sysroot boot system *.img os.iso $(wildcard */bin) $(filter-out $(shell find ./tools/toolchain -name *.o), $(shell find -name *.o)) $(shell find -name *.d) $(wildcard */*.key) $(wildcard */*.bin) $(wildcard */*.a) libraries/lib
 	$(MAKE) clean -Ctools
-	$(MAKE) clean -Clibc
-	$(MAKE) clean -Clibraries
-	$(MAKE) clean -Cinit
-	$(MAKE) clean -Cdrivers
-	$(MAKE) clean -Cservers
-	$(MAKE) clean -Cfilesystems
-	$(MAKE) clean -Cloadelf
-	$(MAKE) clean -Csh
-	$(MAKE) clean -Ccoreutils

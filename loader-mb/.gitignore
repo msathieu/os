@@ -1,5 +1,0 @@
-*.o
-*.d
-libc.a
-loader.bin
-public.key

@@ -25,6 +25,4 @@ install: all
 format:
 	clang-format -i $(CFILES) $(wildcard include/*.h) $(wildcard include/*/*.h)
 	$(MAKE) format -Clibc
-clean:
-	rm -f public.key $(OFILES) $(OFILES:.o=.d) $(LIBC) $(LIBC:.o=.d) libc.a kernel.bin
 -include $(OFILES:.o=.d)

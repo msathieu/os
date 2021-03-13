@@ -14,6 +14,4 @@ install: all
 	cp -r lib $(DESTDIR)
 format:
 	clang-format -i $(wildcard */*.c) $(wildcard include/*.h)
-clean:
-	rm -rf lib $(wildcard */*.o) $(wildcard */*.d)
 -include $(wildcard */*.d)

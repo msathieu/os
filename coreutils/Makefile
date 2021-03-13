@@ -11,5 +11,3 @@ install: all
 	cp -r bin $(DESTDIR)
 format:
 	clang-format -i $(wildcard *.c)
-clean:
-	rm -rf bin $(wildcard *.o)

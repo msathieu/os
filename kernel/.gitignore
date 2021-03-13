@@ -1,5 +1,0 @@
-*.o
-*.d
-libc.a
-kernel.bin
-public.key

@@ -29,6 +29,6 @@ build-toolchain: $(BINUTILS).tar.gz $(GCC).tar.gz
 format:
 	clang-format -i monocypher.c $(wildcard */*.c) $(wildcard include/*.h)
 clean:
-	rm -rf bin monocypher.o monocypher.d $(wildcard */*.o) $(wildcard */*.d) toolchain/os-binutils-$(BINUTILS) toolchain/os-gcc-$(GCC) *.tar.gz
+	rm -rf toolchain/os-binutils-$(BINUTILS) toolchain/os-gcc-$(GCC) *.tar.gz
 .DELETE_ON_ERROR:
 -include $(wildcard */*.d) monocypher.d
