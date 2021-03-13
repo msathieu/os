@@ -22,7 +22,4 @@ libc.a: $(LIBC)
 install: all
 	mkdir -p $(DESTDIR)/boot
 	cp loader.bin $(DESTDIR)/boot
-format:
-	clang-format -i $(CFILES) $(wildcard include/*.h) $(wildcard include/*/*.h)
-	$(MAKE) format -Clibc
 -include $(OFILES:.o=.d)

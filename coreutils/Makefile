@@ -9,5 +9,3 @@ $(PROGRAMS): bin/%: %.o
 install: all
 	mkdir -p $(DESTDIR)
 	cp -r bin $(DESTDIR)
-format:
-	clang-format -i $(wildcard *.c)

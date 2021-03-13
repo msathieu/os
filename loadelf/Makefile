@@ -11,5 +11,3 @@ bin/lelf: $(OFILES)
 install: all
 	mkdir -p $(DESTDIR)/boot
 	cp bin/lelf $(DESTDIR)/boot
-format:
-	clang-format -i $(CFILES)

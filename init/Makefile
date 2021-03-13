@@ -11,5 +11,3 @@ bin/init: $(OFILES)
 install: all
 	mkdir -p $(DESTDIR)/boot
 	cp bin/init $(DESTDIR)/boot
-format:
-	clang-format -i $(CFILES)

@@ -26,8 +26,6 @@ build-toolchain: $(BINUTILS).tar.gz $(GCC).tar.gz
 	cd toolchain/os-gcc-$(GCC)/build && ../configure --target=x86_64-os --with-sysroot=$(DESTDIR) --enable-languages=c --prefix=$(CURDIR)/toolchain
 	cd toolchain/os-gcc-$(GCC)/build && $(MAKE) all-gcc all-target-libgcc
 	unset DESTDIR && cd toolchain/os-gcc-$(GCC)/build && $(MAKE) install-strip-gcc install-strip-target-libgcc
-format:
-	clang-format -i monocypher.c $(wildcard */*.c) $(wildcard include/*.h)
 clean:
 	rm -rf toolchain/os-binutils-$(BINUTILS) toolchain/os-gcc-$(GCC) *.tar.gz
 .DELETE_ON_ERROR:

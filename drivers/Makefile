@@ -12,6 +12,4 @@ install: all
 	cp bin/atad $(DESTDIR)/boot
 	cp bin/fbd $(DESTDIR)/sbin
 	cp bin/ps2d $(DESTDIR)/sbin
-format:
-	clang-format -i $(wildcard */*.c) $(wildcard include/*/*.h)
 -include $(wildcard */*.d)

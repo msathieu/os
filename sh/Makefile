@@ -11,5 +11,3 @@ bin/sh: $(OFILES)
 install: all
 	mkdir -p $(DESTDIR)/bin
 	cp bin/sh $(DESTDIR)/bin
-format:
-	clang-format -i $(CFILES)

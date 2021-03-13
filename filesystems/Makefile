@@ -18,6 +18,4 @@ install: all
 	cp bin/svfsd $(DESTDIR)/boot
 	cp bin/tmpd $(DESTDIR)/sbin
 	cp bin/vfsd $(DESTDIR)/boot
-format:
-	clang-format -i $(wildcard */*.c) $(wildcard include/*/*.h)
 -include $(wildcard */*.d)

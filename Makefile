@@ -43,18 +43,7 @@ toolchain:
 	$(MAKE) install-headers -Clibc
 	$(MAKE) build-toolchain -Ctools
 format:
-	$(MAKE) format -Cloader-mb
-	$(MAKE) format -Ckernel
-	$(MAKE) format -Ctools
-	$(MAKE) format -Clibc
-	$(MAKE) format -Clibraries
-	$(MAKE) format -Cinit
-	$(MAKE) format -Cdrivers
-	$(MAKE) format -Cservers
-	$(MAKE) format -Cfilesystems
-	$(MAKE) format -Cloadelf
-	$(MAKE) format -Csh
-	$(MAKE) format -Ccoreutils
+	clang-format -i $(shell find -name *.c) $(shell find -name *.h)
 analyze: export CFLAGS:=-I$(DESTDIR)/usr/include
 analyze:
 	scan-build --status-bugs --use-cc=clang $(MAKE) install -Cloader-mb

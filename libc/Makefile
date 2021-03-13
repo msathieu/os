@@ -17,7 +17,4 @@ install-headers:
 install: install-headers all
 	mkdir -p $(DESTDIR)/lib
 	cp libc.a crt0.o $(DESTDIR)/lib
-format:
-	clang-format -i $(CFILES) $(wildcard include/*.h) $(wildcard include/*/*.h)
-	$(MAKE) format -Cfreestanding
 -include $(OFILES:.o=.d)

@@ -12,6 +12,4 @@ install: all
 	mkdir -p $(DESTDIR)/usr
 	cp -r include $(DESTDIR)/usr
 	cp -r lib $(DESTDIR)
-format:
-	clang-format -i $(wildcard */*.c) $(wildcard include/*.h)
 -include $(wildcard */*.d)

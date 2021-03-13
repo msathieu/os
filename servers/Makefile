@@ -15,6 +15,4 @@ install: all
 	cp bin/kbdd $(DESTDIR)/sbin
 	cp bin/logd $(DESTDIR)/boot
 	cp bin/ttyd $(DESTDIR)/sbin
-format:
-	clang-format -i $(wildcard */*.c) $(wildcard include/*/*.h)
 -include $(wildcard */*.d)
