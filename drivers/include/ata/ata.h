@@ -1,0 +1,20 @@
+#pragma once
+#define ATA_PORT_SECTOR_COUNT 2
+#define ATA_PORT_LBALOW 3
+#define ATA_PORT_LBAMIDDLE 4
+#define ATA_PORT_LBAHIGH 5
+#define ATA_PORT_DRIVE 6
+#define ATA_PORT_COMMAND 7
+
+#define ATA_DRIVE_MASTER 0xa0
+#define ATA_DRIVE_SLAVE 0xb0
+#define ATA_DRIVE_MASTER_PIO 0xe0
+#define ATA_DRIVE_SLAVE_PIO 0xf0
+
+#define ATA_CMD_READ 0x20
+#define ATA_CMD_IDENTIFY 0xec
+
+#define ATA_STATUS_ERR 1
+#define ATA_STATUS_DRQ 8
+#define ATA_STATUS_RDY 0x40
+#define ATA_STATUS_BSY 0x80

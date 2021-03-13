@@ -1,0 +1,6 @@
+*.o
+*.d
+bin
+toolchain
+*.tar.xz
+*.tar.gz

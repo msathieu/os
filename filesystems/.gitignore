@@ -1,0 +1,4 @@
+*.o
+*.d
+public.key
+bin

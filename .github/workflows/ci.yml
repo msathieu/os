@@ -1,0 +1,132 @@
+name: CI
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+jobs:
+  toolchain:
+    runs-on: ubuntu-20.04
+    steps:
+      - name: Install dependencies
+        run: sudo apt-get update && sudo apt-get install -y libmpc-dev libmpfr-dev
+      - name: Checkout
+        uses: actions/checkout@v2
+        with:
+          submodules: recursive
+      - name: Cache toolchain
+        id: cache-toolchain
+        uses: actions/cache@v2
+        with:
+          key: toolchain-${{ hashFiles('tools/Makefile') }}
+          path: tools/toolchain
+      - name: Build toolchain
+        if: steps.cache-toolchain.outputs.cache-hit != 'true'
+        run: make toolchain -j2
+      - name: Clean toolchain directory
+        run: make clean
+  multiboot:
+    runs-on: ubuntu-20.04
+    needs: toolchain
+    steps:
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y qemu-system-x86 llvm
+          sudo apt-get remove -y grub-efi-amd64-bin
+      - name: Checkout
+        uses: actions/checkout@v2
+        with:
+          submodules: recursive
+      - name: Cache toolchain
+        uses: actions/cache@v2
+        with:
+          key: toolchain-${{ hashFiles('tools/Makefile') }}
+          path: tools/toolchain
+      - name: Build OS image with GRUB
+        run: make build-grub -j2
+      - name: Upload loader-mb
+        uses: actions/upload-artifact@v2
+        with:
+          name: loader-mb
+          path: boot/boot/loader.bin
+      - name: Upload kernel
+        uses: actions/upload-artifact@v2
+        with:
+          name: kernel
+          path: boot/boot/kernel.bin
+      - name: Upload init
+        uses: actions/upload-artifact@v2
+        with:
+          name: init
+          path: boot/boot/init
+      - name: Upload drivers
+        uses: actions/upload-artifact@v2
+        with:
+          name: drivers
+          path: |
+            boot/boot/atad
+      - name: Upload servers
+        uses: actions/upload-artifact@v2
+        with:
+          name: servers
+          path: |
+            boot/boot/argd
+            boot/boot/ipcd
+            boot/boot/logd
+      - name: Upload filesystems
+        uses: actions/upload-artifact@v2
+        with:
+          name: filesystems
+          path: |
+            boot/boot/mbrd
+            boot/boot/svfsd
+            boot/boot/vfsd
+      - name: Upload loadelf
+        uses: actions/upload-artifact@v2
+        with:
+          name: lelf
+          path: boot/boot/lelf
+      - name: Upload system volume
+        uses: actions/upload-artifact@v2
+        with:
+          name: svfs
+          path: svfs.img
+      - name: Upload LVM image
+        uses: actions/upload-artifact@v2
+        with:
+          name: lvm
+          path: lvm.img
+      - name: Test OS
+        timeout-minutes: 1
+        run: |
+          sed -i "s/loader.bin/loader.bin ci/" grub.cfg
+          make run-grub-nographic
+  style:
+    runs-on: ubuntu-20.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+        with:
+          submodules: recursive
+      - name: Format code
+        run: make format
+      - name: Check if there are any changes
+        run: git diff --exit-code
+  analyze:
+    runs-on: ubuntu-20.04
+    needs: toolchain
+    steps:
+      - name: Install dependencies
+        run: sudo apt-get update && sudo apt-get install -y clang-tools llvm
+      - name: Checkout
+        uses: actions/checkout@v2
+        with:
+          submodules: recursive
+      - name: Cache toolchain
+        uses: actions/cache@v2
+        with:
+          key: toolchain-${{ hashFiles('tools/Makefile') }}
+          path: tools/toolchain
+      - name: Analyze
+        run: make analyze -j2

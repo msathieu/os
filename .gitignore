@@ -1,0 +1,8 @@
+sysroot
+boot
+system
+svfs.img
+lvm.img
+os.iso
+private.key
+public.key
