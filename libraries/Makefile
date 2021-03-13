@@ -1,15 +1,8 @@
-CC:=x86_64-os-gcc
-AR:=x86_64-os-ar
-CFLAGS+=-Wall -Wextra -Werror -O2 -MMD -Iinclude
-LIBRARIES:=lib/libmonocypher.a
+LIBRARIES:=$(DESTDIR)/lib/libmonocypher.a
 
-all: $(LIBRARIES)
-.SECONDEXPANSION:
-$(LIBRARIES): $$(patsubst %.c, %.o, $$(wildcard $$(patsubst lib/lib%.a, %, $$@)/*.c))
-	mkdir -p lib
-	$(AR) rc $@ $^
-install: all
-	mkdir -p $(DESTDIR)/usr
+install: $(LIBRARIES)
 	cp -r include $(DESTDIR)/usr
-	cp -r lib $(DESTDIR)
+.SECONDEXPANSION:
+$(LIBRARIES): $$(patsubst %.c, %.o, $$(wildcard $$(patsubst $(DESTDIR)/lib/lib%.a, %, $$@)/*.c))
+	$(AR) rc $@ $^
 -include $(wildcard */*.d)

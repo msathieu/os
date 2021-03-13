@@ -1,7 +1,10 @@
 BINUTILS:=f74f7dc79e96079f2bc55bfe5d6d4e0edeffdd55
 GCC:=f30188d8a08a03302d987160f74e701d44234055
-CFLAGS:=-Wall -Wextra -Werror -O2 -MMD -Iinclude
 PROGRAMS:=bin/lvm bin/sign bin/svfs
+export CC:=cc
+export AR:=ar
+export AS:=as
+export OBJCOPY:=objcopy
 
 all: $(PROGRAMS)
 .SECONDEXPANSION:
