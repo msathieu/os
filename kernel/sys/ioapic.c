@@ -21,7 +21,7 @@ struct acpi_madt_interrupt_override {
   uint8_t source;
   uint32_t gsi;
   uint16_t flags;
-};
+} __attribute__((packed));
 static struct ioapic {
   int gsi_start;
   int gsi_end;

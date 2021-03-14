@@ -112,7 +112,7 @@ static int64_t key_event_handler(uint64_t type, uint64_t value, uint64_t release
   return 0;
 }
 char get_character(void) {
-  if (memchr(buffer, '\n', buffer_len)) {
+  if (buffer && memchr(buffer, '\n', buffer_len)) {
     char c = buffer[0];
     buffer_len--;
     memcpy(buffer, buffer + 1, buffer_len);

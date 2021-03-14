@@ -32,7 +32,7 @@ int main(void) {
   svfs_volume.size = ftell(svfs_file);
   rewind(svfs_file);
   for (size_t i = 0; i < svfs_volume.size; i += LVM_SECTOR) {
-    svfs_volume.sectors[i] = next_sector;
+    svfs_volume.sectors[i / LVM_SECTOR] = next_sector;
     uint8_t data[LVM_SECTOR] = {0};
     if (!fread(data, 1, LVM_SECTOR, svfs_file)) {
       puts("Error reading file");

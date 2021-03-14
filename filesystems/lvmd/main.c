@@ -62,7 +62,7 @@ static int64_t read_handler(uint64_t offset, uint64_t arg1, uint64_t arg2, uint6
     if (offset_i) {
       size_i -= offset_i;
     }
-    send_pid_ipc_call(parent_pid, IPC_CALL_MEMORY_SHARING_RW, volumes[volume_i]->sectors[i] * LVM_SECTOR + offset_i, 0, 0, address, size_i);
+    send_pid_ipc_call(parent_pid, IPC_CALL_MEMORY_SHARING_RW, volumes[volume_i]->sectors[i / LVM_SECTOR] * LVM_SECTOR + offset_i, 0, 0, address, size_i);
     address += size_i;
   }
   return 0;

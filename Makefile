@@ -5,6 +5,9 @@ export AR:=x86_64-os-ar
 export AS:=x86_64-os-as
 export OBJCOPY:=x86_64-os-objcopy
 export CFLAGS:=-Wall -Wextra -Werror -O2 -MMD -Iinclude
+ifdef UBSAN
+CFLAGS+=-fsanitize=undefined
+endif
 
 build-grub: build
 	-cp -n public.key loader-mb
@@ -29,7 +32,7 @@ build:
 	mkdir -p sysroot/boot sysroot/sbin sysroot/bin sysroot/lib sysroot/usr
 	-cp -n public.key kernel
 	$(MAKE) -Ckernel
-	$(MAKE) -Ctools
+	CFLAGS="$(CFLAGS) -fno-sanitize=all" $(MAKE) -Ctools
 	$(MAKE) install-headers -Clibc
 	$(MAKE) -Clibc
 	$(MAKE) -Clibraries
@@ -66,5 +69,5 @@ analyze:
 	scan-build --status-bugs --use-cc=x86_64-os-gcc $(MAKE) -Csh
 	scan-build --status-bugs --use-cc=x86_64-os-gcc $(MAKE) -Ccoreutils
 clean:
-	rm -rf sysroot boot system *.img os.iso $(wildcard */bin) $(filter-out $(shell find ./tools/toolchain -name *.o), $(shell find -name *.o)) $(filter-out $(shell find ./tools/toolchain -name *.d), $(shell find -name *.d)) $(wildcard */*.key) $(wildcard */*.bin) $(wildcard */*.a)
+	rm -rf sysroot boot system *.img os.iso tools/bin $(filter-out $(shell find ./tools/toolchain -name *.o), $(shell find -name *.o)) $(filter-out $(shell find ./tools/toolchain -name *.d), $(shell find -name *.d)) $(wildcard */*.key) $(wildcard */*.a)
 	$(MAKE) clean -Ctools
