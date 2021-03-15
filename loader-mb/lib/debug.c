@@ -3,7 +3,7 @@
 #include <panic.h>
 #include <stdio.h>
 
-int putchar(int c) {
+int putc(int c, __attribute__((unused)) void* file) {
   unsigned eax, ebx, ecx, edx;
   if (!__get_cpuid(1, &eax, &ebx, &ecx, &edx)) {
     panic("Error obtaining CPUID information");
@@ -14,7 +14,7 @@ int putchar(int c) {
   outb(0x3f8, c);
   return c;
 }
-int vprintf(const char* restrict format, va_list args) {
+int vfprintf(__attribute__((unused)) void* file, const char* restrict format, va_list args) {
   unsigned eax, ebx, ecx, edx;
   if (!__get_cpuid(1, &eax, &ebx, &ecx, &edx)) {
     panic("Error obtaining CPUID information");

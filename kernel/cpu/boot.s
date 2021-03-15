@@ -1,5 +1,5 @@
-.global start
-start:
+.global _start
+_start:
   mov $boot_stack, %rsp
   call rdrand
   mov %rax, __stack_chk_guard

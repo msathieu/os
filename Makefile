@@ -69,5 +69,5 @@ analyze:
 	scan-build --status-bugs --use-cc=x86_64-os-gcc $(MAKE) -Csh
 	scan-build --status-bugs --use-cc=x86_64-os-gcc $(MAKE) -Ccoreutils
 clean:
-	rm -rf sysroot boot system *.img os.iso tools/bin $(filter-out $(shell find ./tools/toolchain -name *.o), $(shell find -name *.o)) $(filter-out $(shell find ./tools/toolchain -name *.d), $(shell find -name *.d)) $(wildcard */*.key) $(wildcard */*.a)
+	rm -rf sysroot boot system *.img os.iso tools/bin $(filter-out $(shell find ./tools/toolchain -name *.o), $(shell find -name *.o)) $(filter-out $(shell find ./tools/toolchain -name *.d), $(shell find -name *.d)) $(wildcard */*.key)
 	$(MAKE) clean -Ctools

@@ -2,7 +2,7 @@
 #include <cpuid.h>
 #include <stdio.h>
 
-int putchar(int c) {
+int putc(int c, __attribute__((unused)) void* file) {
   unsigned eax, ebx, ecx = 0, edx;
   __get_cpuid(1, &eax, &ebx, &ecx, &edx);
   if (!(ecx & 0x80000000)) {
@@ -18,7 +18,7 @@ int puts(const char* str) {
   putchar('\n');
   return 0;
 }
-int vprintf(const char* restrict format, va_list args) {
+int vfprintf(__attribute__((unused)) void* file, const char* restrict format, va_list args) {
   unsigned eax, ebx, ecx = 0, edx;
   __get_cpuid(1, &eax, &ebx, &ecx, &edx);
   if (!(ecx & 0x80000000)) {

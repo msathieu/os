@@ -20,8 +20,8 @@ multiboot_start:
 multiboot_end:
 
 .section .text
-.global start
-start:
+.global _start
+_start:
   mov $stack, %esp
   push %ebx
   push %eax
