@@ -30,28 +30,28 @@ static struct acpi_header* find_table(const char* signature) {
 }
 void parse_acpi(void) {
   if (loader_struct.rsdp.revision >= 2) {
-    struct acpi_header* xsdt = map_physical(loader_struct.rsdp.xsdt, sizeof(struct acpi_header), 0, 0, 0);
-    if (memcmp(xsdt->signature, "XSDT", 4)) {
+    struct xsdt* xsdt = map_physical(loader_struct.rsdp.xsdt, sizeof(struct acpi_header), 0, 0, 0);
+    if (memcmp(xsdt->header.signature, "XSDT", 4)) {
       panic("Invalid XSDT signature");
     }
-    xsdt = map_physical(loader_struct.rsdp.xsdt, xsdt->size, 0, 0, 0);
-    check_checksum(xsdt);
-    nheaders = (xsdt->size - sizeof(struct acpi_header)) / 8;
+    xsdt = map_physical(loader_struct.rsdp.xsdt, xsdt->header.size, 0, 0, 0);
+    check_checksum(&xsdt->header);
+    nheaders = (xsdt->header.size - sizeof(struct acpi_header)) / 8;
     headers = calloc(nheaders, 8);
     for (size_t i = 0; i < nheaders; i++) {
-      headers[i] = map_physical(((uint64_t*) (xsdt + 1))[i], sizeof(struct acpi_header), 0, 0, 0);
+      headers[i] = map_physical(xsdt->tables[i], sizeof(struct acpi_header), 0, 0, 0);
     }
   } else {
-    struct acpi_header* rsdt = map_physical(loader_struct.rsdp.rsdt, sizeof(struct acpi_header), 0, 0, 0);
-    if (memcmp(rsdt->signature, "RSDT", 4)) {
+    struct rsdt* rsdt = map_physical(loader_struct.rsdp.rsdt, sizeof(struct acpi_header), 0, 0, 0);
+    if (memcmp(rsdt->header.signature, "RSDT", 4)) {
       panic("Invalid RSDT signature");
     }
-    rsdt = map_physical(loader_struct.rsdp.rsdt, rsdt->size, 0, 0, 0);
-    check_checksum(rsdt);
-    nheaders = (rsdt->size - sizeof(struct acpi_header)) / 4;
+    rsdt = map_physical(loader_struct.rsdp.rsdt, rsdt->header.size, 0, 0, 0);
+    check_checksum(&rsdt->header);
+    nheaders = (rsdt->header.size - sizeof(struct acpi_header)) / 4;
     headers = calloc(nheaders, 8);
     for (size_t i = 0; i < nheaders; i++) {
-      headers[i] = map_physical(((uint32_t*) (rsdt + 1))[i], sizeof(struct acpi_header), 0, 0, 0);
+      headers[i] = map_physical(rsdt->tables[i], sizeof(struct acpi_header), 0, 0, 0);
     }
   }
   parse_madt(find_table("APIC"));

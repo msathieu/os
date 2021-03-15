@@ -25,7 +25,7 @@ struct acpi_madt_lapic {
   uint8_t processor_id;
   uint8_t lapic_id;
   uint32_t flags;
-};
+} __attribute__((packed));
 struct acpi_madt_nmi {
   uint8_t type;
   uint8_t size;

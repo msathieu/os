@@ -1,6 +1,7 @@
 #include <capability.h>
 #include <ipc.h>
 #include <linked_list.h>
+#include <sched.h>
 #include <stdlib.h>
 #include <string.h>
 #include <syslog.h>
@@ -56,6 +57,9 @@ static int64_t open_file_handler(uint64_t arg0, uint64_t arg1, uint64_t arg2, ui
   long file_num = -IPC_ERR_INVALID_PID;
   while (file_num == -IPC_ERR_INVALID_PID) {
     file_num = send_pid_ipc_call(svfsd_pid, IPC_CALL_MEMORY_SHARING, 0, 0, 0, (uintptr_t) buffer + 1, size - 1);
+    if (file_num == -IPC_ERR_INVALID_PID) {
+      sched_yield();
+    }
   }
   free(buffer);
   if (file_num < 0) {

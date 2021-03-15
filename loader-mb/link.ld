@@ -2,15 +2,15 @@ SECTIONS {
   . = 1M;
   .text : {
     *(.multiboot)
-    *(.text)
+    *(.text*)
   }
   .rodata : {
     *(.rodata*)
   }
   .data : {
-    *(.data)
+    *(.data*)
   }
   .bss : {
-    *(.bss)
+    *(.bss*)
   }
 }

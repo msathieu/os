@@ -8,6 +8,8 @@ char** _argv;
 char** environ;
 __attribute__((weak)) extern int _noremove_args;
 __attribute__((weak)) extern int _noenvironment_vars;
+extern void (*__init_array_start[])(void);
+extern void (*__init_array_end[])(void);
 
 void _setup_libc(void) {
   rpmalloc_initialize();
@@ -38,5 +40,8 @@ void _setup_libc(void) {
     environ[nenvs] = 0;
   } else {
     environ = calloc(1, sizeof(char*));
+  }
+  for (size_t i = 0; i < (size_t)(__init_array_end - __init_array_start); i++) {
+    __init_array_start[i]();
   }
 }

@@ -7,7 +7,7 @@ struct acpi_madt {
   struct acpi_header header;
   uint32_t lapic_addr;
   uint32_t flags;
-};
+} __attribute__((packed));
 struct acpi_madt_entry {
   uint8_t type;
   uint8_t size;

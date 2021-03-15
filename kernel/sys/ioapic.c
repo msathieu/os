@@ -13,7 +13,7 @@ struct acpi_madt_ioapic {
   uint8_t reserved;
   uint32_t address;
   uint32_t gsi_base;
-};
+} __attribute__((packed));
 struct acpi_madt_interrupt_override {
   uint8_t type;
   uint8_t size;

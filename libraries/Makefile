@@ -4,5 +4,5 @@ install: $(LIBRARIES)
 	cp -r include $(DESTDIR)/usr
 .SECONDEXPANSION:
 $(LIBRARIES): $$(patsubst %.c, %.o, $$(wildcard $$(patsubst $(DESTDIR)/lib/lib%.a, %, $$@)/*.c))
-	$(AR) rc $@ $^
+	$(AR) rcD $@ $^
 -include $(wildcard */*.d)

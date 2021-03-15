@@ -2,7 +2,7 @@ PROGRAMS:=$(DESTDIR)/boot/lvmd $(DESTDIR)/boot/mbrd $(DESTDIR)/boot/svfsd $(DEST
 
 all: $(PROGRAMS)
 .SECONDEXPANSION:
-$(DESTDIR)/boot/svfsd: LDFLAGS:= -lmonocypher
+$(DESTDIR)/boot/svfsd: LDFLAGS:=-lmonocypher
 $(PROGRAMS): $$(patsubst %.c, %.o, $$(wildcard $$(notdir $$@)/*.c)) $(patsubst %.key, %.o, $(wildcard public.key))
 	$(CC) -s -o $@ $^ $(LDFLAGS)
 %.o: %.key

@@ -23,7 +23,15 @@ struct acpi_header {
   uint32_t oem_revision;
   uint32_t creator_id;
   uint32_t creator_revision;
-};
+} __attribute__((packed));
+struct rsdt {
+  struct acpi_header header;
+  uint32_t tables[];
+} __attribute__((packed));
+struct xsdt {
+  struct acpi_header header;
+  uint64_t tables[];
+} __attribute__((packed));
 #define GAS_ADDRESS_MEMORY 0
 #define GAS_ADDRESS_IO 1
 #define GAS_ADDRESS_PCI 2
