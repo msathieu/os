@@ -40,6 +40,9 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y qemu-system-x86 llvm lld
           sudo apt-get remove -y grub-efi-amd64-bin
+      - name: Install dependencies
+        if: ${{ matrix.os == 'macos-10.15' }}
+        run: brew install llvm
       - name: Checkout
         uses: actions/checkout@v2
         with:
@@ -47,7 +50,7 @@ jobs:
       - name: Cache toolchain
         uses: actions/cache@v2
         with:
-          key: toolchain-${{ hashFiles('tools/Makefile') }}
+          key: toolchain-${{ matrix.os }}-${{ hashFiles('tools/Makefile') }}
           path: tools/toolchain
       - name: Build OS image with GRUB
         run: make build-grub -j2
@@ -141,7 +144,7 @@ jobs:
       - name: Cache toolchain
         uses: actions/cache@v2
         with:
-          key: toolchain-${{ hashFiles('tools/Makefile') }}
+          key: toolchain-ubuntu-20.04-${{ hashFiles('tools/Makefile') }}
           path: tools/toolchain
       - name: Analyze
         run: make analyze -j2
