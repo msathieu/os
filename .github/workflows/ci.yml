@@ -116,6 +116,7 @@ jobs:
           name: lvm
           path: lvm.img
       - name: Test OS
+        if: ${{ matrix.os == 'ubuntu-20.04' }}
         timeout-minutes: 1
         run: |
           sed -i "s/loader.bin/loader.bin ci/" grub.cfg
