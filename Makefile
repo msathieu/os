@@ -5,6 +5,10 @@ export AR:=x86_64-os-ar
 export AS:=x86_64-os-as
 export OBJCOPY:=x86_64-os-objcopy
 export CFLAGS:=-Wall -Wextra -Werror -O2 -MMD -Iinclude
+export LDTARGET:=elf
+ifeq ($(shell uname),Darwin)
+export LDTARGET:=linux-elf
+endif
 ifdef UBSAN
 CFLAGS+=-fsanitize=undefined
 endif
