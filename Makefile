@@ -13,9 +13,7 @@ ifdef UBSAN
 CFLAGS+=-fsanitize=undefined
 endif
 
-build-grub: build
-	-cp -n public.key loader-mb
-	$(MAKE) -Cloader-mb
+build-grub: build-multiboot
 	mkdir -p sysroot/boot/grub
 	cp grub.cfg sysroot/boot/grub
 	-test -f public.key && cp grub-signed.cfg sysroot/boot/grub/grub.cfg
@@ -32,6 +30,9 @@ build-grub: build
 	dd if=lvm.img >> os.iso
 	parted os.iso -a none mkpart primary `parted -m os.iso unit s print free | tail -n 1 | cut -f2 -d:` 100%
 	sfdisk os.iso --part-type 2 0xb9 -q
+build-multiboot: build
+	-cp -n public.key loader-mb
+	$(MAKE) -Cloader-mb
 build:
 	mkdir -p sysroot/boot sysroot/sbin sysroot/bin sysroot/lib sysroot/usr
 	-cp -n public.key kernel

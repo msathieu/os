@@ -49,8 +49,11 @@ jobs:
         with:
           key: toolchain-${{ matrix.os }}-${{ hashFiles('tools/Makefile') }}
           path: tools/toolchain
+      - name: Build OS
+        run: PATH=/usr/local/opt/llvm/bin:$PATH make build-multiboot -j2
       - name: Build OS image with GRUB
-        run: PATH=/usr/local/opt/llvm/bin:$PATH make build-grub -j2
+        if: ${{ matrix.os == 'ubuntu-20.04' }}
+        run: make build-grub -j2
       - name: Upload loader-mb
         if: ${{ matrix.os == 'ubuntu-20.04' }}
         uses: actions/upload-artifact@v2
