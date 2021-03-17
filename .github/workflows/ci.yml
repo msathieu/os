@@ -2,9 +2,14 @@ name: CI
 on: [push, pull_request]
 jobs:
   toolchain:
-    runs-on: ubuntu-20.04
+    strategy:
+      matrix:
+        os: [ubuntu-20.04, macos-10.15]
+      fail-fast: false
+    runs-on: ${{ matrix.os }}
     steps:
       - name: Install dependencies
+        if: ${{ matrix.os == 'ubuntu-20.04' }}
         run: sudo apt-get update && sudo apt-get install -y libmpc-dev libmpfr-dev
       - name: Checkout
         uses: actions/checkout@v2
@@ -14,7 +19,7 @@ jobs:
         id: cache-toolchain
         uses: actions/cache@v2
         with:
-          key: toolchain-${{ hashFiles('tools/Makefile') }}
+          key: toolchain-${{ matrix.os }}-${{ hashFiles('tools/Makefile') }}
           path: tools/toolchain
       - name: Build toolchain
         if: steps.cache-toolchain.outputs.cache-hit != 'true'
@@ -22,10 +27,15 @@ jobs:
       - name: Clean toolchain directory
         run: make clean
   multiboot:
-    runs-on: ubuntu-20.04
+    strategy:
+      matrix:
+        os: [ubuntu-20.04, macos-10.15]
+      fail-fast: false
+    runs-on: ${{ matrix.os }}
     needs: toolchain
     steps:
       - name: Install dependencies
+        if: ${{ matrix.os == 'ubuntu-20.04' }}
         run: |
           sudo apt-get update
           sudo apt-get install -y qemu-system-x86 llvm lld
@@ -37,32 +47,40 @@ jobs:
       - name: Cache toolchain
         uses: actions/cache@v2
         with:
-          key: toolchain-${{ hashFiles('tools/Makefile') }}
+          key: toolchain-${{ matrix.os }}-${{ hashFiles('tools/Makefile') }}
           path: tools/toolchain
+      - name: Build OS
+        run: PATH=/usr/local/opt/llvm/bin:$PATH make build-multiboot -j2
       - name: Build OS image with GRUB
+        if: ${{ matrix.os == 'ubuntu-20.04' }}
         run: make build-grub -j2
       - name: Upload loader-mb
+        if: ${{ matrix.os == 'ubuntu-20.04' }}
         uses: actions/upload-artifact@v2
         with:
           name: loader-mb
           path: boot/boot/loader.bin
       - name: Upload kernel
+        if: ${{ matrix.os == 'ubuntu-20.04' }}
         uses: actions/upload-artifact@v2
         with:
           name: kernel
           path: boot/boot/kernel.bin
       - name: Upload init
+        if: ${{ matrix.os == 'ubuntu-20.04' }}
         uses: actions/upload-artifact@v2
         with:
           name: init
           path: boot/boot/init
       - name: Upload drivers
+        if: ${{ matrix.os == 'ubuntu-20.04' }}
         uses: actions/upload-artifact@v2
         with:
           name: drivers
           path: |
             boot/boot/atad
       - name: Upload servers
+        if: ${{ matrix.os == 'ubuntu-20.04' }}
         uses: actions/upload-artifact@v2
         with:
           name: servers
@@ -71,6 +89,7 @@ jobs:
             boot/boot/ipcd
             boot/boot/logd
       - name: Upload filesystems
+        if: ${{ matrix.os == 'ubuntu-20.04' }}
         uses: actions/upload-artifact@v2
         with:
           name: filesystems
@@ -79,21 +98,25 @@ jobs:
             boot/boot/svfsd
             boot/boot/vfsd
       - name: Upload loadelf
+        if: ${{ matrix.os == 'ubuntu-20.04' }}
         uses: actions/upload-artifact@v2
         with:
           name: lelf
           path: boot/boot/lelf
       - name: Upload system volume
+        if: ${{ matrix.os == 'ubuntu-20.04' }}
         uses: actions/upload-artifact@v2
         with:
           name: svfs
           path: svfs.img
       - name: Upload LVM image
+        if: ${{ matrix.os == 'ubuntu-20.04' }}
         uses: actions/upload-artifact@v2
         with:
           name: lvm
           path: lvm.img
       - name: Test OS
+        if: ${{ matrix.os == 'ubuntu-20.04' }}
         timeout-minutes: 1
         run: |
           sed -i "s/loader.bin/loader.bin ci/" grub.cfg
@@ -122,7 +145,7 @@ jobs:
       - name: Cache toolchain
         uses: actions/cache@v2
         with:
-          key: toolchain-${{ hashFiles('tools/Makefile') }}
+          key: toolchain-ubuntu-20.04-${{ hashFiles('tools/Makefile') }}
           path: tools/toolchain
       - name: Analyze
         run: make analyze -j2

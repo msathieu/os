@@ -13,7 +13,7 @@ OFILES:=$(patsubst %.c, %.o, $(CFILES)) $(patsubst %.s, %.o, $(SFILES)) $(patsub
 
 $(LIBC): CFLAGS+=-fno-builtin
 $(DESTDIR)/boot/loader.bin: $(OFILES) $(LIBC)
-	$(CC) --target=i686-elf -fuse-ld=lld -flto -static -nostdlib -s -T link.ld -o $@ $^
+	$(CC) --target=i686-$(LDTARGET) -fuse-ld=lld -flto -static -nostdlib -s -T link.ld -o $@ $^
 %.o: %.key
 	$(OBJCOPY) -O elf32-i386 -I binary $< $@
 -include $(OFILES:.o=.d)

@@ -3,15 +3,21 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#ifdef linux
 #include <sys/random.h>
+#endif
 #include <sys/stat.h>
 
 static void generate(void) {
   uint8_t private[32];
+#ifdef linux
   if (getrandom(private, 32, 0) != 32) {
     puts("Can't obtain enough randomness");
     exit(1);
   }
+#else
+  arc4random_buf(private, 32);
+#endif
   FILE* private_file = fopen("private.key", "w");
   fwrite(private, 1, 32, private_file);
   fclose(private_file);

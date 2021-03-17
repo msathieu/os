@@ -13,10 +13,10 @@ $(PROGRAMS): $$(patsubst %.c, %.o, $$(wildcard $$(patsubst bin/%, %, $$@)/*.c)) 
 	$(CC) -s -o $@ $^
 $(BINUTILS).tar.gz:
 	wget https://github.com/MSathieu/os-binutils/archive/$(BINUTILS).tar.gz
-	echo "114b99e26d8f5e21d806bce1a5371d1454a278441a8d59cc337452cfd1e376941592a1a313be60e351fed6ba1d0ef145c74cd964453ecab5e8064366cd9d2f79 $(BINUTILS).tar.gz" | sha512sum -c
+	echo "114b99e26d8f5e21d806bce1a5371d1454a278441a8d59cc337452cfd1e376941592a1a313be60e351fed6ba1d0ef145c74cd964453ecab5e8064366cd9d2f79  $(BINUTILS).tar.gz" | shasum -c
 $(GCC).tar.gz:
 	wget https://github.com/MSathieu/os-gcc/archive/$(GCC).tar.gz
-	echo "fb5c07f31026277cb0990f520af3aa82467b8a95002e652594f6df45a31bb5a9b2accc7be4a933b2962361f2f6894c67a9f01cb07ec3feb2fc5eb1ca9efdbec3 $(GCC).tar.gz" | sha512sum -c
+	echo "fb5c07f31026277cb0990f520af3aa82467b8a95002e652594f6df45a31bb5a9b2accc7be4a933b2962361f2f6894c67a9f01cb07ec3feb2fc5eb1ca9efdbec3  $(GCC).tar.gz" | shasum  -c
 build-toolchain: $(BINUTILS).tar.gz $(GCC).tar.gz
 	mkdir -p toolchain
 	cd toolchain && tar -xf ../$(BINUTILS).tar.gz
