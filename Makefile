@@ -4,7 +4,7 @@ export CC:=x86_64-os-gcc
 export AR:=x86_64-os-ar
 export AS:=x86_64-os-as
 export OBJCOPY:=x86_64-os-objcopy
-export CFLAGS:=-Wall -Wextra -Werror -O2 -MMD -Iinclude
+export CFLAGS:=-Wall -Wextra -Werror -O2 -MMD -Iinclude -Wshadow
 export LDTARGET:=elf
 ifeq ($(shell uname),Darwin)
 export LDTARGET:=linux-elf
@@ -37,7 +37,7 @@ build:
 	mkdir -p sysroot/boot sysroot/sbin sysroot/bin sysroot/lib sysroot/usr
 	-cp -n public.key kernel
 	$(MAKE) -Ckernel
-	CFLAGS="$(CFLAGS) -fno-sanitize=all" $(MAKE) -Ctools
+	CFLAGS="$(CFLAGS) -fno-sanitize=all -Wno-shadow" $(MAKE) -Ctools
 	$(MAKE) install-headers -Clibc
 	$(MAKE) -Clibc
 	$(MAKE) -Clibraries

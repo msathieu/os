@@ -89,12 +89,12 @@ void sleep(size_t time) {
   asm volatile("sti");
   sleep_done = 0;
 }
-void sleep_current_task(size_t duration, struct isr_registers* registers) {
+void sleep_current_task(size_t duration, struct isr_registers* isr_registers) {
   if (duration > 24 * 60 * 60 * 1000) {
     duration = 24 * 60 * 60 * 1000;
   }
   struct task* task = current_task;
-  block_current_task(registers);
+  block_current_task(isr_registers);
   task->sleep_until = get_time() + duration;
   insert_sorted_list(&sleeping_list, &task->list_member);
   if ((struct task*) sleeping_list.first == task) {

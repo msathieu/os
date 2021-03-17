@@ -1,5 +1,5 @@
 // Taken from https://github.com/LoupVaillant/Monocypher/blob/master/src/monocypher.c (84f6c35df3ae9da87b98e0ad17e069cc0ae22c6f)
-
+#pragma GCC diagnostic ignored "-Wshadow"
 // Monocypher version __git__
 //
 // This file is dual-licensed.  Choose whichever licence you want from
