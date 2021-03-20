@@ -76,7 +76,7 @@ int main(void) {
     return 1;
   }
   for (size_t i = 0; header.volumes[i]; i++) {
-    volumes[i] = malloc(sizeof(struct lvm_volume));
+    volumes[i] = calloc(1, sizeof(struct lvm_volume));
     send_pid_ipc_call(parent_pid, IPC_CALL_MEMORY_SHARING_RW, header.volumes[i] * LVM_SECTOR, 0, 0, (uintptr_t) volumes[i], sizeof(struct lvm_volume));
     switch (volumes[i]->filesystem) {
     case SVFS_MAGIC:

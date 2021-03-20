@@ -18,7 +18,7 @@ void _setup_libc(void) {
     _argv = malloc((_argc + 1) * sizeof(char*));
     for (size_t i = 0; i < _argc; i++) {
       size_t size = send_ipc_call("argd", 1, i, 0, 0, 0, 0);
-      _argv[i] = malloc(size);
+      _argv[i] = calloc(size, 1);
       bool noremove = 0;
       if (&_noremove_args) {
         noremove = 1;
@@ -34,7 +34,7 @@ void _setup_libc(void) {
     environ = malloc((nenvs + 1) * sizeof(char*));
     for (size_t i = 0; i < nenvs; i++) {
       size_t size = send_ipc_call("envd", 1, i, 0, 0, 0, 0);
-      environ[i] = malloc(size);
+      environ[i] = calloc(size, 1);
       send_ipc_call("envd", IPC_CALL_MEMORY_SHARING_RW, i, 0, 0, (uintptr_t) environ[i], size);
     }
     environ[nenvs] = 0;

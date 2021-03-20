@@ -73,7 +73,7 @@ int main(void) {
   drop_capability(CAP_NAMESPACE_KERNEL, CAP_KERNEL_PRIORITY);
   register_ipc(1);
   parent_pid = getppid();
-  header = malloc(sizeof(struct svfs_header));
+  header = calloc(1, sizeof(struct svfs_header));
   send_pid_ipc_call(parent_pid, IPC_CALL_MEMORY_SHARING_RW, 0, 0, 0, (uintptr_t) header, sizeof(struct svfs_header));
   if (header->magic != SVFS_MAGIC || header->version) {
     syslog(LOG_ERR, "Filesystem has invalid magic value or unknown version");
@@ -83,6 +83,7 @@ int main(void) {
     return 1;
   }
   header = realloc(header, sizeof(struct svfs_header) + header->nfiles * sizeof(struct svfs_file));
+  memset((void*) header + sizeof(struct svfs_header), 0, header->nfiles * sizeof(struct svfs_file));
   send_pid_ipc_call(parent_pid, IPC_CALL_MEMORY_SHARING_RW, sizeof(struct svfs_header), 0, 0, (uintptr_t) header + sizeof(struct svfs_header), header->nfiles * sizeof(struct svfs_file));
   if (&_binary_public_key_start) {
     if (crypto_check(header->signature, (uint8_t*) &_binary_public_key_start, (uint8_t*) header + offsetof(struct svfs_header, magic), sizeof(struct svfs_header) - offsetof(struct svfs_header, magic) + header->nfiles * sizeof(struct svfs_file))) {
@@ -90,7 +91,7 @@ int main(void) {
       return 1;
     }
     for (size_t i = 0; i < header->nfiles; i++) {
-      uint8_t* file = malloc(header->files[i].size);
+      uint8_t* file = calloc(header->files[i].size, 1);
       send_pid_ipc_call(parent_pid, IPC_CALL_MEMORY_SHARING_RW, sizeof(struct svfs_header) + header->nfiles * sizeof(struct svfs_file) + header->files[i].offset, 0, 0, (uintptr_t) file, header->files[i].size);
       uint8_t hash[64];
       crypto_blake2b(hash, file, header->files[i].size);
