@@ -81,10 +81,11 @@ int main(void) {
     switch (volumes[i]->filesystem) {
     case SVFS_MAGIC:
       volume_pids[i] = spawn_process_raw("svfsd");
-      send_ipc_call("vfsd", IPC_VFSD_MOUNT, 0, 0, 0, 0, 0);
+      send_ipc_call("vfsd", IPC_VFSD_MOUNT, 0, 0, 0, (uintptr_t) "/", 2);
       break;
     case TMP_MAGIC:
       volume_pids[i] = spawn_process("/sbin/tmpd");
+      send_ipc_call("vfsd", IPC_VFSD_MOUNT, 0, 0, 0, (uintptr_t) "/tmp", 5);
       break;
     }
     grant_capability(CAP_NAMESPACE_KERNEL, CAP_KERNEL_PRIORITY);

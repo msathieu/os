@@ -1,4 +1,5 @@
 #include <capability.h>
+#include <ctype.h>
 #include <ipccalls.h>
 #include <linked_list.h>
 #include <sched.h>
@@ -9,6 +10,7 @@
 struct fd {
   struct linked_list_member list_member;
   size_t fd;
+  size_t mount;
   size_t file_num;
   size_t position;
 };
@@ -18,12 +20,16 @@ struct process {
   struct linked_list fd_list;
   size_t next_fd;
 };
+struct mount {
+  char* path;
+  pid_t pid;
+};
 
-static pid_t svfsd_pid;
+static struct mount mounts[512];
 static struct linked_list process_list;
 
-static int64_t mount_handler(uint64_t arg0, uint64_t arg1, uint64_t arg2, uint64_t arg3, uint64_t arg4) {
-  if (arg0 || arg1 || arg2 || arg3 || arg4) {
+static int64_t mount_handler(uint64_t arg0, uint64_t arg1, uint64_t arg2, uint64_t address, uint64_t size) {
+  if (arg0 || arg1 || arg2) {
     syslog(LOG_DEBUG, "Reserved argument is set");
     return -IPC_ERR_INVALID_ARGUMENTS;
   }
@@ -31,16 +37,14 @@ static int64_t mount_handler(uint64_t arg0, uint64_t arg1, uint64_t arg2, uint64
     syslog(LOG_DEBUG, "No permission to mount filesystem");
     return -IPC_ERR_INSUFFICIENT_PRIVILEGE;
   }
-  svfsd_pid = get_caller_spawned_pid();
-  return 0;
-}
-static int64_t open_file_handler(uint64_t arg0, uint64_t arg1, uint64_t arg2, uint64_t address, uint64_t size) {
-  if (arg0 || arg1 || arg2) {
-    syslog(LOG_DEBUG, "Reserved argument is set");
+  if (size == 1) {
+    syslog(LOG_DEBUG, "No mount path specified");
     return -IPC_ERR_INVALID_ARGUMENTS;
   }
-  if (!svfsd_pid) {
-    return -IPC_ERR_RETRY;
+  pid_t pid = get_caller_spawned_pid();
+  if (!pid) {
+    syslog(LOG_DEBUG, "Not currently spawning a process");
+    return -IPC_ERR_PROGRAM_DEFINED;
   }
   char* buffer = malloc(size);
   memcpy(buffer, (void*) address, size);
@@ -54,9 +58,61 @@ static int64_t open_file_handler(uint64_t arg0, uint64_t arg1, uint64_t arg2, ui
     syslog(LOG_DEBUG, "Path isn't absolute");
     return -IPC_ERR_INVALID_ARGUMENTS;
   }
+  if (buffer[size - 2] != '/') {
+    free(buffer);
+    syslog(LOG_DEBUG, "Path isn't a directory");
+    return -IPC_ERR_INVALID_ARGUMENTS;
+  }
+  for (size_t i = 0; i < size - 1; i++) {
+    if (!isalnum(buffer[i]) && buffer[i] != '/') {
+      free(buffer);
+      syslog(LOG_DEBUG, "Path contains invalid characters");
+      return -IPC_ERR_INVALID_ARGUMENTS;
+    }
+  }
+  for (size_t i = 0; i < 512; i++) {
+    if (!mounts[i].path) {
+      mounts[i].path = buffer;
+      mounts[i].pid = pid;
+      return 0;
+    }
+  }
+  free(buffer);
+  syslog(LOG_WARNING, "Reached maximum number of mounts");
+  return -IPC_ERR_PROGRAM_DEFINED;
+}
+static int64_t open_file_handler(uint64_t arg0, uint64_t arg1, uint64_t arg2, uint64_t address, uint64_t size) {
+  if (arg0 || arg1 || arg2) {
+    syslog(LOG_DEBUG, "Reserved argument is set");
+    return -IPC_ERR_INVALID_ARGUMENTS;
+  }
+  char* buffer = malloc(size);
+  memcpy(buffer, (void*) address, size);
+  if (buffer[size - 1]) {
+    free(buffer);
+    syslog(LOG_DEBUG, "Path isn't null terminated");
+    return -IPC_ERR_INVALID_ARGUMENTS;
+  }
+  if (buffer[0] != '/') {
+    free(buffer);
+    syslog(LOG_DEBUG, "Path isn't absolute");
+    return -IPC_ERR_INVALID_ARGUMENTS;
+  }
+  int mount_i = -1;
+  size_t mount_size = 0;
+  for (size_t i = 0; i < 512; i++) {
+    if (mounts[i].path && strlen(mounts[i].path) > mount_size && !strncmp(mounts[i].path, buffer, strlen(mounts[i].path))) {
+      mount_i = i;
+      mount_size = strlen(mounts[i].path);
+    }
+  }
+  if (mount_i == -1) {
+    free(buffer);
+    return -IPC_ERR_RETRY;
+  }
   long file_num = -IPC_ERR_INVALID_PID;
   while (file_num == -IPC_ERR_INVALID_PID) {
-    file_num = send_pid_ipc_call(svfsd_pid, IPC_VFSD_FS_GET_FILE_NUM, 0, 0, 0, (uintptr_t) buffer + 1, size - 1);
+    file_num = send_pid_ipc_call(mounts[mount_i].pid, IPC_VFSD_FS_GET_FILE_NUM, 0, 0, 0, (uintptr_t) buffer + mount_size, size - 1);
     if (file_num == -IPC_ERR_INVALID_PID) {
       sched_yield();
     }
@@ -115,7 +171,7 @@ static int64_t read_file_handler(uint64_t fd_num, uint64_t arg1, uint64_t arg2, 
     if (process->pid == caller_pid) {
       for (struct fd* fd = (struct fd*) process->fd_list.first; fd; fd = (struct fd*) fd->list_member.next) {
         if (fd->fd == fd_num) {
-          send_pid_ipc_call(svfsd_pid, IPC_VFSD_FS_READ, fd->file_num, fd->position, 0, address, size);
+          send_pid_ipc_call(mounts[fd->mount].pid, IPC_VFSD_FS_READ, fd->file_num, fd->position, 0, address, size);
           fd->position += size;
           return 0;
         }
@@ -149,10 +205,10 @@ static int64_t seek_file_handler(uint64_t fd_num, uint64_t position, uint64_t ar
 int main(void) {
   drop_capability(CAP_NAMESPACE_KERNEL, CAP_KERNEL_PRIORITY);
   register_ipc(1);
-  ipc_handlers[IPC_VFSD_MOUNT] = mount_handler;
   ipc_handlers[IPC_VFSD_CLOSE] = close_file_handler;
   ipc_handlers[IPC_VFSD_SEEK] = seek_file_handler;
   ipc_handlers[IPC_VFSD_OPEN] = open_file_handler;
+  ipc_handlers[IPC_VFSD_MOUNT] = mount_handler;
   ipc_handlers[IPC_VFSD_READ] = read_file_handler;
   while (1) {
     handle_ipc();
