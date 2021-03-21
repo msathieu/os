@@ -1,5 +1,5 @@
 #include <capability.h>
-#include <ipc.h>
+#include <ipccalls.h>
 #include <keyboard.h>
 #include <stdlib.h>
 #include <string.h>
@@ -121,7 +121,7 @@ char get_character(void) {
   return 0;
 }
 void setup_kbd(void) {
-  send_ipc_call("kbdd", 1, 0, 0, 0, 0, 0);
+  send_ipc_call("kbdd", IPC_KBDD_REGISTER, 0, 0, 0, 0, 0);
   drop_capability(CAP_NAMESPACE_SERVERS, CAP_KBDD_RECEIVE_EVENTS);
-  ipc_handlers[0] = key_event_handler;
+  ipc_handlers[IPC_TTYD_KEY_EVENT] = key_event_handler;
 }

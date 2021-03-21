@@ -1,6 +1,6 @@
 #include <capability.h>
 #include <ioports.h>
-#include <ipc.h>
+#include <ipccalls.h>
 #include <irq.h>
 #include <keyboard.h>
 #include <ps2/ps2.h>
@@ -100,7 +100,7 @@ int main(void) {
         release = 0;
         continue;
       }
-      int return_value = send_ipc_call("kbdd", 0, key, release, 0, 0, 0);
+      int return_value = send_ipc_call("kbdd", IPC_KBDD_KEYPRESS, key, release, 0, 0, 0);
       release = 0;
       change_leds(return_value);
     } else {

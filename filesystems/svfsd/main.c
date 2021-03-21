@@ -1,5 +1,5 @@
 #include <capability.h>
-#include <ipc.h>
+#include <ipccalls.h>
 #include <monocypher.h>
 #include <stdlib.h>
 #include <string.h>
@@ -66,7 +66,7 @@ static int64_t read_handler(uint64_t file_num, uint64_t offset, uint64_t arg2, u
     syslog(LOG_DEBUG, "Can't access this much data");
     return -IPC_ERR_INVALID_ARGUMENTS;
   }
-  send_pid_ipc_call(parent_pid, IPC_CALL_MEMORY_SHARING_RW, sizeof(struct svfs_header) + header->nfiles * sizeof(struct svfs_file) + header->files[file_num].offset + offset, 0, 0, address, size);
+  send_pid_ipc_call(parent_pid, IPC_VFSD_FS_READ, sizeof(struct svfs_header) + header->nfiles * sizeof(struct svfs_file) + header->files[file_num].offset + offset, 0, 0, address, size);
   return 0;
 }
 int main(void) {
@@ -74,7 +74,7 @@ int main(void) {
   register_ipc(1);
   parent_pid = getppid();
   header = calloc(1, sizeof(struct svfs_header));
-  send_pid_ipc_call(parent_pid, IPC_CALL_MEMORY_SHARING_RW, 0, 0, 0, (uintptr_t) header, sizeof(struct svfs_header));
+  send_pid_ipc_call(parent_pid, IPC_VFSD_FS_READ, 0, 0, 0, (uintptr_t) header, sizeof(struct svfs_header));
   if (header->magic != SVFS_MAGIC || header->version) {
     syslog(LOG_ERR, "Filesystem has invalid magic value or unknown version");
     return 1;
@@ -84,7 +84,7 @@ int main(void) {
   }
   header = realloc(header, sizeof(struct svfs_header) + header->nfiles * sizeof(struct svfs_file));
   memset((void*) header + sizeof(struct svfs_header), 0, header->nfiles * sizeof(struct svfs_file));
-  send_pid_ipc_call(parent_pid, IPC_CALL_MEMORY_SHARING_RW, sizeof(struct svfs_header), 0, 0, (uintptr_t) header + sizeof(struct svfs_header), header->nfiles * sizeof(struct svfs_file));
+  send_pid_ipc_call(parent_pid, IPC_VFSD_FS_READ, sizeof(struct svfs_header), 0, 0, (uintptr_t) header + sizeof(struct svfs_header), header->nfiles * sizeof(struct svfs_file));
   if (&_binary_public_key_start) {
     if (crypto_check(header->signature, (uint8_t*) &_binary_public_key_start, (uint8_t*) header + offsetof(struct svfs_header, magic), sizeof(struct svfs_header) - offsetof(struct svfs_header, magic) + header->nfiles * sizeof(struct svfs_file))) {
       syslog(LOG_ERR, "Filesystem has invalid signature");
@@ -92,7 +92,7 @@ int main(void) {
     }
     for (size_t i = 0; i < header->nfiles; i++) {
       uint8_t* file = calloc(header->files[i].size, 1);
-      send_pid_ipc_call(parent_pid, IPC_CALL_MEMORY_SHARING_RW, sizeof(struct svfs_header) + header->nfiles * sizeof(struct svfs_file) + header->files[i].offset, 0, 0, (uintptr_t) file, header->files[i].size);
+      send_pid_ipc_call(parent_pid, IPC_VFSD_FS_READ, sizeof(struct svfs_header) + header->nfiles * sizeof(struct svfs_file) + header->files[i].offset, 0, 0, (uintptr_t) file, header->files[i].size);
       uint8_t hash[64];
       crypto_blake2b(hash, file, header->files[i].size);
       if (memcmp(hash, header->files[i].hash, 64)) {
@@ -102,8 +102,8 @@ int main(void) {
       free(file);
     }
   }
-  ipc_handlers[IPC_CALL_MEMORY_SHARING] = get_file_num_handler;
-  ipc_handlers[IPC_CALL_MEMORY_SHARING_RW] = read_handler;
+  ipc_handlers[IPC_VFSD_FS_GET_FILE_NUM] = get_file_num_handler;
+  ipc_handlers[IPC_VFSD_FS_READ] = read_handler;
   while (1) {
     handle_ipc();
   }

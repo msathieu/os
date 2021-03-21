@@ -1,6 +1,6 @@
 #include <capability.h>
 #include <ctype.h>
-#include <ipc.h>
+#include <ipccalls.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -54,12 +54,12 @@ static int64_t log_handler(uint64_t arg0, uint64_t arg1, uint64_t arg2, uint64_t
 int main(void) {
   drop_capability(CAP_NAMESPACE_KERNEL, CAP_KERNEL_PRIORITY);
   register_ipc(1);
-  ipc_handlers[0] = registration_handler;
-  ipc_handlers[IPC_CALL_MEMORY_SHARING] = log_handler;
+  ipc_handlers[IPC_LOGD_REGISTER] = registration_handler;
+  ipc_handlers[IPC_LOGD_LOG] = log_handler;
   while (1) {
     handle_ipc();
     if (buffer && ttyd) {
-      send_pid_ipc_call(ttyd, IPC_CALL_MEMORY_SHARING, 0, 0, 0, (uintptr_t) buffer, strlen(buffer) + 1);
+      send_pid_ipc_call(ttyd, IPC_TTYD_PRINT, 0, 0, 0, (uintptr_t) buffer, strlen(buffer) + 1);
       free(buffer);
       buffer = 0;
     }

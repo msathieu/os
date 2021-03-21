@@ -1,5 +1,5 @@
 #include <capability.h>
-#include <ipc.h>
+#include <ipccalls.h>
 #include <spawn.h>
 #include <stdlib.h>
 #include <syslog.h>
@@ -51,13 +51,13 @@ int main(void) {
   register_ipc(1);
   setup_fb();
   setup_kbd();
-  send_ipc_call("logd", 0, 0, 0, 0, 0, 0);
+  send_ipc_call("logd", IPC_LOGD_REGISTER, 0, 0, 0, 0, 0);
   drop_capability(CAP_NAMESPACE_SERVERS, CAP_LOGD_TTY);
   setenv("PATH", "/sbin:/bin", 0);
   spawn_process("/bin/sh");
   start_process();
-  ipc_handlers[1] = kbd_input_handler;
-  ipc_handlers[IPC_CALL_MEMORY_SHARING] = print_handler;
+  ipc_handlers[IPC_TTYD_KBD_INPUT] = kbd_input_handler;
+  ipc_handlers[IPC_TTYD_PRINT] = print_handler;
   while (1) {
     handle_ipc();
   }

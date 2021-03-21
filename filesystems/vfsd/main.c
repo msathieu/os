@@ -1,5 +1,5 @@
 #include <capability.h>
-#include <ipc.h>
+#include <ipccalls.h>
 #include <linked_list.h>
 #include <sched.h>
 #include <stdlib.h>
@@ -56,7 +56,7 @@ static int64_t open_file_handler(uint64_t arg0, uint64_t arg1, uint64_t arg2, ui
   }
   long file_num = -IPC_ERR_INVALID_PID;
   while (file_num == -IPC_ERR_INVALID_PID) {
-    file_num = send_pid_ipc_call(svfsd_pid, IPC_CALL_MEMORY_SHARING, 0, 0, 0, (uintptr_t) buffer + 1, size - 1);
+    file_num = send_pid_ipc_call(svfsd_pid, IPC_VFSD_FS_GET_FILE_NUM, 0, 0, 0, (uintptr_t) buffer + 1, size - 1);
     if (file_num == -IPC_ERR_INVALID_PID) {
       sched_yield();
     }
@@ -115,7 +115,7 @@ static int64_t read_file_handler(uint64_t fd_num, uint64_t arg1, uint64_t arg2, 
     if (process->pid == caller_pid) {
       for (struct fd* fd = (struct fd*) process->fd_list.first; fd; fd = (struct fd*) fd->list_member.next) {
         if (fd->fd == fd_num) {
-          send_pid_ipc_call(svfsd_pid, IPC_CALL_MEMORY_SHARING_RW, fd->file_num, fd->position, 0, address, size);
+          send_pid_ipc_call(svfsd_pid, IPC_VFSD_FS_READ, fd->file_num, fd->position, 0, address, size);
           fd->position += size;
           return 0;
         }
@@ -149,11 +149,11 @@ static int64_t seek_file_handler(uint64_t fd_num, uint64_t position, uint64_t ar
 int main(void) {
   drop_capability(CAP_NAMESPACE_KERNEL, CAP_KERNEL_PRIORITY);
   register_ipc(1);
-  ipc_handlers[0] = mount_handler;
-  ipc_handlers[1] = close_file_handler;
-  ipc_handlers[2] = seek_file_handler;
-  ipc_handlers[IPC_CALL_MEMORY_SHARING] = open_file_handler;
-  ipc_handlers[IPC_CALL_MEMORY_SHARING_RW] = read_file_handler;
+  ipc_handlers[IPC_VFSD_MOUNT] = mount_handler;
+  ipc_handlers[IPC_VFSD_CLOSE] = close_file_handler;
+  ipc_handlers[IPC_VFSD_SEEK] = seek_file_handler;
+  ipc_handlers[IPC_VFSD_OPEN] = open_file_handler;
+  ipc_handlers[IPC_VFSD_READ] = read_file_handler;
   while (1) {
     handle_ipc();
   }

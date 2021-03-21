@@ -1,6 +1,6 @@
 #include <__/syscall.h>
 #include <capability.h>
-#include <ipc.h>
+#include <ipccalls.h>
 #include <memory.h>
 #include <string.h>
 #include <syslog.h>
@@ -92,8 +92,8 @@ int main(void) {
       draw_pixel(x, y, 0);
     }
   }
-  ipc_handlers[0] = info_handler;
-  ipc_handlers[IPC_CALL_MEMORY_SHARING] = copy_handler;
+  ipc_handlers[IPC_FBD_INFO] = info_handler;
+  ipc_handlers[IPC_FBD_COPY] = copy_handler;
   while (1) {
     handle_ipc();
   }

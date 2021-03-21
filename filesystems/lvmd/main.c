@@ -1,5 +1,5 @@
 #include <capability.h>
-#include <ipc.h>
+#include <ipccalls.h>
 #include <spawn.h>
 #include <stdlib.h>
 #include <syslog.h>
@@ -62,7 +62,7 @@ static int64_t read_handler(uint64_t offset, uint64_t arg1, uint64_t arg2, uint6
     if (offset_i) {
       size_i -= offset_i;
     }
-    send_pid_ipc_call(parent_pid, IPC_CALL_MEMORY_SHARING_RW, volumes[volume_i]->sectors[i / LVM_SECTOR] * LVM_SECTOR + offset_i, 0, 0, address, size_i);
+    send_pid_ipc_call(parent_pid, IPC_VFSD_FS_READ, volumes[volume_i]->sectors[i / LVM_SECTOR] * LVM_SECTOR + offset_i, 0, 0, address, size_i);
     address += size_i;
   }
   return 0;
@@ -70,18 +70,18 @@ static int64_t read_handler(uint64_t offset, uint64_t arg1, uint64_t arg2, uint6
 int main(void) {
   register_ipc(1);
   parent_pid = getppid();
-  send_pid_ipc_call(parent_pid, IPC_CALL_MEMORY_SHARING_RW, 0, 0, 0, (uintptr_t) &header, sizeof(struct lvm_header));
+  send_pid_ipc_call(parent_pid, IPC_VFSD_FS_READ, 0, 0, 0, (uintptr_t) &header, sizeof(struct lvm_header));
   if (header.magic != LVM_MAGIC || header.version) {
     syslog(LOG_ERR, "Filesystem has invalid magic value or unknown version");
     return 1;
   }
   for (size_t i = 0; header.volumes[i]; i++) {
     volumes[i] = calloc(1, sizeof(struct lvm_volume));
-    send_pid_ipc_call(parent_pid, IPC_CALL_MEMORY_SHARING_RW, header.volumes[i] * LVM_SECTOR, 0, 0, (uintptr_t) volumes[i], sizeof(struct lvm_volume));
+    send_pid_ipc_call(parent_pid, IPC_VFSD_FS_READ, header.volumes[i] * LVM_SECTOR, 0, 0, (uintptr_t) volumes[i], sizeof(struct lvm_volume));
     switch (volumes[i]->filesystem) {
     case SVFS_MAGIC:
       volume_pids[i] = spawn_process_raw("svfsd");
-      send_ipc_call("vfsd", 0, 0, 0, 0, 0, 0);
+      send_ipc_call("vfsd", IPC_VFSD_MOUNT, 0, 0, 0, 0, 0);
       break;
     case TMP_MAGIC:
       volume_pids[i] = spawn_process("/sbin/tmpd");
@@ -90,7 +90,7 @@ int main(void) {
     grant_capability(CAP_NAMESPACE_KERNEL, CAP_KERNEL_PRIORITY);
     start_process();
   }
-  ipc_handlers[IPC_CALL_MEMORY_SHARING_RW] = read_handler;
+  ipc_handlers[IPC_VFSD_FS_READ] = read_handler;
   while (1) {
     handle_ipc();
   }

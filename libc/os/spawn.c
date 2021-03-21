@@ -1,5 +1,5 @@
 #include <__/syscall.h>
-#include <ipc.h>
+#include <ipccalls.h>
 #include <string.h>
 #include <sys/types.h>
 
@@ -14,7 +14,7 @@ pid_t spawn_process_raw(const char* file) {
 }
 void start_process(void) {
   for (size_t i = 0; environ[i]; i++) {
-    send_ipc_call("envd", IPC_CALL_MEMORY_SHARING, 0, 0, 0, (uintptr_t) environ[i], strlen(environ[i]) + 1);
+    send_ipc_call("envd", IPC_ENVD_ADD, 0, 0, 0, (uintptr_t) environ[i], strlen(environ[i]) + 1);
   }
   _syscall(_SYSCALL_START, has_arguments, (bool) environ[0], 0, 0, 0);
 }
@@ -29,7 +29,7 @@ void grant_capability(int namespace, int capability) {
 }
 void add_argument(const char* arg) {
   has_arguments = 1;
-  send_ipc_call("argd", IPC_CALL_MEMORY_SHARING, 0, 0, 0, (uintptr_t) arg, strlen(arg) + 1);
+  send_ipc_call("argd", IPC_ARGD_ADD, 0, 0, 0, (uintptr_t) arg, strlen(arg) + 1);
 }
 pid_t spawn_process(const char* file) {
   pid_t pid = spawn_process_raw("lelf");

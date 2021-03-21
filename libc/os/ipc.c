@@ -1,5 +1,5 @@
 #include <__/syscall.h>
-#include <ipc.h>
+#include <ipccalls.h>
 #include <sched.h>
 #include <stdbool.h>
 #include <stdlib.h>
@@ -56,7 +56,7 @@ int64_t send_pid_ipc_call(pid_t pid, uint8_t syscall, uint64_t arg0, uint64_t ar
 void register_ipc_name(const char* name) {
   char process_name[5];
   strncpy(process_name, name, 5);
-  int64_t return_value = send_pid_ipc_call(2, 0, process_name[0], process_name[1], process_name[2], process_name[3], process_name[4]);
+  int64_t return_value = send_pid_ipc_call(2, IPC_IPCD_REGISTER, process_name[0], process_name[1], process_name[2], process_name[3], process_name[4]);
   if (return_value == -IPC_ERR_INVALID_PID) {
     sched_yield();
     return register_ipc_name(name);
@@ -75,7 +75,7 @@ int64_t send_ipc_call(const char* name, uint8_t syscall, uint64_t arg0, uint64_t
   bool first_iteration = 1;
   while (1) {
     if (!first_iteration || !pid) {
-      pid = send_pid_ipc_call(2, 1, process_name[0], process_name[1], process_name[2], process_name[3], process_name[4]);
+      pid = send_pid_ipc_call(2, IPC_IPCD_DISCOVER, process_name[0], process_name[1], process_name[2], process_name[3], process_name[4]);
     }
     first_iteration = 0;
     if (pid > 0) {

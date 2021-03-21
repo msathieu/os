@@ -1,5 +1,5 @@
 #include <capability.h>
-#include <ipc.h>
+#include <ipccalls.h>
 #include <priority.h>
 
 struct ipc_process {
@@ -42,8 +42,8 @@ int main(void) {
   change_priority(PRIORITY_SYSTEM_HIGH);
   drop_capability(CAP_NAMESPACE_KERNEL, CAP_KERNEL_PRIORITY);
   register_ipc(0);
-  ipc_handlers[0] = registration_handler;
-  ipc_handlers[1] = discovery_handler;
+  ipc_handlers[IPC_IPCD_REGISTER] = registration_handler;
+  ipc_handlers[IPC_IPCD_DISCOVER] = discovery_handler;
   while (1) {
     handle_ipc();
   }

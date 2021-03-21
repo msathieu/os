@@ -1,5 +1,5 @@
 #include <capability.h>
-#include <ipc.h>
+#include <ipccalls.h>
 #include <stdlib.h>
 #include <string.h>
 #include <tty/font.h>
@@ -20,15 +20,15 @@ static char* framebuffer[12];
 static bool* line_updated;
 
 void setup_fb(void) {
-  fb_width = send_ipc_call("fbd", 0, 0, 0, 0, 0, 0);
+  fb_width = send_ipc_call("fbd", IPC_FBD_INFO, 0, 0, 0, 0, 0);
   width = fb_width / 9;
-  fb_height = send_ipc_call("fbd", 0, 1, 0, 0, 0, 0);
+  fb_height = send_ipc_call("fbd", IPC_FBD_INFO, 1, 0, 0, 0, 0);
   height = fb_height / 16;
-  fb_pitch = send_ipc_call("fbd", 0, 2, 0, 0, 0, 0);
-  fb_bits_per_pixel = send_ipc_call("fbd", 0, 3, 0, 0, 0, 0);
-  fb_red_index = send_ipc_call("fbd", 0, 4, 0, 0, 0, 0);
-  fb_green_index = send_ipc_call("fbd", 0, 5, 0, 0, 0, 0);
-  fb_blue_index = send_ipc_call("fbd", 0, 6, 0, 0, 0, 0);
+  fb_pitch = send_ipc_call("fbd", IPC_FBD_INFO, 2, 0, 0, 0, 0);
+  fb_bits_per_pixel = send_ipc_call("fbd", IPC_FBD_INFO, 3, 0, 0, 0, 0);
+  fb_red_index = send_ipc_call("fbd", IPC_FBD_INFO, 4, 0, 0, 0, 0);
+  fb_green_index = send_ipc_call("fbd", IPC_FBD_INFO, 5, 0, 0, 0, 0);
+  fb_blue_index = send_ipc_call("fbd", IPC_FBD_INFO, 6, 0, 0, 0, 0);
   for (size_t i = 0; i < 12; i++) {
     framebuffer[i] = calloc(1, fb_height * fb_pitch);
   }
@@ -100,7 +100,7 @@ void put_character(char c, size_t fb) {
     memcpy(framebuffer[fb], framebuffer[fb] + 16 * fb_pitch, (fb_height - 16) * fb_pitch);
     memset(framebuffer[fb] + (fb_height - 16) * fb_pitch, 0, 16 * fb_pitch);
     if (fb == selected_framebuffer) {
-      send_ipc_call("fbd", IPC_CALL_MEMORY_SHARING, 0, 0, 0, (uintptr_t) framebuffer[fb], fb_height * fb_pitch);
+      send_ipc_call("fbd", IPC_FBD_COPY, 0, 0, 0, (uintptr_t) framebuffer[fb], fb_height * fb_pitch);
     }
     current_y[fb]--;
   }
@@ -116,12 +116,12 @@ void fb_backspace(size_t fb) {
 }
 void switch_framebuffer(size_t fb) {
   selected_framebuffer = fb;
-  send_ipc_call("fbd", IPC_CALL_MEMORY_SHARING, 0, 0, 0, (uintptr_t) framebuffer[fb], fb_height * fb_pitch);
+  send_ipc_call("fbd", IPC_FBD_COPY, 0, 0, 0, (uintptr_t) framebuffer[fb], fb_height * fb_pitch);
 }
 void update_fb(void) {
   for (size_t i = 0; i < height; i++) {
     if (line_updated[i]) {
-      send_ipc_call("fbd", IPC_CALL_MEMORY_SHARING, i * 16 * fb_pitch, 0, 0, (uintptr_t) framebuffer[selected_framebuffer] + i * 16 * fb_pitch, 16 * fb_pitch);
+      send_ipc_call("fbd", IPC_FBD_COPY, i * 16 * fb_pitch, 0, 0, (uintptr_t) framebuffer[selected_framebuffer] + i * 16 * fb_pitch, 16 * fb_pitch);
       line_updated[i] = 0;
     }
   }

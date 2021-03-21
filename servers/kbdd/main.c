@@ -1,5 +1,5 @@
 #include <capability.h>
-#include <ipc.h>
+#include <ipccalls.h>
 #include <kbd/layout.h>
 #include <keyboard.h>
 #include <syslog.h>
@@ -29,7 +29,7 @@ static int handle_key_event(struct layout_key* key, bool release) {
     leds |= 1 << KBD_LED_NUM_LOCK;
   }
   if (event_receiver && key->value) {
-    send_pid_ipc_call(event_receiver, 0, key->type, key->value, release, 0, 0);
+    send_pid_ipc_call(event_receiver, IPC_TTYD_KEY_EVENT, key->type, key->value, release, 0, 0);
   }
   return leds;
 }
@@ -74,8 +74,8 @@ int main(void) {
   drop_capability(CAP_NAMESPACE_KERNEL, CAP_KERNEL_PRIORITY);
   register_ipc(0);
   layout = layouts[0];
-  ipc_handlers[0] = keypress_handler;
-  ipc_handlers[1] = registration_handler;
+  ipc_handlers[IPC_KBDD_KEYPRESS] = keypress_handler;
+  ipc_handlers[IPC_KBDD_REGISTER] = registration_handler;
   while (1) {
     handle_ipc();
   }

@@ -1,5 +1,5 @@
 #include <capability.h>
-#include <ipc.h>
+#include <ipccalls.h>
 #include <spawn.h>
 #include <stdlib.h>
 #include <string.h>
@@ -51,13 +51,13 @@ static int64_t read_handler(uint64_t offset, uint64_t arg1, uint64_t arg2, uint6
     syslog(LOG_DEBUG, "Can't access this much data");
     return -IPC_ERR_INVALID_ARGUMENTS;
   }
-  send_pid_ipc_call(parent_pid, IPC_CALL_MEMORY_SHARING_RW, mbr.partitions[partition_i].lba_start * 512 + offset, 0, 0, address, size);
+  send_pid_ipc_call(parent_pid, IPC_VFSD_FS_READ, mbr.partitions[partition_i].lba_start * 512 + offset, 0, 0, address, size);
   return 0;
 }
 int main(void) {
   register_ipc(1);
   parent_pid = getppid();
-  send_pid_ipc_call(parent_pid, IPC_CALL_MEMORY_SHARING_RW, 0, 0, 0, (uintptr_t) &mbr, sizeof(struct mbr));
+  send_pid_ipc_call(parent_pid, IPC_VFSD_FS_READ, 0, 0, 0, (uintptr_t) &mbr, sizeof(struct mbr));
   for (size_t i = 0; i < 4; i++) {
     switch (mbr.partitions[i].type) {
     case MBR_TYPE_LVM:
@@ -68,7 +68,7 @@ int main(void) {
       break;
     }
   }
-  ipc_handlers[IPC_CALL_MEMORY_SHARING_RW] = read_handler;
+  ipc_handlers[IPC_VFSD_FS_READ] = read_handler;
   while (1) {
     handle_ipc();
   }

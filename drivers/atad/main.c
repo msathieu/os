@@ -1,7 +1,7 @@
 #include <ata/ata.h>
 #include <capability.h>
 #include <ioports.h>
-#include <ipc.h>
+#include <ipccalls.h>
 #include <irq.h>
 #include <spawn.h>
 #include <string.h>
@@ -119,7 +119,7 @@ int main(void) {
   identify(1, 0);
   identify(1, 1);
   clear_irqs();
-  ipc_handlers[IPC_CALL_MEMORY_SHARING_RW] = read_handler;
+  ipc_handlers[IPC_VFSD_FS_READ] = read_handler;
   while (1) {
     handle_ipc();
   }

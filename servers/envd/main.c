@@ -1,5 +1,5 @@
 #include <capability.h>
-#include <ipc.h>
+#include <ipccalls.h>
 #include <linked_list.h>
 #include <priority.h>
 #include <stdlib.h>
@@ -106,10 +106,10 @@ int main(void) {
   change_priority(PRIORITY_SYSTEM_HIGH);
   drop_capability(CAP_NAMESPACE_KERNEL, CAP_KERNEL_PRIORITY);
   register_ipc(1);
-  ipc_handlers[0] = get_num_envs_handler;
-  ipc_handlers[1] = get_env_size_handler;
-  ipc_handlers[IPC_CALL_MEMORY_SHARING] = add_env_handler;
-  ipc_handlers[IPC_CALL_MEMORY_SHARING_RW] = get_env_handler;
+  ipc_handlers[IPC_ENVD_GET_NUM] = get_num_envs_handler;
+  ipc_handlers[IPC_ENVD_GET_SIZE] = get_env_size_handler;
+  ipc_handlers[IPC_ENVD_ADD] = add_env_handler;
+  ipc_handlers[IPC_ENVD_GET] = get_env_handler;
   while (1) {
     handle_ipc();
   }
