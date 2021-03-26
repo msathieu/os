@@ -13,11 +13,11 @@ void syscall_spawn_process(union syscall_args* args) {
     return;
   }
   char name[6] = {
-      args->arg0,
-      args->arg1,
-      args->arg2,
-      args->arg3,
-      args->arg4};
+    args->arg0,
+    args->arg1,
+    args->arg2,
+    args->arg3,
+    args->arg4};
   if (!name[0] || strchr(name, '.')) {
     puts("Invalid name");
     terminate_current_task(&args->registers);

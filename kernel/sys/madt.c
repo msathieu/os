@@ -38,9 +38,9 @@ void parse_madt(struct acpi_header* header) {
   struct acpi_madt* madt = (struct acpi_madt*) header;
   madt_lapic_address = madt->lapic_addr;
   for (
-      struct acpi_madt_entry* entry = (struct acpi_madt_entry*) (madt + 1);
-      (uintptr_t) entry < (uintptr_t) madt + madt->header.size;
-      entry = (struct acpi_madt_entry*) ((uintptr_t) entry + entry->size)) {
+    struct acpi_madt_entry* entry = (struct acpi_madt_entry*) (madt + 1);
+    (uintptr_t) entry < (uintptr_t) madt + madt->header.size;
+    entry = (struct acpi_madt_entry*) ((uintptr_t) entry + entry->size)) {
     switch (entry->type) {
     case ACPI_MADT_LAPIC:
       madt_lapics[madt_num_lapics++] = (struct acpi_madt_lapic*) entry;

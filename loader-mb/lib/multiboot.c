@@ -99,9 +99,9 @@ void parse_multiboot_header(uintptr_t ptr) {
   struct mb_memory_map_tag* memory_map = find_mb_tag(MULTIBOOT_MEMORY_MAP_TAG, 1);
   size_t j = 0;
   for (
-      struct mb_memory_map_entry* entry = (struct mb_memory_map_entry*) ((uintptr_t) memory_map + sizeof(struct mb_memory_map_tag));
-      (uintptr_t) entry < (uintptr_t) memory_map + memory_map->size;
-      entry = (struct mb_memory_map_entry*) ((uintptr_t) entry + memory_map->entry_size)) {
+    struct mb_memory_map_entry* entry = (struct mb_memory_map_entry*) ((uintptr_t) memory_map + sizeof(struct mb_memory_map_tag));
+    (uintptr_t) entry < (uintptr_t) memory_map + memory_map->size;
+    entry = (struct mb_memory_map_entry*) ((uintptr_t) entry + memory_map->entry_size)) {
     if (entry->type == MULTIBOOT_MEMORY_AVAILABLE) {
       uint64_t start = entry->address;
       uint64_t end = start + entry->size;

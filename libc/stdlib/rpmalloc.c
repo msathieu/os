@@ -849,10 +849,10 @@ _rpmalloc_spin(void) {
   _mm_pause();
 #elif defined(__x86_64__) || defined(__i386__)
   __asm__ volatile("pause" ::
-                       : "memory");
+                     : "memory");
 #elif defined(__aarch64__) || (defined(__arm__) && __ARM_ARCH >= 7)
   __asm__ volatile("yield" ::
-                       : "memory");
+                     : "memory");
 #elif defined(__powerpc__) || defined(__powerpc64__)
   // No idea if ever been compiled in such archs but ... as precaution
   __asm__ volatile("or 27,27,27");
