@@ -12,6 +12,7 @@
 #define ATA_DRIVE_SLAVE_PIO 0xf0
 
 #define ATA_CMD_READ 0x20
+#define ATA_CMD_WRITE 0x30
 #define ATA_CMD_IDENTIFY 0xec
 
 #define ATA_STATUS_ERR 1

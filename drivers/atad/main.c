@@ -48,7 +48,7 @@ static void identify(int bus, int drive) {
     }
   }
 }
-static void read(int bus, int drive, size_t lba, uint16_t* buffer) {
+static void prepare_transfer(int bus, int drive, size_t lba) {
   if (drive) {
     outb(base_ports[bus] + ATA_PORT_DRIVE, ATA_DRIVE_SLAVE_PIO | ((lba >> 24) & 0xf));
   } else {
@@ -58,10 +58,21 @@ static void read(int bus, int drive, size_t lba, uint16_t* buffer) {
   outb(base_ports[bus] + ATA_PORT_LBALOW, lba);
   outb(base_ports[bus] + ATA_PORT_LBAMIDDLE, lba >> 8);
   outb(base_ports[bus] + ATA_PORT_LBAHIGH, lba >> 16);
+}
+static void read(int bus, int drive, size_t lba, uint16_t* buffer) {
+  prepare_transfer(bus, drive, lba);
   outb(base_ports[bus] + ATA_PORT_COMMAND, ATA_CMD_READ);
   wait_irq();
   for (size_t i = 0; i < 256; i++) {
     buffer[i] = inw(base_ports[bus]);
+  }
+}
+static void write(int bus, int drive, size_t lba, uint16_t* buffer) {
+  prepare_transfer(bus, drive, lba);
+  outb(base_ports[bus] + ATA_PORT_COMMAND, ATA_CMD_WRITE);
+  wait_irq();
+  for (size_t i = 0; i < 256; i++) {
+    outw(base_ports[bus], buffer[i]);
   }
 }
 static int64_t read_handler(uint64_t offset, uint64_t arg1, uint64_t arg2, uint64_t address, uint64_t size) {
@@ -112,6 +123,56 @@ static int64_t read_handler(uint64_t offset, uint64_t arg1, uint64_t arg2, uint6
   }
   return 0;
 }
+static int64_t write_handler(uint64_t offset, uint64_t arg1, uint64_t arg2, uint64_t address, uint64_t size) {
+  if (arg1 || arg2) {
+    syslog(LOG_DEBUG, "Reserved argument is set");
+    return -IPC_ERR_INVALID_ARGUMENTS;
+  }
+  pid_t caller_pid = get_ipc_caller_pid();
+  if (caller_pid != child_pid[0] && caller_pid != child_pid[1] && caller_pid != child_pid[2] && caller_pid != child_pid[3]) {
+    syslog(LOG_DEBUG, "No permission to access disk");
+    return -IPC_ERR_INSUFFICIENT_PRIVILEGE;
+  }
+  int bus = 0, drive = 0;
+  for (size_t i = 0; i < 4; i++) {
+    if (child_pid[i] == caller_pid) {
+      bus = i / 2;
+      drive = i % 2;
+      break;
+    }
+  }
+  uint16_t buffer[256];
+  read(bus, drive, offset / 512, buffer);
+  size_t initial_size = 512 - offset % 512;
+  if (initial_size > size) {
+    initial_size = size;
+  }
+  memcpy((void*) buffer + offset % 512, (void*) address, initial_size);
+  write(bus, drive, offset / 512, buffer);
+  address += initial_size;
+  size_t total_size;
+  if (__builtin_uaddl_overflow(offset, size, &total_size)) {
+    syslog(LOG_DEBUG, "Can't access this much data");
+    return -IPC_ERR_INVALID_ARGUMENTS;
+  }
+  size_t aligned_size;
+  if (__builtin_uaddl_overflow(total_size, 511, &aligned_size)) {
+    syslog(LOG_DEBUG, "Can't access this much data");
+    return -IPC_ERR_INVALID_ARGUMENTS;
+  }
+  for (size_t i = offset / 512 + 1; i < aligned_size / 512; i++) {
+    if (total_size - i * 512 >= 512) {
+      write(bus, drive, i, (uint16_t*) address);
+      address += 512;
+    } else {
+      read(bus, drive, i, buffer);
+      size_t copy_size = total_size - i * 512;
+      memcpy((void*) buffer, (void*) address, copy_size);
+      write(bus, drive, i, buffer);
+    }
+  }
+  return 0;
+}
 int main(void) {
   register_ipc(1);
   identify(0, 0);
@@ -119,6 +180,7 @@ int main(void) {
   identify(1, 0);
   identify(1, 1);
   clear_irqs();
+  ipc_handlers[IPC_VFSD_FS_WRITE] = write_handler;
   ipc_handlers[IPC_VFSD_FS_READ] = read_handler;
   while (1) {
     handle_ipc();

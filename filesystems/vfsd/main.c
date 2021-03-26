@@ -27,6 +27,7 @@ struct mount {
 
 static struct mount mounts[512];
 static struct linked_list process_list;
+static bool ready;
 
 static int64_t mount_handler(uint64_t arg0, uint64_t arg1, uint64_t arg2, uint64_t address, uint64_t size) {
   if (arg0 || arg1 || arg2) {
@@ -85,6 +86,9 @@ static int64_t open_file_handler(uint64_t arg0, uint64_t arg1, uint64_t arg2, ui
   if (arg0 || arg1 || arg2) {
     syslog(LOG_DEBUG, "Reserved argument is set");
     return -IPC_ERR_INVALID_ARGUMENTS;
+  }
+  if (!ready) {
+    return -IPC_ERR_RETRY;
   }
   char* buffer = malloc(size);
   memcpy(buffer, (void*) address, size);
@@ -182,6 +186,27 @@ static int64_t read_file_handler(uint64_t fd_num, uint64_t arg1, uint64_t arg2, 
   syslog(LOG_DEBUG, "File descriptor doesn't exist");
   return -IPC_ERR_INVALID_ARGUMENTS;
 }
+static int64_t write_file_handler(uint64_t fd_num, uint64_t arg1, uint64_t arg2, uint64_t address, uint64_t size) {
+  if (arg1 || arg2) {
+    syslog(LOG_DEBUG, "Reserved argument is set");
+    return -IPC_ERR_INVALID_ARGUMENTS;
+  }
+  pid_t caller_pid = get_ipc_caller_pid();
+  for (struct process* process = (struct process*) process_list.first; process; process = (struct process*) process->list_member.next) {
+    if (process->pid == caller_pid) {
+      for (struct fd* fd = (struct fd*) process->fd_list.first; fd; fd = (struct fd*) fd->list_member.next) {
+        if (fd->fd == fd_num) {
+          send_pid_ipc_call(mounts[fd->mount].pid, IPC_VFSD_FS_WRITE, fd->file_num, fd->position, 0, address, size);
+          fd->position += size;
+          return 0;
+        }
+      }
+      break;
+    }
+  }
+  syslog(LOG_DEBUG, "File descriptor doesn't exist");
+  return -IPC_ERR_INVALID_ARGUMENTS;
+}
 static int64_t seek_file_handler(uint64_t fd_num, uint64_t position, uint64_t arg2, uint64_t arg3, uint64_t arg4) {
   if (arg2 || arg3 || arg4) {
     syslog(LOG_DEBUG, "Reserved argument is set");
@@ -202,13 +227,27 @@ static int64_t seek_file_handler(uint64_t fd_num, uint64_t position, uint64_t ar
   syslog(LOG_DEBUG, "File descriptor doesn't exist");
   return -IPC_ERR_INVALID_ARGUMENTS;
 }
+static int64_t set_ready_handler(uint64_t arg0, uint64_t arg1, uint64_t arg2, uint64_t arg3, uint64_t arg4) {
+  if (arg0 || arg1 || arg2 || arg3 || arg4) {
+    syslog(LOG_DEBUG, "Reserved argument is set");
+    return -IPC_ERR_INVALID_ARGUMENTS;
+  }
+  if (!has_ipc_caller_capability(CAP_NAMESPACE_FILESYSTEMS, CAP_VFSD_MOUNT)) {
+    syslog(LOG_DEBUG, "No permission to set ready flag");
+    return -IPC_ERR_INSUFFICIENT_PRIVILEGE;
+  }
+  ready = 1;
+  return 0;
+}
 int main(void) {
   drop_capability(CAP_NAMESPACE_KERNEL, CAP_KERNEL_PRIORITY);
   register_ipc(1);
   ipc_handlers[IPC_VFSD_CLOSE] = close_file_handler;
   ipc_handlers[IPC_VFSD_SEEK] = seek_file_handler;
+  ipc_handlers[IPC_VFSD_SET_READY] = set_ready_handler;
   ipc_handlers[IPC_VFSD_OPEN] = open_file_handler;
   ipc_handlers[IPC_VFSD_MOUNT] = mount_handler;
+  ipc_handlers[IPC_VFSD_WRITE] = write_file_handler;
   ipc_handlers[IPC_VFSD_READ] = read_file_handler;
   while (1) {
     handle_ipc();

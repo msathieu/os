@@ -24,7 +24,7 @@ static pid_t parent_pid;
 static pid_t volume_pids[1024];
 static struct lvm_volume* volumes[1024];
 
-static int64_t read_handler(uint64_t offset, uint64_t arg1, uint64_t arg2, uint64_t address, uint64_t size) {
+static int64_t handle_transfer(uint64_t offset, uint64_t arg1, uint64_t arg2, uint64_t address, uint64_t size, bool write) {
   if (arg1 || arg2) {
     syslog(LOG_DEBUG, "Reserved argument is set");
     return -IPC_ERR_INVALID_ARGUMENTS;
@@ -62,10 +62,20 @@ static int64_t read_handler(uint64_t offset, uint64_t arg1, uint64_t arg2, uint6
     if (offset_i) {
       size_i -= offset_i;
     }
-    send_pid_ipc_call(parent_pid, IPC_VFSD_FS_READ, volumes[volume_i]->sectors[i / LVM_SECTOR] * LVM_SECTOR + offset_i, 0, 0, address, size_i);
+    uint8_t call = IPC_VFSD_FS_READ;
+    if (write) {
+      call = IPC_VFSD_FS_WRITE;
+    }
+    send_pid_ipc_call(parent_pid, call, volumes[volume_i]->sectors[i / LVM_SECTOR] * LVM_SECTOR + offset_i, 0, 0, address, size_i);
     address += size_i;
   }
   return 0;
+}
+static int64_t read_handler(uint64_t offset, uint64_t arg1, uint64_t arg2, uint64_t address, uint64_t size) {
+  return handle_transfer(offset, arg1, arg2, address, size, 0);
+}
+static int64_t write_handler(uint64_t offset, uint64_t arg1, uint64_t arg2, uint64_t address, uint64_t size) {
+  return handle_transfer(offset, arg1, arg2, address, size, 1);
 }
 int main(void) {
   register_ipc(1);
@@ -85,12 +95,16 @@ int main(void) {
       break;
     case TMP_MAGIC:
       volume_pids[i] = spawn_process("/sbin/tmpd");
-      send_ipc_call("vfsd", IPC_VFSD_MOUNT, 0, 0, 0, (uintptr_t) "/tmp", 5);
+      send_ipc_call("vfsd", IPC_VFSD_MOUNT, 0, 0, 0, (uintptr_t) "/tmp/", 6);
       break;
+    default:
+      continue;
     }
     grant_capability(CAP_NAMESPACE_KERNEL, CAP_KERNEL_PRIORITY);
     start_process();
   }
+  send_ipc_call("vfsd", IPC_VFSD_SET_READY, 0, 0, 0, 0, 0);
+  ipc_handlers[IPC_VFSD_FS_WRITE] = write_handler;
   ipc_handlers[IPC_VFSD_FS_READ] = read_handler;
   while (1) {
     handle_ipc();

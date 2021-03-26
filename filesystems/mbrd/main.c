@@ -25,7 +25,7 @@ static struct mbr {
 static pid_t parent_pid;
 static pid_t child_pid[4];
 
-static int64_t read_handler(uint64_t offset, uint64_t arg1, uint64_t arg2, uint64_t address, uint64_t size) {
+static int64_t handle_transfer(uint64_t offset, uint64_t arg1, uint64_t arg2, uint64_t address, uint64_t size, bool write) {
   if (arg1 || arg2) {
     syslog(LOG_DEBUG, "Reserved argument is set");
     return -IPC_ERR_INVALID_ARGUMENTS;
@@ -51,8 +51,18 @@ static int64_t read_handler(uint64_t offset, uint64_t arg1, uint64_t arg2, uint6
     syslog(LOG_DEBUG, "Can't access this much data");
     return -IPC_ERR_INVALID_ARGUMENTS;
   }
-  send_pid_ipc_call(parent_pid, IPC_VFSD_FS_READ, mbr.partitions[partition_i].lba_start * 512 + offset, 0, 0, address, size);
+  uint8_t call = IPC_VFSD_FS_READ;
+  if (write) {
+    call = IPC_VFSD_FS_WRITE;
+  }
+  send_pid_ipc_call(parent_pid, call, mbr.partitions[partition_i].lba_start * 512 + offset, 0, 0, address, size);
   return 0;
+}
+static int64_t read_handler(uint64_t offset, uint64_t arg1, uint64_t arg2, uint64_t address, uint64_t size) {
+  return handle_transfer(offset, arg1, arg2, address, size, 0);
+}
+static int64_t write_handler(uint64_t offset, uint64_t arg1, uint64_t arg2, uint64_t address, uint64_t size) {
+  return handle_transfer(offset, arg1, arg2, address, size, 1);
 }
 int main(void) {
   register_ipc(1);
@@ -68,6 +78,7 @@ int main(void) {
       break;
     }
   }
+  ipc_handlers[IPC_VFSD_FS_WRITE] = write_handler;
   ipc_handlers[IPC_VFSD_FS_READ] = read_handler;
   while (1) {
     handle_ipc();
