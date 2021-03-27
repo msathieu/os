@@ -13,19 +13,20 @@ struct service {
   bool raw;
   pid_t pid;
   size_t capabilities[64];
+  char* ipc_name;
 };
 
 struct service services[] = {
-  {"argd", 1, 0, {[CAP_NAMESPACE_KERNEL] = 1 << CAP_KERNEL_PRIORITY}},
-  {"atad", 1, 0, {[CAP_NAMESPACE_KERNEL] = 1 << CAP_KERNEL_PRIORITY, [CAP_NAMESPACE_FILESYSTEMS] = 1 << CAP_VFSD_MOUNT}},
-  {"ipcd", 1, 0, {[CAP_NAMESPACE_KERNEL] = 1 << CAP_KERNEL_PRIORITY}},
-  {"logd", 1, 0, {[CAP_NAMESPACE_KERNEL] = 1 << CAP_KERNEL_PRIORITY, [CAP_NAMESPACE_SERVERS] = 1 << CAP_LOGD}},
-  {"/sbin/envd", 0, 0, {[CAP_NAMESPACE_KERNEL] = 1 << CAP_KERNEL_PRIORITY}},
-  {"/sbin/fbd", 0, 0, {[CAP_NAMESPACE_KERNEL] = 1 << CAP_KERNEL_PRIORITY | 1 << CAP_KERNEL_GET_FB_INFO}},
-  {"/sbin/kbdd", 0, 0, {[CAP_NAMESPACE_KERNEL] = 1 << CAP_KERNEL_PRIORITY, [CAP_NAMESPACE_SERVERS] = 1 << CAP_KBDD}},
-  {"/sbin/ps2d", 0, 0, {[CAP_NAMESPACE_KERNEL] = 1 << CAP_KERNEL_PRIORITY, [CAP_NAMESPACE_SERVERS] = 1 << CAP_KBDD_SEND_KEYPRESS}},
-  {"/sbin/ttyd", 0, 0, {[CAP_NAMESPACE_KERNEL] = 1 << CAP_KERNEL_PRIORITY, [CAP_NAMESPACE_DRIVERS] = 1 << CAP_FBD_DRAW, [CAP_NAMESPACE_SERVERS] = 1 << CAP_KBDD_RECEIVE_EVENTS | 1 << CAP_LOGD_TTY}},
-  {"vfsd", 1, 0, {[CAP_NAMESPACE_KERNEL] = 1 << CAP_KERNEL_PRIORITY, [CAP_NAMESPACE_FILESYSTEMS] = 1 << CAP_VFSD}},
+  {"argd", 1, 0, {[CAP_NAMESPACE_KERNEL] = 1 << CAP_KERNEL_PRIORITY}, "argd"},
+  {"atad", 1, 0, {[CAP_NAMESPACE_KERNEL] = 1 << CAP_KERNEL_PRIORITY, [CAP_NAMESPACE_FILESYSTEMS] = 1 << CAP_VFSD_MOUNT}, 0},
+  {"ipcd", 1, 0, {[CAP_NAMESPACE_KERNEL] = 1 << CAP_KERNEL_PRIORITY}, 0},
+  {"logd", 1, 0, {[CAP_NAMESPACE_KERNEL] = 1 << CAP_KERNEL_PRIORITY, [CAP_NAMESPACE_SERVERS] = 1 << CAP_LOGD}, "logd"},
+  {"/sbin/envd", 0, 0, {[CAP_NAMESPACE_KERNEL] = 1 << CAP_KERNEL_PRIORITY}, "envd"},
+  {"/sbin/fbd", 0, 0, {[CAP_NAMESPACE_KERNEL] = 1 << CAP_KERNEL_PRIORITY | 1 << CAP_KERNEL_GET_FB_INFO}, "fbd"},
+  {"/sbin/kbdd", 0, 0, {[CAP_NAMESPACE_KERNEL] = 1 << CAP_KERNEL_PRIORITY, [CAP_NAMESPACE_SERVERS] = 1 << CAP_KBDD}, "kbdd"},
+  {"/sbin/ps2d", 0, 0, {[CAP_NAMESPACE_KERNEL] = 1 << CAP_KERNEL_PRIORITY, [CAP_NAMESPACE_SERVERS] = 1 << CAP_KBDD_SEND_KEYPRESS}, 0},
+  {"/sbin/ttyd", 0, 0, {[CAP_NAMESPACE_KERNEL] = 1 << CAP_KERNEL_PRIORITY, [CAP_NAMESPACE_DRIVERS] = 1 << CAP_FBD_DRAW, [CAP_NAMESPACE_SERVERS] = 1 << CAP_KBDD_RECEIVE_EVENTS | 1 << CAP_LOGD_TTY}, "ttyd"},
+  {"vfsd", 1, 0, {[CAP_NAMESPACE_KERNEL] = 1 << CAP_KERNEL_PRIORITY, [CAP_NAMESPACE_FILESYSTEMS] = 1 << CAP_VFSD}, "vfsd"},
 };
 
 static void spawn(const char* name) {
@@ -40,6 +41,9 @@ static void spawn(const char* name) {
       for (size_t j = 0; j < 64; j++) {
         _syscall(_SYSCALL_GRANT_CAPABILITIES, j, services[i].capabilities[j], 0, 0, 0);
       }
+      if (services[i].ipc_name) {
+        register_ipc_name(services[i].ipc_name);
+      }
       service_found = 1;
       break;
     }
@@ -47,9 +51,7 @@ static void spawn(const char* name) {
   if (!service_found) {
     return;
   }
-  if (!strcmp(name, "argd")) {
-    register_ipc_name("argd");
-  } else if (!strcmp(name, "atad")) {
+  if (!strcmp(name, "atad")) {
     for (size_t i = 0; i < 8; i++) {
       grant_ioport(0x1f0 + i);
       grant_ioport(0x170 + i);
@@ -58,26 +60,15 @@ static void spawn(const char* name) {
     grant_ioport(0x376);
     register_irq(14);
     register_irq(15);
-  } else if (!strcmp(name, "logd")) {
-    register_ipc_name("logd");
-  } else if (!strcmp(name, "/sbin/envd")) {
-    register_ipc_name("envd");
   } else if (!strcmp(name, "/sbin/fbd")) {
-    register_ipc_name("fbd");
     uintptr_t fb_phys_addr = _syscall(_SYSCALL_GET_FB_INFO, 0, 0, 0, 0, 0);
     size_t height = _syscall(_SYSCALL_GET_FB_INFO, 2, 0, 0, 0, 0);
     size_t pitch = _syscall(_SYSCALL_GET_FB_INFO, 3, 0, 0, 0, 0);
     map_physical_memory(fb_phys_addr, height * pitch);
-  } else if (!strcmp(name, "/sbin/kbdd")) {
-    register_ipc_name("kbdd");
   } else if (!strcmp(name, "/sbin/ps2d")) {
     grant_ioport(0x60);
     grant_ioport(0x64);
     register_irq(1);
-  } else if (!strcmp(name, "/sbin/ttyd")) {
-    register_ipc_name("ttyd");
-  } else if (!strcmp(name, "vfsd")) {
-    register_ipc_name("vfsd");
   }
   start_process();
 }
