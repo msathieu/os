@@ -1,6 +1,6 @@
 #include <__/syscall.h>
 #include <capability.h>
-#include <ipc.h>
+#include <ipccalls.h>
 #include <priority.h>
 #include <spawn.h>
 #include <stdbool.h>
