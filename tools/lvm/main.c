@@ -1,7 +1,9 @@
 #include <stdint.h>
 #include <stdio.h>
+#include <stdlib.h>
 #define LVM_MAGIC 0x10f2af8ac29eb55
 #define SVFS_MAGIC 0x55ce581be6Bfa5a6
+#define TMP_MAGIC 0x5381835340924865
 #define LVM_SECTOR (1024 * 1024)
 
 struct lvm_volume {
@@ -15,18 +17,17 @@ struct lvm_header {
   uint32_t volumes[1024];
 };
 
-int main(void) {
-  struct lvm_header header = {0};
-  header.magic = LVM_MAGIC;
-  header.version = 0;
-  size_t next_sector = 1;
-  FILE* lvm_file = fopen("lvm.img", "w");
+static struct lvm_header header = {LVM_MAGIC, 0, {}};
+static size_t next_sector = 1;
+static FILE* lvm_file;
+
+static void add_svfs(void) {
   struct lvm_volume svfs_volume = {0};
   svfs_volume.filesystem = SVFS_MAGIC;
   FILE* svfs_file = fopen("svfs.img", "r");
   if (!svfs_file) {
     puts("Can't open svfs.img");
-    return 1;
+    exit(1);
   }
   fseek(svfs_file, 0, SEEK_END);
   svfs_volume.size = ftell(svfs_file);
@@ -36,7 +37,7 @@ int main(void) {
     uint8_t data[LVM_SECTOR] = {0};
     if (!fread(data, 1, LVM_SECTOR, svfs_file)) {
       puts("Error reading file");
-      return 1;
+      exit(1);
     }
     fseek(lvm_file, next_sector * LVM_SECTOR, SEEK_SET);
     fwrite(data, 1, LVM_SECTOR, lvm_file);
@@ -47,6 +48,19 @@ int main(void) {
   fwrite(&svfs_volume, sizeof(struct lvm_volume), 1, lvm_file);
   header.volumes[0] = next_sector;
   next_sector++;
+}
+static void add_tmp(void) {
+  struct lvm_volume tmp_volume = {0};
+  tmp_volume.filesystem = TMP_MAGIC;
+  fseek(lvm_file, next_sector * LVM_SECTOR, SEEK_SET);
+  fwrite(&tmp_volume, sizeof(struct lvm_volume), 1, lvm_file);
+  header.volumes[1] = next_sector;
+  next_sector++;
+}
+int main(void) {
+  lvm_file = fopen("lvm.img", "w");
+  add_svfs();
+  add_tmp();
   fseek(lvm_file, 0, SEEK_SET);
   fwrite(&header, sizeof(struct lvm_header), 1, lvm_file);
   fseek(lvm_file, 0, SEEK_END);
