@@ -21,7 +21,7 @@ struct process {
   size_t next_fd;
 };
 struct mount {
-  char* path;
+  const char* path;
   pid_t pid;
 };
 
@@ -139,6 +139,7 @@ static int64_t open_file_handler(uint64_t arg0, uint64_t arg1, uint64_t arg2, ui
     insert_linked_list(&process_list, &process->list_member);
   }
   struct fd* fd = calloc(1, sizeof(struct fd));
+  fd->mount = mount_i;
   fd->file_num = file_num;
   fd->fd = process->next_fd++;
   insert_linked_list(&process->fd_list, &fd->list_member);

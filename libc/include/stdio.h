@@ -18,6 +18,7 @@ FILE* fopen(const char* restrict, const char* restrict);
 int fprintf(FILE* restrict, const char* restrict, ...);
 size_t fread(void* restrict, size_t, size_t, FILE* restrict);
 int fseek(FILE*, long, int);
+size_t fwrite(const void* restrict, size_t, size_t, FILE* restrict);
 int getc(FILE*);
 int putc(int, FILE*);
 int puts(const char*);

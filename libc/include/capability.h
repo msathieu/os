@@ -26,6 +26,7 @@ enum {
   CAP_LOGD
 };
 enum {
+  CAP_DEVD,
   CAP_VFSD_MOUNT,
   CAP_VFSD
 };

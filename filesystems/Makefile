@@ -1,4 +1,4 @@
-PROGRAMS:=$(DESTDIR)/boot/lvmd $(DESTDIR)/boot/mbrd $(DESTDIR)/boot/svfsd $(DESTDIR)/sbin/tmpd $(DESTDIR)/boot/vfsd
+PROGRAMS:=$(DESTDIR)/sbin/devd $(DESTDIR)/boot/lvmd $(DESTDIR)/boot/mbrd $(DESTDIR)/boot/svfsd $(DESTDIR)/sbin/tmpd $(DESTDIR)/boot/vfsd
 
 all: $(PROGRAMS)
 .SECONDEXPANSION:
