@@ -69,11 +69,6 @@ void syscall_handle_ipc(union syscall_args* args) {
       return;
     }
     mapping_end = mapping_end / 0x1000 * 0x1000;
-    if (mapping_end >= 0x800000000000) {
-      puts("Can't share this memory region");
-      terminate_current_task(&args->registers);
-      return;
-    }
     if (mapping_end >= PAGING_USER_PHYS_MAPPINGS_START) {
       puts("Can't share this memory region");
       terminate_current_task(&args->registers);
