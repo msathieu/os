@@ -34,7 +34,8 @@ static bool paging_enabled;
 static uint64_t* frames;
 static size_t nframes;
 static uintptr_t physical_mappings_addr = PAGING_PHYSICAL_MAPPINGS_START;
-uintptr_t user_physical_mappings_addr;
+struct process* physical_mappings_process;
+struct task* physical_mappings_task;
 extern int text_start[];
 extern int text_end[];
 extern int rodata_start[];
@@ -185,27 +186,18 @@ void set_paging_flags(uintptr_t address, size_t size, bool user, bool write, boo
     invlpg(virtual_address);
   }
 }
-void* map_physical(uintptr_t physical_address, size_t size, bool user, bool write, bool cache_disable) {
+void* map_physical(uintptr_t physical_address, size_t size, bool write, bool cache_disable) {
   uintptr_t offset = physical_address % 0x1000;
   uintptr_t end = physical_address + size;
   physical_address = physical_address / 0x1000 * 0x1000;
   end = (end + 0xfff) / 0x1000 * 0x1000;
-  uintptr_t virtual_address;
-  if (user) {
-    virtual_address = user_physical_mappings_addr;
-    user_physical_mappings_addr += end - physical_address;
-    if (user_physical_mappings_addr > PAGING_USER_PHYS_MAPPINGS_START + PAGING_PHYSICAL_MAPPINGS_SIZE) {
-      panic("Out of memory reserved for physical mappings");
-    }
-  } else {
-    virtual_address = physical_mappings_addr;
-    physical_mappings_addr += end - physical_address;
-    if (physical_mappings_addr > PAGING_PHYSICAL_MAPPINGS_START + PAGING_PHYSICAL_MAPPINGS_SIZE) {
-      panic("Out of memory reserved for physical mappings");
-    }
+  uintptr_t virtual_address = physical_mappings_addr;
+  physical_mappings_addr += end - physical_address;
+  if (physical_mappings_addr > PAGING_PHYSICAL_MAPPINGS_START + PAGING_PHYSICAL_MAPPINGS_SIZE) {
+    panic("Out of memory reserved for physical mappings");
   }
   for (size_t i = 0; i < end - physical_address; i += 0x1000) {
-    create_mapping(virtual_address + i, physical_address + i, user, write, 0, cache_disable);
+    create_mapping(virtual_address + i, physical_address + i, 0, write, 0, cache_disable);
   }
   return (void*) virtual_address + offset;
 }
@@ -263,10 +255,13 @@ uintptr_t get_free_range(size_t size, bool write, bool exec, uintptr_t requested
     if (!start) {
       if (!get_page(i, current_pml4)) {
         start = i;
+      } else {
+        continue;
       }
     } else {
       if (get_page(i, current_pml4)) {
         start = 0;
+        continue;
       }
     }
     if (i + 0x1000 - start == size) {
@@ -275,6 +270,33 @@ uintptr_t get_free_range(size_t size, bool write, bool exec, uintptr_t requested
     }
   }
   return 0;
+}
+uintptr_t get_free_ipc_range(size_t size) {
+  long start = -1;
+  for (size_t i = 0; i < PAGING_PHYSICAL_MAPPINGS_SIZE; i += 0x1000) {
+    if (start == -1) {
+      if (!bitset_test(physical_mappings_process->mappings_bitset, i / 0x1000)) {
+        start = i;
+      } else {
+        continue;
+      }
+    } else {
+      if (bitset_test(physical_mappings_process->mappings_bitset, i / 0x1000)) {
+        start = -1;
+        continue;
+      }
+    }
+    if (i + 0x1000 - start == size) {
+      for (size_t j = start; j <= i; j += 0x1000) {
+        bitset_set(physical_mappings_process->mappings_bitset, j / 0x1000);
+        if (physical_mappings_task) {
+          bitset_set(physical_mappings_task->mappings_bitset, j / 0x1000);
+        }
+      }
+      return PAGING_USER_PHYS_MAPPINGS_START + start;
+    }
+  }
+  panic("Out of memory reserved for physical mappings"); // TODO: Terminate task instead
 }
 static void fault_handler(struct isr_registers* registers) {
   printf("Page fault at %lx: ", registers->rip);
@@ -329,7 +351,7 @@ void setup_paging(void) {
     create_mapping(virtual_addr, virtual_addr - KERNEL_VIRTUAL_ADDRESS + loader_struct.kernel_physical_addr, 0, 1, 0, 0);
   }
   for (size_t i = 0; i < 64; i++) {
-    loader_struct.files[i].address = (uintptr_t) map_physical(loader_struct.files[i].address, loader_struct.files[i].size, 0, 0, 0);
+    loader_struct.files[i].address = (uintptr_t) map_physical(loader_struct.files[i].address, loader_struct.files[i].size, 0, 0);
   }
   for (size_t i = 256; i < 512; i++) {
     gen_entry(current_pml4, i);

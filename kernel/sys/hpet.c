@@ -117,7 +117,7 @@ void setup_hpet(struct acpi_header* header) {
   if (hpet->address.address_space != GAS_ADDRESS_MEMORY) {
     panic("HPET isn't memory mapped");
   }
-  registers = map_physical(hpet->address.address, 0x400, 0, 1, 1);
+  registers = map_physical(hpet->address.address, 0x400, 1, 1);
   if (!(read_register(HPET_REGISTER_TIMERS_CONFIG) & 0x20)) {
     panic("First HPET timer isn't 64-bit");
   }

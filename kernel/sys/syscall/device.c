@@ -189,15 +189,23 @@ void syscall_map_phys_memory(union syscall_args* args) {
     terminate_current_task(&args->registers);
     return;
   }
+  if (args->arg0 % 0x1000 || args->arg1 % 0x1000) {
+    puts("Invalid address or size");
+    terminate_current_task(&args->registers);
+    return;
+  }
   if (!current_task->spawned_process) {
     puts("No process is currently being spawned");
     terminate_current_task(&args->registers);
     return;
   }
   switch_pml4(current_task->spawned_process->address_space);
-  user_physical_mappings_addr = current_task->spawned_process->physical_mappings_addr;
-  args->return_value = (uintptr_t) map_physical(args->arg0, args->arg1, 1, 1, 1);
-  current_task->spawned_process->physical_mappings_addr = user_physical_mappings_addr;
+  physical_mappings_process = current_task->spawned_process;
+  args->return_value = get_free_ipc_range(args->arg1);
+  for (size_t i = 0; i < args->arg1; i += 0x1000) {
+    create_mapping(args->return_value + i, args->arg0 + i, 1, 1, 0, 1);
+  }
+  physical_mappings_process = 0;
   switch_pml4(current_task->process->address_space);
 }
 void syscall_get_fb_info(union syscall_args* args) {

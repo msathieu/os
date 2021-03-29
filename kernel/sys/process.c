@@ -14,7 +14,6 @@ struct process* create_process(void) {
   struct process* process = calloc(1, sizeof(struct process));
   process->pid = next_pid++;
   process->address_space = create_pml4();
-  process->physical_mappings_addr = PAGING_USER_PHYS_MAPPINGS_START;
   return process;
 }
 void destroy_process(struct process* process) {

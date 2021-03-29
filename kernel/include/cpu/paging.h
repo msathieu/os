@@ -14,13 +14,15 @@ struct paging_table* create_pml4(void);
 void destroy_pml4(struct paging_table*);
 void free_page(uintptr_t);
 void unmap_page(uintptr_t);
+uintptr_t get_free_ipc_range(size_t);
 uintptr_t get_free_range(size_t, bool, bool, uintptr_t);
 bool is_page_mapped(uintptr_t, bool);
-void* map_physical(uintptr_t, size_t, bool, bool, bool);
+void* map_physical(uintptr_t, size_t, bool, bool);
 void map_range(uintptr_t, size_t, bool, bool, bool);
 void setup_paging(void);
 void set_paging_flags(uintptr_t, size_t, bool, bool, bool);
 void switch_pml4(struct paging_table*);
 
-extern uintptr_t user_physical_mappings_addr;
+extern struct process* physical_mappings_process;
+extern struct task* physical_mappings_task;
 extern struct paging_table* current_pml4;

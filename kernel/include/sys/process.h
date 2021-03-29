@@ -1,4 +1,5 @@
 #pragma once
+#include <cpu/paging.h>
 #include <linked_list.h>
 #include <stdbool.h>
 #include <stddef.h>
@@ -28,8 +29,6 @@ struct process {
   struct task* irq_handler;
   bool irqs_assigned;
   size_t capabilities[64];
-  uintptr_t physical_mappings_addr;
-  uintptr_t last_physical_mappings_addr;
   struct process* parent;
   struct process* first_child;
   struct process* next_sibling;
@@ -38,6 +37,7 @@ struct process {
   struct linked_list blocked_ipc_calls_queue;
   bool has_arguments;
   bool has_environment_vars;
+  uint64_t mappings_bitset[PAGING_PHYSICAL_MAPPINGS_SIZE / 0x1000 / 64];
 };
 
 struct process* create_process(void);

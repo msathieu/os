@@ -1,3 +1,4 @@
+#include <bitset.h>
 #include <cpu/paging.h>
 #include <elf.h>
 #include <panic.h>
@@ -49,12 +50,18 @@ struct task* create_task(struct process* process) {
 void destroy_task(struct task* task) {
   if (task->sharing_memory) {
     switch_pml4(task->process->address_space);
-    for (size_t i = task->process->last_physical_mappings_addr; i < task->process->physical_mappings_addr; i += 0x1000) {
-      unmap_page(i);
+    for (size_t i = 0; i < PAGING_PHYSICAL_MAPPINGS_SIZE / 0x1000 / 64; i++) {
+      if (!task->mappings_bitset[i]) {
+        continue;
+      }
+      for (size_t j = 0; j < 64; j++) {
+        if (bitset_test(task->mappings_bitset, i * 64 + j)) {
+          unmap_page(PAGING_USER_PHYS_MAPPINGS_START + (i * 64 + j) * 0x1000);
+          bitset_clear(task->process->mappings_bitset, i * 64 + j);
+        }
+      }
     }
     switch_pml4(current_task->process->address_space);
-    task->process->physical_mappings_addr = task->process->last_physical_mappings_addr;
-    task->process->last_physical_mappings_addr = 0;
   }
   if (task->servicing_syscall_requester) {
     destroy_task(task->servicing_syscall_requester);

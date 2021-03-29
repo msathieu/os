@@ -109,7 +109,7 @@ void unregister_isa_irq(int irq) {
 }
 void setup_ioapics(void) {
   for (size_t i = 0; i < madt_num_ioapics; i++) {
-    registers[i] = map_physical(madt_ioapics[i]->address, 0x14, 0, 1, 1);
+    registers[i] = map_physical(madt_ioapics[i]->address, 0x14, 1, 1);
     ioapics[i].gsi_start = madt_ioapics[i]->gsi_base;
     ioapics[i].gsi_end = ioapics[i].gsi_start + (uint8_t)(read_register(i, IOAPIC_REGISTER_VERSION) >> 16);
     for (int j = ioapics[i].gsi_start; j <= ioapics[i].gsi_end; j++) {

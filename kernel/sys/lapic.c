@@ -51,7 +51,7 @@ void lapic_eoi(void) {
 }
 void setup_lapic(size_t nlapic) {
   if (!nlapic) {
-    registers = map_physical(madt_lapic_address, 0x400, 0, 1, 1);
+    registers = map_physical(madt_lapic_address, 0x400, 1, 1);
     madt_bsp_lapic_id = madt_lapics[0]->lapic_id;
   }
   write_register(LAPIC_REGISTER_SPURIOUS_INT, 0x1ff);

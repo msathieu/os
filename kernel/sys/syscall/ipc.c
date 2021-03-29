@@ -1,3 +1,4 @@
+#include <bitset.h>
 #include <cpu/paging.h>
 #include <stdio.h>
 #include <sys/ipc.h>
@@ -56,10 +57,6 @@ void syscall_handle_ipc(union syscall_args* args) {
       terminate_current_task(&args->registers);
       return;
     }
-    if (called_process->last_physical_mappings_addr) {
-      args->return_value = -IPC_ERR_RETRY;
-      return;
-    }
     mapping_start = args->arg3 / 0x1000 * 0x1000;
     if (!args->arg4 || args->arg4 > 0x8000000) {
       puts("Can't share this much memory");
@@ -77,7 +74,7 @@ void syscall_handle_ipc(union syscall_args* args) {
       terminate_current_task(&args->registers);
       return;
     }
-    if (!current_task->sharing_memory && mapping_end >= PAGING_USER_PHYS_MAPPINGS_START) {
+    if (mapping_end >= PAGING_USER_PHYS_MAPPINGS_START) {
       puts("Can't share this memory region");
       terminate_current_task(&args->registers);
       return;
@@ -116,13 +113,15 @@ void syscall_handle_ipc(union syscall_args* args) {
   args->arg4 = arg4;
   if (syscall & IPC_CALL_MEMORY_SHARING) {
     current_task->sharing_memory = 1;
-    current_task->process->last_physical_mappings_addr = current_task->process->physical_mappings_addr;
-    user_physical_mappings_addr = current_task->process->physical_mappings_addr;
-    args->arg3 = user_physical_mappings_addr + arg3 % 0x1000;
-    for (size_t i = mapping_start; i < mapping_end; i += 0x1000) {
-      map_physical(convert_to_physical(i, current_task->servicing_syscall_requester->process->address_space), 0x1000, 1, syscall & IPC_CALL_MEMORY_SHARING_RW_MASK, 0);
+    physical_mappings_process = current_task->process;
+    physical_mappings_task = current_task;
+    uintptr_t virtual_address = get_free_ipc_range(mapping_end - mapping_start);
+    physical_mappings_process = 0;
+    physical_mappings_task = 0;
+    args->arg3 = virtual_address + arg3 % 0x1000;
+    for (size_t i = 0; i < mapping_end - mapping_start; i += 0x1000) {
+      create_mapping(virtual_address + i, convert_to_physical(mapping_start + i, current_task->servicing_syscall_requester->process->address_space), 0x1000, 1, syscall & IPC_CALL_MEMORY_SHARING_RW_MASK, 0);
     }
-    current_task->process->physical_mappings_addr = user_physical_mappings_addr;
   } else {
     args->arg3 = arg3;
   }
@@ -134,11 +133,18 @@ void syscall_return_ipc(union syscall_args* args) {
     return;
   }
   if (current_task->sharing_memory) {
-    for (size_t i = current_task->process->last_physical_mappings_addr; i < current_task->process->physical_mappings_addr; i += 0x1000) {
-      unmap_page(i);
+    for (size_t i = 0; i < PAGING_PHYSICAL_MAPPINGS_SIZE / 0x1000 / 64; i++) {
+      if (!current_task->mappings_bitset[i]) {
+        continue;
+      }
+      for (size_t j = 0; j < 64; j++) {
+        if (bitset_test(current_task->mappings_bitset, i * 64 + j)) {
+          unmap_page(PAGING_USER_PHYS_MAPPINGS_START + (i * 64 + j) * 0x1000);
+          bitset_clear(current_task->process->mappings_bitset, i * 64 + j);
+          bitset_clear(current_task->mappings_bitset, i * 64 + j);
+        }
+      }
     }
-    current_task->process->physical_mappings_addr = current_task->process->last_physical_mappings_addr;
-    current_task->process->last_physical_mappings_addr = 0;
     current_task->sharing_memory = 0;
   }
   struct task* requester = current_task->servicing_syscall_requester;

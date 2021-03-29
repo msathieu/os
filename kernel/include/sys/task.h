@@ -25,6 +25,7 @@ struct task {
   size_t sleep_until;
   int priority;
   _Alignas(16) uint8_t fxsave_region[512];
+  uint64_t mappings_bitset[PAGING_PHYSICAL_MAPPINGS_SIZE / 0x1000 / 64];
 };
 
 extern struct task* current_task;
