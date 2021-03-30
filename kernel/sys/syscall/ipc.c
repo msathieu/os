@@ -29,8 +29,23 @@ void syscall_wait_ipc(union syscall_args* args) {
     args->arg0 = current_task->servicing_syscall_requester->registers.rsi;
     args->arg1 = current_task->servicing_syscall_requester->registers.rdx;
     args->arg2 = current_task->servicing_syscall_requester->registers.rcx;
-    args->arg3 = current_task->servicing_syscall_requester->registers.r8;
     args->arg4 = current_task->servicing_syscall_requester->registers.r9;
+    if (args->syscall & IPC_CALL_MEMORY_SHARING) {
+      current_task->sharing_memory = 1;
+      physical_mappings_process = current_task->process;
+      physical_mappings_task = current_task;
+      uintptr_t mapping_start = current_task->servicing_syscall_requester->registers.r8 / 0x1000 * 0x1000;
+      uintptr_t mapping_end = (current_task->servicing_syscall_requester->registers.r8 + args->arg4 + 0xfff) / 0x1000 * 0x1000;
+      uintptr_t virtual_address = get_free_ipc_range(mapping_end - mapping_start);
+      physical_mappings_process = 0;
+      physical_mappings_task = 0;
+      args->arg3 = virtual_address + current_task->servicing_syscall_requester->registers.r8 % 0x1000;
+      for (size_t i = 0; i < mapping_end - mapping_start; i += 0x1000) {
+        create_mapping(virtual_address + i, convert_to_physical(mapping_start + i, current_task->servicing_syscall_requester->process->address_space), 0x1000, 1, args->syscall & IPC_CALL_MEMORY_SHARING_RW_MASK, 0);
+      }
+    } else {
+      args->arg3 = current_task->servicing_syscall_requester->registers.r8;
+    }
   } else {
     current_task->process->syscall_handler = current_task;
     block_current_task(&args->registers);
@@ -83,10 +98,6 @@ void syscall_handle_ipc(union syscall_args* args) {
     }
   }
   if (!called_process->syscall_handler) {
-    if (syscall & IPC_CALL_MEMORY_SHARING) {
-      args->return_value = -IPC_ERR_RETRY;
-      return;
-    }
     insert_linked_list(&called_process->syscall_queue, &current_task->list_member);
     block_current_task(&args->registers);
     return;
@@ -166,9 +177,19 @@ void syscall_block_ipc_call(union syscall_args* args) {
     return;
   }
   if (current_task->sharing_memory) {
-    puts("Can't block while sharing memory");
-    terminate_current_task(&args->registers);
-    return;
+    for (size_t i = 0; i < PAGING_PHYSICAL_MAPPINGS_SIZE / 0x1000 / 64; i++) {
+      if (!current_task->mappings_bitset[i]) {
+        continue;
+      }
+      for (size_t j = 0; j < 64; j++) {
+        if (bitset_test(current_task->mappings_bitset, i * 64 + j)) {
+          unmap_page(PAGING_USER_PHYS_MAPPINGS_START + (i * 64 + j) * 0x1000);
+          bitset_clear(current_task->process->mappings_bitset, i * 64 + j);
+          bitset_clear(current_task->mappings_bitset, i * 64 + j);
+        }
+      }
+    }
+    current_task->sharing_memory = 0;
   }
   insert_linked_list(&current_task->process->blocked_ipc_calls_queue, &requester->list_member);
   current_task->servicing_syscall_requester = 0;
@@ -204,7 +225,22 @@ void syscall_unblock_ipc_call(union syscall_args* args) {
   syscall_handler->registers.rsi = syscall_requester->registers.rsi;
   syscall_handler->registers.rdx = syscall_requester->registers.rdx;
   syscall_handler->registers.rcx = syscall_requester->registers.rcx;
-  syscall_handler->registers.r8 = syscall_requester->registers.r8;
   syscall_handler->registers.r9 = syscall_requester->registers.r9;
+  if (syscall_requester->registers.rdi & IPC_CALL_MEMORY_SHARING) {
+    syscall_handler->sharing_memory = 1;
+    physical_mappings_process = syscall_handler->process;
+    physical_mappings_task = syscall_handler;
+    uintptr_t mapping_start = syscall_requester->registers.r8 / 0x1000 * 0x1000;
+    uintptr_t mapping_end = (syscall_requester->registers.r8 + syscall_requester->registers.r9 + 0xfff) / 0x1000 * 0x1000;
+    uintptr_t virtual_address = get_free_ipc_range(mapping_end - mapping_start);
+    physical_mappings_process = 0;
+    physical_mappings_task = 0;
+    syscall_handler->registers.r8 = virtual_address + syscall_requester->registers.r8 % 0x1000;
+    for (size_t i = 0; i < mapping_end - mapping_start; i += 0x1000) {
+      create_mapping(virtual_address + i, convert_to_physical(mapping_start + i, syscall_requester->process->address_space), 0x1000, 1, syscall_requester->registers.rdi & IPC_CALL_MEMORY_SHARING_RW_MASK, 0);
+    }
+  } else {
+    syscall_handler->registers.r8 = syscall_requester->registers.r8;
+  }
   schedule_task(syscall_handler, &args->registers);
 }
