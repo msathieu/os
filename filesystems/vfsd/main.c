@@ -139,6 +139,7 @@ static int64_t open_file_handler(uint64_t arg0, uint64_t arg1, uint64_t arg2, ui
   if (!process) {
     process = calloc(1, sizeof(struct process));
     process->pid = caller_pid;
+    process->next_fd = 3;
     insert_linked_list(&process_list, &process->list_member);
   }
   struct fd* fd = calloc(1, sizeof(struct fd));
@@ -208,8 +209,16 @@ static int64_t write_file_handler(uint64_t fd_num, uint64_t arg1, uint64_t arg2,
       break;
     }
   }
-  syslog(LOG_DEBUG, "File descriptor doesn't exist");
-  return -IPC_ERR_INVALID_ARGUMENTS;
+  switch (fd_num) {
+  case 1:
+  case 2:
+    send_ipc_call("ttyd", IPC_VFSD_FS_WRITE, 0, 0, 0, address, size);
+    return 0;
+    break;
+  default:
+    syslog(LOG_DEBUG, "File descriptor doesn't exist");
+    return -IPC_ERR_INVALID_ARGUMENTS;
+  }
 }
 static int64_t seek_file_handler(uint64_t fd_num, uint64_t position, uint64_t arg2, uint64_t arg3, uint64_t arg4) {
   if (arg2 || arg3 || arg4) {

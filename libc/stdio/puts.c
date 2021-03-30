@@ -1,9 +1,8 @@
-#include <ipccalls.h>
 #include <stdio.h>
 #include <string.h>
 
 int puts(const char* str) {
-  send_ipc_call("ttyd", IPC_TTYD_PRINT, 0, 0, 0, (uintptr_t) str, strlen(str) + 1);
+  fwrite(str, 1, strlen(str), stdout);
   putchar('\n');
   return 0;
 }

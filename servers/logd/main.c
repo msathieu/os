@@ -39,12 +39,12 @@ static int64_t log_handler(uint64_t arg0, uint64_t arg1, uint64_t arg2, uint64_t
   msg[size - 1] = '\n';
   msg[size] = 0;
   if (ttyd) {
-    send_pid_ipc_call(ttyd, IPC_CALL_MEMORY_SHARING, 0, 0, 0, (uintptr_t) msg, size + 1);
+    send_pid_ipc_call(ttyd, IPC_VFSD_FS_WRITE, 0, 0, 0, (uintptr_t) msg, size);
   } else {
     if (!buffer) {
       buffer = strdup(msg);
     } else {
-      buffer = realloc(buffer, strlen(buffer) + strlen(msg) + 1);
+      buffer = realloc(buffer, strlen(buffer) + size + 1);
       strcat(buffer, msg);
     }
   }
@@ -59,7 +59,7 @@ int main(void) {
   while (1) {
     handle_ipc();
     if (buffer && ttyd) {
-      send_pid_ipc_call(ttyd, IPC_TTYD_PRINT, 0, 0, 0, (uintptr_t) buffer, strlen(buffer) + 1);
+      send_pid_ipc_call(ttyd, IPC_VFSD_FS_WRITE, 0, 0, 0, (uintptr_t) buffer, strlen(buffer));
       free(buffer);
       buffer = 0;
     }

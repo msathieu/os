@@ -6,18 +6,17 @@
 #include <tty/fb.h>
 #include <tty/kbd.h>
 
-static int64_t print_handler(uint64_t arg0, uint64_t arg1, uint64_t arg2, uint64_t address, uint64_t size) {
-  if (arg0 || arg1 || arg2) {
+static int64_t print_handler(__attribute__((unused)) uint64_t offset, uint64_t arg1, uint64_t arg2, uint64_t address, uint64_t size) {
+  if (arg1 || arg2) {
     syslog(LOG_DEBUG, "Reserved argument is set");
     return -IPC_ERR_INVALID_ARGUMENTS;
   }
-  size_t fb;
-  if (is_caller_child()) {
-    fb = 0;
-  } else if (has_ipc_caller_capability(CAP_NAMESPACE_SERVERS, CAP_LOGD)) {
+  size_t fb = 0;
+  if (has_ipc_caller_capability(CAP_NAMESPACE_SERVERS, CAP_LOGD)) {
     fb = 11;
-  } else {
-    syslog(LOG_DEBUG, "No permission to print to screen");
+    // TODO: Remove CAP_VFSD
+  } else if (!has_ipc_caller_capability(CAP_NAMESPACE_FILESYSTEMS, CAP_VFSD) && !has_ipc_caller_capability(CAP_NAMESPACE_FILESYSTEMS, CAP_DEVD)) {
+    syslog(LOG_DEBUG, "Not allowed to access tty");
     return -IPC_ERR_INSUFFICIENT_PRIVILEGE;
   }
   for (size_t i = 0; i < size && ((char*) address)[i]; i++) {
@@ -56,8 +55,8 @@ int main(void) {
   setenv("PATH", "/sbin:/bin", 0);
   spawn_process("/bin/sh");
   start_process();
+  ipc_handlers[IPC_VFSD_FS_WRITE] = print_handler;
   ipc_handlers[IPC_TTYD_KBD_INPUT] = kbd_input_handler;
-  ipc_handlers[IPC_TTYD_PRINT] = print_handler;
   while (1) {
     handle_ipc();
   }

@@ -75,6 +75,8 @@ static void spawn(const char* name) {
     grant_ioport(0x60);
     grant_ioport(0x64);
     register_irq(1);
+  } else if (!strcmp(name, "/sbin/ttyd")) {
+    send_ipc_call("devd", IPC_DEVD_REGISTER, 0, 0, 0, (uintptr_t) "tty", 4);
   }
   start_process();
 }
