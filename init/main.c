@@ -22,6 +22,7 @@ struct service services[] = {
   {"ipcd", 1, 0, {[CAP_NAMESPACE_KERNEL] = 1 << CAP_KERNEL_PRIORITY}, 0},
   {"logd", 1, 0, {[CAP_NAMESPACE_KERNEL] = 1 << CAP_KERNEL_PRIORITY, [CAP_NAMESPACE_SERVERS] = 1 << CAP_LOGD}, "logd"},
   {"/sbin/devd", 0, 0, {[CAP_NAMESPACE_KERNEL] = 1 << CAP_KERNEL_PRIORITY, [CAP_NAMESPACE_FILESYSTEMS] = 1 << CAP_DEVD}, "devd"},
+  {"/sbin/dev-nulld", 0, 0, {[CAP_NAMESPACE_KERNEL] = 1 << CAP_KERNEL_PRIORITY}, 0},
   {"/sbin/envd", 0, 0, {[CAP_NAMESPACE_KERNEL] = 1 << CAP_KERNEL_PRIORITY}, "envd"},
   {"/sbin/fbd", 0, 0, {[CAP_NAMESPACE_KERNEL] = 1 << CAP_KERNEL_PRIORITY | 1 << CAP_KERNEL_GET_FB_INFO}, "fbd"},
   {"/sbin/kbdd", 0, 0, {[CAP_NAMESPACE_KERNEL] = 1 << CAP_KERNEL_PRIORITY, [CAP_NAMESPACE_SERVERS] = 1 << CAP_KBDD}, "kbdd"},
@@ -63,6 +64,8 @@ static void spawn(const char* name) {
     register_irq(15);
   } else if (!strcmp(name, "/sbin/devd")) {
     send_ipc_call("vfsd", IPC_VFSD_MOUNT, 0, 0, 0, (uintptr_t) "/dev/", 6);
+  } else if (!strcmp(name, "/sbin/dev-nulld")) {
+    send_ipc_call("devd", IPC_DEVD_REGISTER, 0, 0, 0, (uintptr_t) "null", 5);
   } else if (!strcmp(name, "/sbin/fbd")) {
     uintptr_t fb_phys_addr = _syscall(_SYSCALL_GET_FB_INFO, 0, 0, 0, 0, 0);
     size_t height = _syscall(_SYSCALL_GET_FB_INFO, 2, 0, 0, 0, 0);
@@ -85,6 +88,7 @@ int main(void) {
   spawn("vfsd");
   spawn("atad");
   spawn("/sbin/devd");
+  spawn("/sbin/dev-nulld");
   spawn("/sbin/envd");
   spawn("/sbin/fbd");
   spawn("/sbin/kbdd");

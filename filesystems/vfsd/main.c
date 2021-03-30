@@ -28,6 +28,7 @@ struct mount {
 static struct mount mounts[512];
 static struct linked_list process_list;
 static bool ready;
+static size_t blocked_calls;
 
 static int64_t mount_handler(uint64_t arg0, uint64_t arg1, uint64_t arg2, uint64_t address, uint64_t size) {
   if (arg0 || arg1 || arg2) {
@@ -79,7 +80,7 @@ static int64_t mount_handler(uint64_t arg0, uint64_t arg1, uint64_t arg2, uint64
     }
   }
   free(buffer);
-  syslog(LOG_WARNING, "Reached maximum number of mounts");
+  syslog(LOG_ERR, "Reached maximum number of mounts");
   return -IPC_ERR_PROGRAM_DEFINED;
 }
 static int64_t open_file_handler(uint64_t arg0, uint64_t arg1, uint64_t arg2, uint64_t address, uint64_t size) {
@@ -88,7 +89,8 @@ static int64_t open_file_handler(uint64_t arg0, uint64_t arg1, uint64_t arg2, ui
     return -IPC_ERR_INVALID_ARGUMENTS;
   }
   if (!ready) {
-    return -IPC_ERR_RETRY;
+    blocked_calls++;
+    return -IPC_ERR_BLOCK;
   }
   char* buffer = malloc(size);
   memcpy(buffer, (void*) address, size);
@@ -112,7 +114,8 @@ static int64_t open_file_handler(uint64_t arg0, uint64_t arg1, uint64_t arg2, ui
   }
   if (mount_i == -1) {
     free(buffer);
-    return -IPC_ERR_RETRY;
+    syslog(LOG_ERR, "No root filesystem mounted");
+    return -IPC_ERR_PROGRAM_DEFINED;
   }
   long file_num = -IPC_ERR_INVALID_PID;
   while (file_num == -IPC_ERR_INVALID_PID) {
@@ -238,6 +241,10 @@ static int64_t set_ready_handler(uint64_t arg0, uint64_t arg1, uint64_t arg2, ui
     return -IPC_ERR_INSUFFICIENT_PRIVILEGE;
   }
   ready = 1;
+  for (size_t i = 0; i < blocked_calls; i++) {
+    ipc_unblock(0);
+  }
+  blocked_calls = 0;
   return 0;
 }
 int main(void) {
