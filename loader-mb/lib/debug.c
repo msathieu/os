@@ -3,7 +3,7 @@
 #include <panic.h>
 #include <stdio.h>
 
-int putc(int c, __attribute__((unused)) void* file) {
+int fputc(int c, __attribute__((unused)) void* file) {
   unsigned eax, ebx, ecx, edx;
   if (!__get_cpuid(1, &eax, &ebx, &ecx, &edx)) {
     panic("Error obtaining CPUID information");
