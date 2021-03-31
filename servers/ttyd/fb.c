@@ -39,16 +39,13 @@ static void draw_pixel(size_t x, size_t y, int color, size_t fb) {
   framebuffer[fb][y * fb_pitch + x * fb_bits_per_pixel / 8 + fb_green_index] = color >> 8;
   framebuffer[fb][y * fb_pitch + x * fb_bits_per_pixel / 8 + fb_red_index] = color >> 16;
 }
-static void draw_character(size_t x, size_t y, unsigned char c, size_t fb) {
-  if (x >= width || y >= height) {
-    return;
-  }
-  if (c >= 128) {
+static void draw_cursor(size_t x, size_t y, size_t fb, bool cursor) {
+  if (fb == 11) {
     return;
   }
   for (size_t cy = 0; cy < 16; cy++) {
     for (size_t cx = 0; cx < 8; cx++) {
-      if (font[c * 16 + cy] & 128 >> cx) {
+      if (cursor) {
         draw_pixel(x * 9 + cx, y * 16 + cy, 0xbebebe, fb);
       } else {
         draw_pixel(x * 9 + cx, y * 16 + cy, 0, fb);
@@ -59,13 +56,17 @@ static void draw_character(size_t x, size_t y, unsigned char c, size_t fb) {
     line_updated[y] = 1;
   }
 }
-static void draw_cursor(size_t x, size_t y, size_t fb, bool cursor) {
-  if (fb == 11) {
+static void draw_character(size_t x, size_t y, unsigned char c, size_t fb) {
+  if (x >= width || y >= height) {
+    return;
+  }
+  if (c >= 128) {
+    draw_cursor(x, y, fb, 0);
     return;
   }
   for (size_t cy = 0; cy < 16; cy++) {
     for (size_t cx = 0; cx < 8; cx++) {
-      if (cursor) {
+      if (font[c * 16 + cy] & 128 >> cx) {
         draw_pixel(x * 9 + cx, y * 16 + cy, 0xbebebe, fb);
       } else {
         draw_pixel(x * 9 + cx, y * 16 + cy, 0, fb);
