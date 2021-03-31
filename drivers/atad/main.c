@@ -121,7 +121,7 @@ static int64_t read_handler(uint64_t offset, uint64_t arg1, uint64_t arg2, uint6
       memcpy((void*) address, (void*) buffer, copy_size);
     }
   }
-  return 0;
+  return size;
 }
 static int64_t write_handler(uint64_t offset, uint64_t arg1, uint64_t arg2, uint64_t address, uint64_t size) {
   if (arg1 || arg2) {
@@ -171,7 +171,7 @@ static int64_t write_handler(uint64_t offset, uint64_t arg1, uint64_t arg2, uint
       write(bus, drive, i, buffer);
     }
   }
-  return 0;
+  return size;
 }
 int main(void) {
   register_ipc(1);

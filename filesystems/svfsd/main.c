@@ -57,17 +57,13 @@ static int64_t read_handler(uint64_t file_num, uint64_t offset, uint64_t arg2, u
     syslog(LOG_DEBUG, "Invalid file number");
     return -IPC_ERR_INVALID_ARGUMENTS;
   }
-  size_t total_size;
-  if (__builtin_uaddl_overflow(offset, size, &total_size)) {
-    syslog(LOG_DEBUG, "Can't access this much data");
-    return -IPC_ERR_INVALID_ARGUMENTS;
+  if (offset >= header->files[file_num].size) {
+    return 0;
   }
-  if (total_size > header->files[file_num].size) {
-    syslog(LOG_DEBUG, "Can't access this much data");
-    return -IPC_ERR_INVALID_ARGUMENTS;
+  if (size > header->files[file_num].size - offset) {
+    size = header->files[file_num].size - offset;
   }
-  send_pid_ipc_call(parent_pid, IPC_VFSD_FS_READ, sizeof(struct svfs_header) + header->nfiles * sizeof(struct svfs_file) + header->files[file_num].offset + offset, 0, 0, address, size);
-  return 0;
+  return send_pid_ipc_call(parent_pid, IPC_VFSD_FS_READ, sizeof(struct svfs_header) + header->nfiles * sizeof(struct svfs_file) + header->files[file_num].offset + offset, 0, 0, address, size);
 }
 int main(void) {
   drop_capability(CAP_NAMESPACE_KERNEL, CAP_KERNEL_PRIORITY);

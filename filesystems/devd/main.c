@@ -101,8 +101,7 @@ static int64_t handle_transfer(uint64_t file_num, uint64_t offset, uint64_t arg2
   if (write) {
     call = IPC_VFSD_FS_WRITE;
   }
-  send_pid_ipc_call(devices[file_num].pid, call, offset, 0, 0, address, size);
-  return 0;
+  return send_pid_ipc_call(devices[file_num].pid, call, offset, 0, 0, address, size);
 }
 static int64_t read_handler(uint64_t file_num, uint64_t offset, uint64_t arg2, uint64_t address, uint64_t size) {
   return handle_transfer(file_num, offset, arg2, address, size, 0);

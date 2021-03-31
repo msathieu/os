@@ -2,6 +2,5 @@
 #include <stdio.h>
 
 size_t fwrite(const void* restrict buffer, size_t size, size_t num, FILE* restrict file) {
-  send_ipc_call("vfsd", IPC_VFSD_WRITE, file->fd, 0, 0, (uintptr_t) buffer, size * num);
-  return num;
+  return send_ipc_call("vfsd", IPC_VFSD_WRITE, file->fd, 0, 0, (uintptr_t) buffer, size * num) / size;
 }

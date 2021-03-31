@@ -180,9 +180,9 @@ static int64_t read_file_handler(uint64_t fd_num, uint64_t arg1, uint64_t arg2, 
     if (process->pid == caller_pid) {
       for (struct fd* fd = (struct fd*) process->fd_list.first; fd; fd = (struct fd*) fd->list_member.next) {
         if (fd->fd == fd_num) {
-          send_pid_ipc_call(mounts[fd->mount].pid, IPC_VFSD_FS_READ, fd->file_num, fd->position, 0, address, size);
+          size_t offset = fd->position;
           fd->position += size;
-          return 0;
+          return send_pid_ipc_call(mounts[fd->mount].pid, IPC_VFSD_FS_READ, fd->file_num, offset, 0, address, size);
         }
       }
       break;
@@ -201,9 +201,9 @@ static int64_t write_file_handler(uint64_t fd_num, uint64_t arg1, uint64_t arg2,
     if (process->pid == caller_pid) {
       for (struct fd* fd = (struct fd*) process->fd_list.first; fd; fd = (struct fd*) fd->list_member.next) {
         if (fd->fd == fd_num) {
-          send_pid_ipc_call(mounts[fd->mount].pid, IPC_VFSD_FS_WRITE, fd->file_num, fd->position, 0, address, size);
+          size_t offset = fd->position;
           fd->position += size;
-          return 0;
+          return send_pid_ipc_call(mounts[fd->mount].pid, IPC_VFSD_FS_WRITE, fd->file_num, offset, 0, address, size);
         }
       }
       break;

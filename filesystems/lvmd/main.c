@@ -41,15 +41,14 @@ static int64_t handle_transfer(uint64_t offset, uint64_t arg1, uint64_t arg2, ui
     syslog(LOG_DEBUG, "No permission to access disk");
     return -IPC_ERR_INSUFFICIENT_PRIVILEGE;
   }
-  size_t total_size;
-  if (__builtin_uaddl_overflow(offset, size, &total_size)) {
-    syslog(LOG_DEBUG, "Can't access this much data");
-    return -IPC_ERR_INVALID_ARGUMENTS;
+  if (offset >= volumes[volume_i]->size) {
+    return 0;
   }
-  if (total_size > volumes[volume_i]->size || total_size > LVM_SECTOR * 1024) {
-    syslog(LOG_DEBUG, "Can't access this much data");
-    return -IPC_ERR_INVALID_ARGUMENTS;
+  if (size > volumes[volume_i]->size - offset) {
+    size = volumes[volume_i]->size - offset;
   }
+  size_t total_size = offset + size;
+  size_t written_size = 0;
   for (size_t i = offset / LVM_SECTOR * LVM_SECTOR; i < total_size; i += LVM_SECTOR) {
     size_t offset_i = 0;
     if (i == offset / LVM_SECTOR * LVM_SECTOR) {
@@ -66,10 +65,10 @@ static int64_t handle_transfer(uint64_t offset, uint64_t arg1, uint64_t arg2, ui
     if (write) {
       call = IPC_VFSD_FS_WRITE;
     }
-    send_pid_ipc_call(parent_pid, call, volumes[volume_i]->sectors[i / LVM_SECTOR] * LVM_SECTOR + offset_i, 0, 0, address, size_i);
+    written_size += send_pid_ipc_call(parent_pid, call, volumes[volume_i]->sectors[i / LVM_SECTOR] * LVM_SECTOR + offset_i, 0, 0, address, size_i);
     address += size_i;
   }
-  return 0;
+  return written_size;
 }
 static int64_t read_handler(uint64_t offset, uint64_t arg1, uint64_t arg2, uint64_t address, uint64_t size) {
   return handle_transfer(offset, arg1, arg2, address, size, 0);
@@ -88,6 +87,10 @@ int main(void) {
   for (size_t i = 0; header.volumes[i]; i++) {
     volumes[i] = calloc(1, sizeof(struct lvm_volume));
     send_pid_ipc_call(parent_pid, IPC_VFSD_FS_READ, header.volumes[i] * LVM_SECTOR, 0, 0, (uintptr_t) volumes[i], sizeof(struct lvm_volume));
+    if (volumes[i]->size > LVM_SECTOR * 1024) {
+      syslog(LOG_ERR, "Filesystem has invalid size");
+      return 1;
+    }
     switch (volumes[i]->filesystem) {
     case SVFS_MAGIC:
       volume_pids[i] = spawn_process_raw("svfsd");

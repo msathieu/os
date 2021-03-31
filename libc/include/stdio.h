@@ -14,6 +14,7 @@ extern FILE* stdout;
 extern FILE* stderr;
 
 int fclose(FILE*);
+int fgetc(FILE*);
 FILE* fopen(const char* restrict, const char* restrict);
 int fprintf(FILE* restrict, const char* restrict, ...);
 int fputc(int, FILE*);

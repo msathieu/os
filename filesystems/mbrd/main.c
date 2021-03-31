@@ -42,21 +42,17 @@ static int64_t handle_transfer(uint64_t offset, uint64_t arg1, uint64_t arg2, ui
     syslog(LOG_DEBUG, "No permission to access disk");
     return -IPC_ERR_INSUFFICIENT_PRIVILEGE;
   }
-  size_t total_size;
-  if (__builtin_uaddl_overflow(offset, size, &total_size)) {
-    syslog(LOG_DEBUG, "Can't access this much data");
-    return -IPC_ERR_INVALID_ARGUMENTS;
+  if (offset >= mbr.partitions[partition_i].num_sectors * 512) {
+    return 0;
   }
-  if (total_size > mbr.partitions[partition_i].num_sectors * 512) {
-    syslog(LOG_DEBUG, "Can't access this much data");
-    return -IPC_ERR_INVALID_ARGUMENTS;
+  if (size > mbr.partitions[partition_i].num_sectors * 512 - offset) {
+    size = mbr.partitions[partition_i].num_sectors * 512 - offset;
   }
   uint8_t call = IPC_VFSD_FS_READ;
   if (write) {
     call = IPC_VFSD_FS_WRITE;
   }
-  send_pid_ipc_call(parent_pid, call, mbr.partitions[partition_i].lba_start * 512 + offset, 0, 0, address, size);
-  return 0;
+  return send_pid_ipc_call(parent_pid, call, mbr.partitions[partition_i].lba_start * 512 + offset, 0, 0, address, size);
 }
 static int64_t read_handler(uint64_t offset, uint64_t arg1, uint64_t arg2, uint64_t address, uint64_t size) {
   return handle_transfer(offset, arg1, arg2, address, size, 0);
