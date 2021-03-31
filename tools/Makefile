@@ -1,5 +1,5 @@
 BINUTILS:=572df6d4e00649f0e69baa11008e1be357eb51ab
-GCC:=f30188d8a08a03302d987160f74e701d44234055
+GCC:=434ec15dcef78bbe30ab6134fbf1858551e671c8
 PROGRAMS:=bin/lvm bin/sign bin/svfs
 export CC:=cc
 export AR:=ar
@@ -16,7 +16,7 @@ $(BINUTILS).tar.gz:
 	echo "114b99e26d8f5e21d806bce1a5371d1454a278441a8d59cc337452cfd1e376941592a1a313be60e351fed6ba1d0ef145c74cd964453ecab5e8064366cd9d2f79  $(BINUTILS).tar.gz" | shasum -c
 $(GCC).tar.gz:
 	wget https://github.com/MSathieu/os-gcc/archive/$(GCC).tar.gz
-	echo "fb5c07f31026277cb0990f520af3aa82467b8a95002e652594f6df45a31bb5a9b2accc7be4a933b2962361f2f6894c67a9f01cb07ec3feb2fc5eb1ca9efdbec3  $(GCC).tar.gz" | shasum  -c
+	echo "8818a0140d1b238839d064810c48796819844f26ac7ee08221a140dcf3df545079dd9129333c0fad2e76985bca76510558f932ce34cf008f1d3810a8b2718ef2  $(GCC).tar.gz" | shasum  -c
 build-toolchain: $(BINUTILS).tar.gz $(GCC).tar.gz
 	mkdir -p toolchain
 	cd toolchain && tar -xf ../$(BINUTILS).tar.gz
