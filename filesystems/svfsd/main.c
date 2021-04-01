@@ -25,13 +25,16 @@ static struct svfs_header* header;
 static pid_t parent_pid;
 __attribute__((weak)) extern int _binary_public_key_start;
 
-static int64_t get_file_num_handler(uint64_t arg0, uint64_t arg1, uint64_t arg2, uint64_t address, uint64_t size) {
-  if (arg0 || arg1 || arg2) {
+static int64_t open_handler(uint64_t mode, uint64_t arg1, uint64_t arg2, uint64_t address, uint64_t size) {
+  if (arg1 || arg2) {
     syslog(LOG_DEBUG, "Reserved argument is set");
     return -IPC_ERR_INVALID_ARGUMENTS;
   }
   if (!has_ipc_caller_capability(CAP_NAMESPACE_FILESYSTEMS, CAP_VFSD)) {
-    syslog(LOG_DEBUG, "Not allowed to access file number");
+    syslog(LOG_DEBUG, "Not allowed to open file");
+    return -IPC_ERR_INSUFFICIENT_PRIVILEGE;
+  }
+  if (mode) {
     return -IPC_ERR_INSUFFICIENT_PRIVILEGE;
   }
   for (size_t i = 0; i < header->nfiles; i++) {
@@ -98,7 +101,7 @@ int main(void) {
       free(file);
     }
   }
-  ipc_handlers[IPC_VFSD_FS_GET_FILE_NUM] = get_file_num_handler;
+  ipc_handlers[IPC_VFSD_FS_OPEN] = open_handler;
   ipc_handlers[IPC_VFSD_FS_READ] = read_handler;
   while (1) {
     handle_ipc();

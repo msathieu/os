@@ -83,8 +83,8 @@ static int64_t mount_handler(uint64_t arg0, uint64_t arg1, uint64_t arg2, uint64
   syslog(LOG_ERR, "Reached maximum number of mounts");
   return -IPC_ERR_PROGRAM_DEFINED;
 }
-static int64_t open_file_handler(uint64_t arg0, uint64_t arg1, uint64_t arg2, uint64_t address, uint64_t size) {
-  if (arg0 || arg1 || arg2) {
+static int64_t open_file_handler(uint64_t mode, uint64_t arg1, uint64_t arg2, uint64_t address, uint64_t size) {
+  if (arg1 || arg2) {
     syslog(LOG_DEBUG, "Reserved argument is set");
     return -IPC_ERR_INVALID_ARGUMENTS;
   }
@@ -119,7 +119,7 @@ static int64_t open_file_handler(uint64_t arg0, uint64_t arg1, uint64_t arg2, ui
   }
   long file_num = -IPC_ERR_INVALID_PID;
   while (file_num == -IPC_ERR_INVALID_PID) {
-    file_num = send_pid_ipc_call(mounts[mount_i].pid, IPC_VFSD_FS_GET_FILE_NUM, 0, 0, 0, (uintptr_t) buffer + mount_size, size - 1);
+    file_num = send_pid_ipc_call(mounts[mount_i].pid, IPC_VFSD_FS_OPEN, mode, 0, 0, (uintptr_t) buffer + mount_size, size - 1);
     if (file_num == -IPC_ERR_INVALID_PID) {
       sched_yield();
     }

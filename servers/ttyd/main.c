@@ -19,7 +19,7 @@ static int64_t print_handler(__attribute__((unused)) uint64_t offset, uint64_t a
     syslog(LOG_DEBUG, "Not allowed to access tty");
     return -IPC_ERR_INSUFFICIENT_PRIVILEGE;
   }
-  for (size_t i = 0; i < size && ((char*) address)[i]; i++) {
+  for (size_t i = 0; i < size; i++) {
     put_character(((char*) address)[i], fb);
   }
   update_fb();

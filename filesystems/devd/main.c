@@ -55,13 +55,13 @@ static int64_t register_device_handler(uint64_t arg0, uint64_t arg1, uint64_t ar
   syslog(LOG_ERR, "Reached maximum number of devices");
   return -IPC_ERR_PROGRAM_DEFINED;
 }
-static int64_t get_file_num_handler(uint64_t arg0, uint64_t arg1, uint64_t arg2, uint64_t address, uint64_t size) {
-  if (arg0 || arg1 || arg2) {
+static int64_t open_handler(__attribute__((unused)) uint64_t mode, uint64_t arg1, uint64_t arg2, uint64_t address, uint64_t size) {
+  if (arg1 || arg2) {
     syslog(LOG_DEBUG, "Reserved argument is set");
     return -IPC_ERR_INVALID_ARGUMENTS;
   }
   if (!has_ipc_caller_capability(CAP_NAMESPACE_FILESYSTEMS, CAP_VFSD)) {
-    syslog(LOG_DEBUG, "Not allowed to access file number");
+    syslog(LOG_DEBUG, "Not allowed to open file");
     return -IPC_ERR_INSUFFICIENT_PRIVILEGE;
   }
   char* buffer = malloc(size);
@@ -112,7 +112,7 @@ static int64_t write_handler(uint64_t file_num, uint64_t offset, uint64_t arg2, 
 int main(void) {
   register_ipc(1);
   drop_capability(CAP_NAMESPACE_KERNEL, CAP_KERNEL_PRIORITY);
-  ipc_handlers[IPC_VFSD_FS_GET_FILE_NUM] = get_file_num_handler;
+  ipc_handlers[IPC_VFSD_FS_OPEN] = open_handler;
   ipc_handlers[IPC_VFSD_FS_WRITE] = write_handler;
   ipc_handlers[IPC_DEVD_REGISTER] = register_device_handler;
   ipc_handlers[IPC_VFSD_FS_READ] = read_handler;
