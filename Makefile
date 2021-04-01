@@ -57,7 +57,7 @@ toolchain:
 	$(MAKE) install-headers -Clibc
 	$(MAKE) build-toolchain -Ctools
 format:
-	clang-format -i $(shell find -name *.c) $(shell find -name *.h)
+	clang-format -i $(shell find . -name *.c) $(shell find . -name *.h)
 analyze: export CFLAGS+=-I$(DESTDIR)/usr/include
 analyze:
 	mkdir -p sysroot/boot sysroot/sbin sysroot/bin sysroot/lib sysroot/usr
@@ -74,5 +74,5 @@ analyze:
 	scan-build --status-bugs --use-cc=x86_64-os-gcc $(MAKE) -Csh
 	scan-build --status-bugs --use-cc=x86_64-os-gcc $(MAKE) -Ccoreutils
 clean:
-	rm -rf sysroot boot system *.img os.iso tools/bin $(filter-out $(shell find ./tools/toolchain -name *.o), $(shell find -name *.o)) $(filter-out $(shell find ./tools/toolchain -name *.d), $(shell find -name *.d)) $(wildcard */*.key)
+	rm -rf sysroot boot system *.img os.iso tools/bin $(filter-out $(shell find ./tools/toolchain -name *.o), $(shell find . -name *.o)) $(filter-out $(shell find ./tools/toolchain -name *.d), $(shell find . -name *.d)) $(wildcard */*.key)
 	$(MAKE) clean -Ctools
