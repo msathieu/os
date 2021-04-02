@@ -212,8 +212,7 @@ static int64_t write_file_handler(uint64_t fd_num, uint64_t arg1, uint64_t arg2,
   switch (fd_num) {
   case 1:
   case 2:
-    send_ipc_call("ttyd", IPC_VFSD_FS_WRITE, 0, 0, 0, address, size);
-    return 0;
+    return send_ipc_call("ttyd", IPC_VFSD_FS_WRITE, 0, 0, 0, address, size);
     break;
   default:
     syslog(LOG_DEBUG, "File descriptor doesn't exist");

@@ -23,7 +23,7 @@ static int64_t print_handler(__attribute__((unused)) uint64_t offset, uint64_t a
     put_character(((char*) address)[i], fb);
   }
   update_fb();
-  return 0;
+  return size;
 }
 static int64_t kbd_input_handler(uint64_t arg0, uint64_t arg1, uint64_t arg2, uint64_t arg3, uint64_t arg4) {
   if (arg0 || arg1 || arg2 || arg3 || arg4) {
