@@ -119,7 +119,7 @@ static int64_t open_file_handler(uint64_t mode, uint64_t arg1, uint64_t arg2, ui
   }
   long file_num = -IPC_ERR_INVALID_PID;
   while (file_num == -IPC_ERR_INVALID_PID) {
-    file_num = send_pid_ipc_call(mounts[mount_i].pid, IPC_VFSD_FS_OPEN, mode, 0, 0, (uintptr_t) buffer + mount_size, size - 1);
+    file_num = send_pid_ipc_call(mounts[mount_i].pid, IPC_VFSD_FS_OPEN, mode, 0, 0, (uintptr_t) buffer + mount_size, size - mount_size);
     if (file_num == -IPC_ERR_INVALID_PID) {
       sched_yield();
     }

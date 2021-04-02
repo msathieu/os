@@ -110,8 +110,8 @@ static int64_t write_handler(uint64_t file_num, uint64_t offset, uint64_t arg2, 
   return handle_transfer(file_num, offset, arg2, address, size, 1);
 }
 int main(void) {
-  register_ipc(1);
   drop_capability(CAP_NAMESPACE_KERNEL, CAP_KERNEL_PRIORITY);
+  register_ipc(1);
   ipc_handlers[IPC_VFSD_FS_OPEN] = open_handler;
   ipc_handlers[IPC_VFSD_FS_WRITE] = write_handler;
   ipc_handlers[IPC_DEVD_REGISTER] = register_device_handler;

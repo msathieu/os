@@ -17,8 +17,8 @@ static int64_t write_handler(__attribute__((unused)) uint64_t offset, uint64_t a
   return size;
 }
 int main(void) {
-  register_ipc(1);
   drop_capability(CAP_NAMESPACE_KERNEL, CAP_KERNEL_PRIORITY);
+  register_ipc(1);
   ipc_handlers[IPC_VFSD_FS_WRITE] = write_handler;
   ipc_handlers[IPC_VFSD_FS_READ] = read_handler;
   while (1) {
