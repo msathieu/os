@@ -2,7 +2,7 @@ CC:=clang
 AS:=clang
 AR:=llvm-ar
 OBJCOPY:=llvm-objcopy
-CFLAGS+=--target=i686-elf -ffreestanding --sysroot=/dev/null -fstack-protector-strong -mretpoline -flto -fbuiltin -Ilibc/include
+CFLAGS+=--target=i686-elf -ffreestanding --sysroot=/dev/null -fstack-protector-strong -mretpoline -mno-mmx -mno-sse -flto -fbuiltin -Ilibc/include
 ASFLAGS:=--target=i686-elf -c
 
 LIBC:=$(patsubst %.c, %.o, $(wildcard libc/*/*.c))

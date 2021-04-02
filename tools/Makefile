@@ -1,6 +1,6 @@
 BINUTILS:=572df6d4e00649f0e69baa11008e1be357eb51ab
 GCC:=434ec15dcef78bbe30ab6134fbf1858551e671c8
-PROGRAMS:=bin/lvm bin/sign bin/svfs
+PROGRAMS:=bin/lvm bin/mbr bin/sign bin/svfs
 export CC:=cc
 export AR:=ar
 export AS:=as

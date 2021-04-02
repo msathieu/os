@@ -28,8 +28,7 @@ build-grub: build-multiboot
 	tools/bin/svfs
 	tools/bin/lvm
 	dd if=lvm.img >> os.iso
-	parted os.iso -a none mkpart primary `parted -m os.iso unit s print free | tail -n 1 | cut -f2 -d:` 100%
-	sfdisk os.iso --part-type 2 0xb9 -q
+	tools/bin/mbr
 build-multiboot: build
 	-cp -n public.key loader-mb
 	$(MAKE) -Cloader-mb
