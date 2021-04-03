@@ -19,4 +19,4 @@ struct tm {
 };
 typedef long clock_t;
 
-time_t time(time_t*);
+time_t time(time_t* ptr);

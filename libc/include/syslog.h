@@ -8,4 +8,4 @@
 #define LOG_INFO 6
 #define LOG_DEBUG 7
 
-void syslog(int, const char*, ...);
+void syslog(int priority, const char* format, ...);

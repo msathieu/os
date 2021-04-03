@@ -15,7 +15,7 @@
 #define POSIX_MADV_WILLNEED 3
 #define POSIX_MADV_DONTNEED 4
 
-void* mmap(void*, size_t, int, int, int, off_t);
-int mprotect(void*, size_t, int);
-int munmap(void*, size_t);
-int posix_madvise(void*, size_t, int);
+void* mmap(void* address, size_t size, int prot, int flags, int file, off_t offset);
+int mprotect(void* address, size_t size, int prot);
+int munmap(void* address, size_t size);
+int posix_madvise(void* address, size_t size, int advice);

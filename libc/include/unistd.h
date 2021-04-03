@@ -6,5 +6,5 @@
 pid_t getpid(void);
 pid_t getppid(void);
 uid_t getuid(void);
-unsigned sleep(unsigned);
-long sysconf(int);
+unsigned sleep(unsigned duration);
+long sysconf(int name);

@@ -13,4 +13,4 @@ enum {
   PRIORITY_IDLE
 };
 
-void change_priority(int);
+void change_priority(int priority);

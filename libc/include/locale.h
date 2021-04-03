@@ -6,4 +6,4 @@
 #define LC_NUMERIC 5
 #define LC_TIME 6
 
-char* setlocale(int, const char*);
+char* setlocale(int category, const char* locale);

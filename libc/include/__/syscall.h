@@ -38,4 +38,4 @@ enum {
   _SYSCALL_CHANGE_PRIORITY
 };
 
-int64_t _syscall(uint64_t, uint64_t, uint64_t, uint64_t, uint64_t, uint64_t);
+int64_t _syscall(uint64_t syscall, uint64_t arg0, uint64_t arg1, uint64_t arg2, uint64_t arg3, uint64_t arg4);

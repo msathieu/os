@@ -31,4 +31,4 @@ enum {
   CAP_VFSD
 };
 
-void drop_capability(int, int);
+void drop_capability(int namespace, int capability);
