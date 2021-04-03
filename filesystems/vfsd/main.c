@@ -170,7 +170,7 @@ static int64_t close_file_handler(uint64_t fd_num, uint64_t arg1, uint64_t arg2,
   syslog(LOG_DEBUG, "File descriptor doesn't exist");
   return -IPC_ERR_INVALID_ARGUMENTS;
 }
-static int64_t read_file_handler(uint64_t fd_num, uint64_t arg1, uint64_t arg2, uint64_t address, uint64_t size) {
+static int64_t handle_transfer(uint64_t fd_num, uint64_t arg1, uint64_t arg2, uint64_t address, uint64_t size, bool write) {
   if (arg1 || arg2) {
     syslog(LOG_DEBUG, "Reserved argument is set");
     return -IPC_ERR_INVALID_ARGUMENTS;
@@ -180,44 +180,29 @@ static int64_t read_file_handler(uint64_t fd_num, uint64_t arg1, uint64_t arg2, 
     if (process->pid == caller_pid) {
       for (struct fd* fd = (struct fd*) process->fd_list.first; fd; fd = (struct fd*) fd->list_member.next) {
         if (fd->fd == fd_num) {
-          size_t offset = fd->position;
-          fd->position += size;
-          return send_pid_ipc_call(mounts[fd->mount].pid, IPC_VFSD_FS_READ, fd->file_num, offset, 0, address, size);
+          uint8_t call = IPC_VFSD_FS_READ;
+          if (write) {
+            call = IPC_VFSD_FS_WRITE;
+          }
+          size_t transferred_size = send_pid_ipc_call(mounts[fd->mount].pid, call, fd->file_num, fd->position, 0, address, size);
+          fd->position += transferred_size;
+          return transferred_size;
         }
       }
       break;
     }
+  }
+  if (write && (fd_num == 1 || fd_num == 2)) {
+    return send_ipc_call("ttyd", IPC_VFSD_FS_WRITE, 0, 0, 0, address, size);
   }
   syslog(LOG_DEBUG, "File descriptor doesn't exist");
   return -IPC_ERR_INVALID_ARGUMENTS;
 }
+static int64_t read_file_handler(uint64_t fd_num, uint64_t arg1, uint64_t arg2, uint64_t address, uint64_t size) {
+  return handle_transfer(fd_num, arg1, arg2, address, size, 0);
+}
 static int64_t write_file_handler(uint64_t fd_num, uint64_t arg1, uint64_t arg2, uint64_t address, uint64_t size) {
-  if (arg1 || arg2) {
-    syslog(LOG_DEBUG, "Reserved argument is set");
-    return -IPC_ERR_INVALID_ARGUMENTS;
-  }
-  pid_t caller_pid = get_ipc_caller_pid();
-  for (struct process* process = (struct process*) process_list.first; process; process = (struct process*) process->list_member.next) {
-    if (process->pid == caller_pid) {
-      for (struct fd* fd = (struct fd*) process->fd_list.first; fd; fd = (struct fd*) fd->list_member.next) {
-        if (fd->fd == fd_num) {
-          size_t offset = fd->position;
-          fd->position += size;
-          return send_pid_ipc_call(mounts[fd->mount].pid, IPC_VFSD_FS_WRITE, fd->file_num, offset, 0, address, size);
-        }
-      }
-      break;
-    }
-  }
-  switch (fd_num) {
-  case 1:
-  case 2:
-    return send_ipc_call("ttyd", IPC_VFSD_FS_WRITE, 0, 0, 0, address, size);
-    break;
-  default:
-    syslog(LOG_DEBUG, "File descriptor doesn't exist");
-    return -IPC_ERR_INVALID_ARGUMENTS;
-  }
+  return handle_transfer(fd_num, arg1, arg2, address, size, 1);
 }
 static int64_t seek_file_handler(uint64_t fd_num, uint64_t position, uint64_t arg2, uint64_t arg3, uint64_t arg4) {
   if (arg2 || arg3 || arg4) {
