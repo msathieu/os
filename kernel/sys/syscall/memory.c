@@ -24,7 +24,7 @@ void syscall_map_memory(union syscall_args* args) {
     terminate_current_task(&args->registers);
     return;
   }
-  if (args->arg3 % 0x1000 || args->arg3 < 0x1000 || args->arg3 >= PAGING_USER_PHYS_MAPPINGS_START) {
+  if (args->arg3 % 0x1000 || !args->arg3 || args->arg3 >= PAGING_USER_PHYS_MAPPINGS_START) {
     puts("Invalid starting position");
     terminate_current_task(&args->registers);
     return;

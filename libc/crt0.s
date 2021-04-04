@@ -16,5 +16,5 @@ _start:
   call exit
 .section .bss
 .align 16
-.skip 0x2000
+.skip 0x8000
 stack:

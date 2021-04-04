@@ -17,18 +17,19 @@ struct service {
 };
 
 struct service services[] = {
-  {"argd", 1, 0, {[CAP_NAMESPACE_KERNEL] = 1 << CAP_KERNEL_PRIORITY}, "argd"},
-  {"atad", 1, 0, {[CAP_NAMESPACE_KERNEL] = 1 << CAP_KERNEL_PRIORITY, [CAP_NAMESPACE_FILESYSTEMS] = 1 << CAP_VFSD_MOUNT}, 0},
-  {"ipcd", 1, 0, {[CAP_NAMESPACE_KERNEL] = 1 << CAP_KERNEL_PRIORITY}, 0},
-  {"logd", 1, 0, {[CAP_NAMESPACE_KERNEL] = 1 << CAP_KERNEL_PRIORITY, [CAP_NAMESPACE_SERVERS] = 1 << CAP_LOGD}, "logd"},
-  {"/sbin/devd", 0, 0, {[CAP_NAMESPACE_KERNEL] = 1 << CAP_KERNEL_PRIORITY, [CAP_NAMESPACE_FILESYSTEMS] = 1 << CAP_DEVD}, "devd"},
-  {"/sbin/dev-nulld", 0, 0, {[CAP_NAMESPACE_KERNEL] = 1 << CAP_KERNEL_PRIORITY}, 0},
-  {"/sbin/envd", 0, 0, {[CAP_NAMESPACE_KERNEL] = 1 << CAP_KERNEL_PRIORITY}, "envd"},
-  {"/sbin/fbd", 0, 0, {[CAP_NAMESPACE_KERNEL] = 1 << CAP_KERNEL_PRIORITY | 1 << CAP_KERNEL_GET_FB_INFO}, "fbd"},
-  {"/sbin/kbdd", 0, 0, {[CAP_NAMESPACE_KERNEL] = 1 << CAP_KERNEL_PRIORITY, [CAP_NAMESPACE_SERVERS] = 1 << CAP_KBDD}, "kbdd"},
-  {"/sbin/ps2d", 0, 0, {[CAP_NAMESPACE_KERNEL] = 1 << CAP_KERNEL_PRIORITY, [CAP_NAMESPACE_SERVERS] = 1 << CAP_KBDD_SEND_KEYPRESS}, 0},
-  {"/sbin/ttyd", 0, 0, {[CAP_NAMESPACE_KERNEL] = 1 << CAP_KERNEL_PRIORITY, [CAP_NAMESPACE_DRIVERS] = 1 << CAP_FBD_DRAW, [CAP_NAMESPACE_SERVERS] = 1 << CAP_KBDD_RECEIVE_EVENTS | 1 << CAP_LOGD_TTY}, "ttyd"},
-  {"vfsd", 1, 0, {[CAP_NAMESPACE_KERNEL] = 1 << CAP_KERNEL_PRIORITY, [CAP_NAMESPACE_FILESYSTEMS] = 1 << CAP_VFSD}, "vfsd"},
+  {"argd", 1, 0, {}, "argd"},
+  {"atad", 1, 0, {[CAP_NAMESPACE_FILESYSTEMS] = 1 << CAP_VFSD_MOUNT}, 0},
+  {"ipcd", 1, 0, {}, 0},
+  {"logd", 1, 0, {[CAP_NAMESPACE_SERVERS] = 1 << CAP_LOGD}, "logd"},
+  {"pcid", 1, 0, {}, "pcid"},
+  {"/sbin/devd", 0, 0, {[CAP_NAMESPACE_FILESYSTEMS] = 1 << CAP_DEVD}, "devd"},
+  {"/sbin/dev-nulld", 0, 0, {}, 0},
+  {"/sbin/envd", 0, 0, {}, "envd"},
+  {"/sbin/fbd", 0, 0, {[CAP_NAMESPACE_KERNEL] = 1 << CAP_KERNEL_GET_FB_INFO}, "fbd"},
+  {"/sbin/kbdd", 0, 0, {[CAP_NAMESPACE_SERVERS] = 1 << CAP_KBDD}, "kbdd"},
+  {"/sbin/ps2d", 0, 0, {[CAP_NAMESPACE_SERVERS] = 1 << CAP_KBDD_SEND_KEYPRESS}, 0},
+  {"/sbin/ttyd", 0, 0, {[CAP_NAMESPACE_DRIVERS] = 1 << CAP_FBD_DRAW, [CAP_NAMESPACE_SERVERS] = 1 << CAP_KBDD_RECEIVE_EVENTS | 1 << CAP_LOGD_TTY}, "ttyd"},
+  {"vfsd", 1, 0, {[CAP_NAMESPACE_FILESYSTEMS] = 1 << CAP_VFSD}, "vfsd"},
 };
 
 static void spawn(const char* name) {
@@ -53,6 +54,7 @@ static void spawn(const char* name) {
   if (!service_found) {
     return;
   }
+  grant_capability(CAP_NAMESPACE_KERNEL, CAP_KERNEL_PRIORITY);
   if (!strcmp(name, "atad")) {
     for (size_t i = 0; i < 8; i++) {
       grant_ioport(0x1f0 + i);
@@ -62,6 +64,9 @@ static void spawn(const char* name) {
     grant_ioport(0x376);
     register_irq(14);
     register_irq(15);
+  } else if (!strcmp(name, "pcid")) {
+    grant_ioport(0xcf8);
+    grant_ioport(0xcfc);
   } else if (!strcmp(name, "/sbin/devd")) {
     send_ipc_call("vfsd", IPC_VFSD_MOUNT, 0, 0, 0, (uintptr_t) "/dev/", 6);
   } else if (!strcmp(name, "/sbin/dev-nulld")) {
@@ -87,6 +92,7 @@ int main(void) {
   spawn("ipcd");
   spawn("logd");
   spawn("argd");
+  spawn("pcid");
   spawn("vfsd");
   spawn("atad");
   spawn("/sbin/devd");

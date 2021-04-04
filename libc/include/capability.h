@@ -15,7 +15,8 @@ enum {
   CAP_KERNEL_PRIORITY
 };
 enum {
-  CAP_FBD_DRAW
+  CAP_FBD_DRAW,
+  CAP_PCID_ACCESS
 };
 enum {
   CAP_IPCD_REGISTER,

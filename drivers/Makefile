@@ -1,4 +1,4 @@
-PROGRAMS:=$(DESTDIR)/boot/atad $(DESTDIR)/sbin/fbd $(DESTDIR)/sbin/ps2d
+PROGRAMS:=$(DESTDIR)/boot/atad $(DESTDIR)/sbin/fbd $(DESTDIR)/boot/pcid $(DESTDIR)/sbin/ps2d
 
 all: $(PROGRAMS)
 .SECONDEXPANSION:
