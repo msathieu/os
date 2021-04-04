@@ -18,7 +18,7 @@ static void check_checksum(struct acpi_header* header) {
     panic("Invalid checksum");
   }
 }
-static struct acpi_header* find_table(const char* signature) {
+struct acpi_header* acpi_find_table(const char* signature, bool panic) {
   for (size_t i = 0; i < nheaders; i++) {
     if (!memcmp(headers[i]->signature, signature, 4)) {
       struct acpi_header* header = map_physical(convert_to_physical((uintptr_t) headers[i], current_pml4), headers[i]->size, 0, 0);
@@ -26,7 +26,11 @@ static struct acpi_header* find_table(const char* signature) {
       return header;
     }
   }
-  panic("Couldn't find ACPI table");
+  if (panic) {
+    panic("Couldn't find ACPI table");
+  } else {
+    return 0;
+  }
 }
 void parse_acpi(void) {
   if (loader_struct.rsdp.revision >= 2) {
@@ -54,6 +58,6 @@ void parse_acpi(void) {
       headers[i] = map_physical(rsdt->tables[i], sizeof(struct acpi_header), 0, 0);
     }
   }
-  parse_madt(find_table("APIC"));
-  setup_hpet(find_table("HPET"));
+  parse_madt(acpi_find_table("APIC", 1));
+  setup_hpet(acpi_find_table("HPET", 1));
 }

@@ -79,7 +79,7 @@ void syscall_handle_ipc(union syscall_args* args) {
       return;
     }
     if (__builtin_uaddl_overflow(args->arg3, args->arg4 + 0xfff, &mapping_end)) {
-      puts("Can' share this memory region");
+      puts("Can't share this memory region");
       terminate_current_task(&args->registers);
       return;
     }

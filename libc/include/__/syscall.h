@@ -35,7 +35,8 @@ enum {
   _SYSCALL_CHANGE_MEMORY_PERMISSIONS,
   _SYSCALL_SLEEP,
   _SYSCALL_HAS_ENVIRONMENT_VARS,
-  _SYSCALL_CHANGE_PRIORITY
+  _SYSCALL_CHANGE_PRIORITY,
+  _SYSCALL_GET_ACPI_TABLE
 };
 
 int64_t _syscall(uint64_t syscall, uint64_t arg0, uint64_t arg1, uint64_t arg2, uint64_t arg3, uint64_t arg4);

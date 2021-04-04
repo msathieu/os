@@ -71,7 +71,8 @@ static syscall_handler syscall_handlers[256] = {
   syscall_change_memory_permissions,
   syscall_sleep,
   syscall_has_environment_vars,
-  syscall_change_priority};
+  syscall_change_priority,
+  syscall_get_acpi_table};
 
 void syscall_common(union syscall_args* args) {
   if (args->syscall & 0xffffffffffffff00) {

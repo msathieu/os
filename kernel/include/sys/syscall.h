@@ -38,6 +38,7 @@ void syscall_wait(union syscall_args*);
 
 void syscall_access_ioport(union syscall_args*);
 void syscall_clear_irqs(union syscall_args*);
+void syscall_get_acpi_table(union syscall_args*);
 void syscall_get_fb_info(union syscall_args*);
 void syscall_grant_ioport(union syscall_args*);
 void syscall_map_phys_memory(union syscall_args*);

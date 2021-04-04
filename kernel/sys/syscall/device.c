@@ -1,7 +1,9 @@
 #include <cpu/ioports.h>
 #include <cpu/paging.h>
 #include <stdio.h>
+#include <string.h>
 #include <struct.h>
+#include <sys/acpi.h>
 #include <sys/ioapic.h>
 #include <sys/scheduler.h>
 #include <sys/syscall.h>
@@ -259,4 +261,30 @@ void syscall_get_fb_info(union syscall_args* args) {
     puts("Argument out of range");
     terminate_current_task(&args->registers);
   }
+}
+void syscall_get_acpi_table(union syscall_args* args) {
+  if (args->arg4) {
+    puts("Reserved argument is set");
+    terminate_current_task(&args->registers);
+    return;
+  }
+  if (!has_process_capability(current_task->process, CAP_ACPI)) {
+    puts("No permission to get ACPI table");
+    terminate_current_task(&args->registers);
+    return;
+  }
+  char name[4] = {
+    args->arg0,
+    args->arg1,
+    args->arg2,
+    args->arg3};
+  struct acpi_header* table = acpi_find_table(name, 0);
+  if (!table) {
+    args->return_value = 0;
+    return;
+  }
+  args->return_value = get_free_range(table->size, 0, 0, 0x1000);
+  set_paging_flags(args->return_value, table->size, 0, 1, 0);
+  memcpy((void*) args->return_value, table, table->size);
+  set_paging_flags(args->return_value, table->size, 1, 0, 0);
 }

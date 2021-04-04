@@ -11,7 +11,8 @@ enum {
   CAP_IRQ,
   CAP_MAP_MEMORY,
   CAP_GET_FB_INFO,
-  CAP_PRIORITY
+  CAP_PRIORITY,
+  CAP_ACPI
 };
 
 struct process {
