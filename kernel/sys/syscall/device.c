@@ -179,7 +179,7 @@ void syscall_wait_irq(union syscall_args* args) {
   block_current_task(&args->registers);
 }
 void syscall_map_phys_memory(union syscall_args* args) {
-  if (args->arg2 || args->arg3 || args->arg4) {
+  if (args->arg3 || args->arg4) {
     puts("Reserved argument is set");
     terminate_current_task(&args->registers);
     return;
@@ -194,19 +194,30 @@ void syscall_map_phys_memory(union syscall_args* args) {
     terminate_current_task(&args->registers);
     return;
   }
-  if (!current_task->spawned_process) {
+  if (args->arg2 >= 2) {
+    puts("Argument out of range");
+    terminate_current_task(&args->registers);
+    return;
+  }
+  if (args->arg2 && !current_task->spawned_process) {
     puts("No process is currently being spawned");
     terminate_current_task(&args->registers);
     return;
   }
-  switch_pml4(current_task->spawned_process->address_space);
-  physical_mappings_process = current_task->spawned_process;
+  if (args->arg2) {
+    switch_pml4(current_task->spawned_process->address_space);
+    physical_mappings_process = current_task->spawned_process;
+  } else {
+    physical_mappings_process = current_task->process;
+  }
   args->return_value = get_free_ipc_range(args->arg1);
   for (size_t i = 0; i < args->arg1; i += 0x1000) {
     create_mapping(args->return_value + i, args->arg0 + i, 1, 1, 0, 1);
   }
   physical_mappings_process = 0;
-  switch_pml4(current_task->process->address_space);
+  if (args->arg2) {
+    switch_pml4(current_task->process->address_space);
+  }
 }
 void syscall_get_fb_info(union syscall_args* args) {
   if (args->arg1 || args->arg2 || args->arg3 || args->arg4) {
