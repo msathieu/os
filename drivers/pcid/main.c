@@ -20,7 +20,7 @@ static void pci_writew(uint8_t bus, uint8_t device, uint8_t function, uint8_t of
   uint32_t current_value = pci_readl(bus, device, function, offset);
   current_value &= ~(0xffff << ((offset & 2) * 8));
   current_value |= value << ((offset & 2) * 8);
-  pci_writel(bus, device, function, offset, value);
+  pci_writel(bus, device, function, offset, current_value);
 }
 static uint8_t pci_readb(uint8_t bus, uint8_t device, uint8_t function, uint8_t offset) {
   return pci_readl(bus, device, function, offset) >> ((offset & 3) * 8);
@@ -29,7 +29,7 @@ static void pci_writeb(uint8_t bus, uint8_t device, uint8_t function, uint8_t of
   uint32_t current_value = pci_readl(bus, device, function, offset);
   current_value &= ~(0xff << ((offset & 3) * 8));
   current_value |= value << ((offset & 3) * 8);
-  pci_writel(bus, device, function, offset, value);
+  pci_writel(bus, device, function, offset, current_value);
 }
 static int64_t access_handler(uint64_t write, uint64_t width, uint64_t address, uint64_t value, uint64_t arg4) {
   if (arg4) {
