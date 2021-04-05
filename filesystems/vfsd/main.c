@@ -184,9 +184,12 @@ static int64_t handle_transfer(uint64_t fd_num, uint64_t arg1, uint64_t arg2, ui
           if (write) {
             call = IPC_VFSD_FS_WRITE;
           }
-          size_t transferred_size = send_pid_ipc_call(mounts[fd->mount].pid, call, fd->file_num, fd->position, 0, address, size);
-          fd->position += transferred_size;
-          return transferred_size;
+          int64_t return_value = send_pid_ipc_call(mounts[fd->mount].pid, call, fd->file_num, fd->position, 0, address, size);
+          if (return_value < 0) {
+            return 0;
+          }
+          fd->position += return_value;
+          return return_value;
         }
       }
       break;
