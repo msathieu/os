@@ -2,9 +2,10 @@
 #include <string.h>
 
 int puts(const char* str) {
-  int return_value = fputs(str, stdout);
-  if (return_value == EOF) {
-    return EOF;
-  }
-  return putchar('\n');
+  size_t size = strlen(str);
+  char buffer[size + 2];
+  strcpy(buffer, str);
+  buffer[size] = '\n';
+  buffer[size + 1] = 0;
+  return fputs(buffer, stdout);
 }

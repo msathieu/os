@@ -107,6 +107,7 @@ int main(void) {
   spawn("/sbin/ps2d");
   while (1) {
     pid_t pid = wait(0);
+    sleep(5);
     for (size_t i = 0; i < sizeof(services) / sizeof(struct service); i++) {
       if (services[i].pid == pid) {
         if (!strcmp(services[i].name, "ipcd")) {
