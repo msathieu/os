@@ -5,7 +5,7 @@ OBJCOPY:=llvm-objcopy
 CFLAGS+=--target=i686-elf -ffreestanding --sysroot=/dev/null -fstack-protector-strong -mretpoline -mno-mmx -mno-sse -flto -fbuiltin -Ilibc/include
 ASFLAGS:=--target=i686-elf -c
 
-LIBC:=$(patsubst %.c, %.o, $(wildcard libc/*/*.c))
+LIBC:=$(patsubst %.c, %.o, $(wildcard libc/*/*.c) $(wildcard libc/arch/generic/*.c))
 SFILES:=$(wildcard cpu/*.s)
 CFILES:=main.c $(wildcard */*.c)
 PUBKEY:=$(wildcard public.key)

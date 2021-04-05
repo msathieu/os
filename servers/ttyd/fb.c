@@ -98,7 +98,7 @@ void put_character(char c, size_t fb) {
     current_y[fb]++;
   }
   if (current_y[fb] == height) {
-    memcpy(framebuffer[fb], framebuffer[fb] + 16 * fb_pitch, (fb_height - 16) * fb_pitch);
+    memmove(framebuffer[fb], framebuffer[fb] + 16 * fb_pitch, (fb_height - 16) * fb_pitch);
     memset(framebuffer[fb] + (fb_height - 16) * fb_pitch, 0, 16 * fb_pitch);
     if (fb == selected_framebuffer) {
       send_ipc_call("fbd", IPC_FBD_COPY, 0, 0, 0, (uintptr_t) framebuffer[fb], fb_height * fb_pitch);

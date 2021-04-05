@@ -1,7 +1,7 @@
 CFLAGS+=-ffreestanding
 
 CFILES:=$(wildcard freestanding/*/*.c) $(wildcard */*.c)
-SFILES:=$(wildcard */*.s)
+SFILES:=$(wildcard freestanding/arch/x86_64/*.s) $(wildcard */*.s)
 OFILES:=$(patsubst %.c, %.o, $(CFILES)) $(patsubst %.s, %.o, $(SFILES))
 
 install: $(DESTDIR)/lib/libc.a crt0.o
