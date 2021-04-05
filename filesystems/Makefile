@@ -9,5 +9,5 @@ $(PROGRAMS): $$(patsubst %.c, %.o, $$(wildcard $$(notdir $$@)/*.c)) $(patsubst %
 $(DEVICES): $(DESTDIR)/sbin/dev-%: dev/%.o
 	$(CC) -s -o $@ $^
 %.o: %.key
-	$(OBJCOPY) -O elf64-x86-64 -I binary $< $@
+	$(OBJCOPY) -O elf64-x86-64 -I binary $^ $@
 -include $(wildcard */*.d)

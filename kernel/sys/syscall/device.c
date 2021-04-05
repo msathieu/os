@@ -52,7 +52,7 @@ void syscall_access_ioport(union syscall_args* args) {
     terminate_current_task(&args->registers);
     return;
   }
-  if (ioports_pid[args->arg0] != current_task->process->pid) {
+  if (ioports_pid[args->arg0] != current_task->process->pid && !has_process_capability(current_task->process, CAP_IOPORT)) {
     puts("No permission to access port");
     terminate_current_task(&args->registers);
     return;

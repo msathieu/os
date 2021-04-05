@@ -7,3 +7,6 @@
 [submodule "libc/freestanding"]
   path = libc/freestanding
   url = https://github.com/MSathieu/freestanding-libc
+[submodule "acpid/lai"]
+  path = acpid/lai
+  url = https://github.com/managarm/lai

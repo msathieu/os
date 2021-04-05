@@ -79,6 +79,7 @@ jobs:
           name: drivers
           path: |
             boot/boot/atad
+            boot/boot/pcid
       - name: Upload servers
         if: ${{ matrix.os == 'ubuntu-20.04' }}
         uses: actions/upload-artifact@v2
@@ -94,6 +95,7 @@ jobs:
         with:
           name: filesystems
           path: |
+            boot/boot/lvmd
             boot/boot/mbrd
             boot/boot/svfsd
             boot/boot/vfsd

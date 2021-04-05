@@ -18,6 +18,7 @@ struct service {
 };
 
 struct service services[] = {
+  {"acpid", 1, 0, {[CAP_NAMESPACE_KERNEL] = 1 << CAP_KERNEL_IOPORT | 1 << CAP_KERNEL_MAP_MEMORY | 1 << CAP_KERNEL_ACPI, [CAP_NAMESPACE_DRIVERS] = 1 << CAP_PCID_ACCESS}, "acpid"},
   {"argd", 1, 0, {}, "argd"},
   {"atad", 1, 0, {[CAP_NAMESPACE_FILESYSTEMS] = 1 << CAP_VFSD_MOUNT}, 0},
   {"ipcd", 1, 0, {}, 0},
@@ -94,6 +95,7 @@ int main(void) {
   spawn("logd");
   spawn("argd");
   spawn("pcid");
+  spawn("acpid");
   spawn("vfsd");
   spawn("atad");
   spawn("/sbin/devd");

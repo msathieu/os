@@ -15,5 +15,5 @@ $(LIBC): CFLAGS+=-fno-builtin
 $(DESTDIR)/boot/kernel.bin: $(OFILES) $(LIBC)
 	$(CC) --target=x86_64-$(LDTARGET) -fuse-ld=lld -flto -static -nostdlib -s -T link.ld -o $@ $^
 %.o: %.key
-	$(OBJCOPY) -O elf64-x86-64 -I binary $< $@
+	$(OBJCOPY) -O elf64-x86-64 -I binary $^ $@
 -include $(OFILES:.o=.d)

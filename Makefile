@@ -42,6 +42,7 @@ build:
 	$(MAKE) -Clibraries
 	$(MAKE) -Cinit
 	$(MAKE) -Cdrivers
+	$(MAKE) -Cacpid
 	$(MAKE) -Cservers
 	-cp -n public.key filesystems
 	$(MAKE) -Cfilesystems
