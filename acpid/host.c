@@ -30,10 +30,10 @@ void* laihost_map(uintptr_t address, size_t size) {
 }
 void laihost_unmap(__attribute__((unused)) void* ptr, __attribute__((unused)) size_t size) {
 }
-void* laihost_scan(char* signature, __attribute__((unused)) size_t index) {
+void* laihost_scan(char* signature, size_t index) {
   char os_signature[5];
   strncpy(os_signature, signature, 4);
-  return (void*) _syscall(_SYSCALL_GET_ACPI_TABLE, os_signature[0], os_signature[1], os_signature[2], os_signature[3], 0);
+  return (void*) _syscall(_SYSCALL_GET_ACPI_TABLE, os_signature[0], os_signature[1], os_signature[2], os_signature[3], index);
 }
 void laihost_outb(uint16_t port, uint8_t value) {
   outb(port, value);

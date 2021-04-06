@@ -25,7 +25,7 @@ static void check_checksum(struct acpi_header* header) {
     panic("Invalid checksum");
   }
 }
-struct acpi_header* acpi_find_table(const char* signature, bool panic) {
+struct acpi_header* acpi_find_table(const char* signature, bool panic, size_t index) {
   if (!memcmp(signature, "DSDT", 4)) {
     struct acpi_header* dsdt = map_physical(fadt->dsdt, sizeof(struct acpi_header), 0, 0);
     dsdt = map_physical(fadt->dsdt, dsdt->size, 0, 0);
@@ -33,7 +33,7 @@ struct acpi_header* acpi_find_table(const char* signature, bool panic) {
     return dsdt;
   } else {
     for (size_t i = 0; i < nheaders; i++) {
-      if (!memcmp(headers[i]->signature, signature, 4)) {
+      if (!memcmp(headers[i]->signature, signature, 4) && !index--) {
         struct acpi_header* header = map_physical(convert_to_physical((uintptr_t) headers[i], current_pml4), headers[i]->size, 0, 0);
         check_checksum(header);
         return header;
@@ -72,7 +72,7 @@ void parse_acpi(void) {
       headers[i] = map_physical(rsdt->tables[i], sizeof(struct acpi_header), 0, 0);
     }
   }
-  fadt = (struct fadt*) acpi_find_table("FACP", 1);
-  parse_madt(acpi_find_table("APIC", 1));
-  setup_hpet(acpi_find_table("HPET", 1));
+  fadt = (struct fadt*) acpi_find_table("FACP", 1, 0);
+  parse_madt(acpi_find_table("APIC", 1, 0));
+  setup_hpet(acpi_find_table("HPET", 1, 0));
 }

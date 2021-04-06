@@ -263,11 +263,6 @@ void syscall_get_fb_info(union syscall_args* args) {
   }
 }
 void syscall_get_acpi_table(union syscall_args* args) {
-  if (args->arg4) {
-    puts("Reserved argument is set");
-    terminate_current_task(&args->registers);
-    return;
-  }
   if (!has_process_capability(current_task->process, CAP_ACPI)) {
     puts("No permission to get ACPI table");
     terminate_current_task(&args->registers);
@@ -278,7 +273,7 @@ void syscall_get_acpi_table(union syscall_args* args) {
     args->arg1,
     args->arg2,
     args->arg3};
-  struct acpi_header* table = acpi_find_table(name, 0);
+  struct acpi_header* table = acpi_find_table(name, 0, args->arg4);
   if (!table) {
     args->return_value = 0;
     return;

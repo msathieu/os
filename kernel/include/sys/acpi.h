@@ -1,5 +1,6 @@
 #pragma once
 #include <stdbool.h>
+#include <stddef.h>
 #include <stdint.h>
 
 struct acpi_rsdp {
@@ -44,5 +45,5 @@ struct generic_address_structure {
   uint64_t address;
 } __attribute__((packed));
 
-struct acpi_header* acpi_find_table(const char*, bool);
+struct acpi_header* acpi_find_table(const char*, bool, size_t);
 void parse_acpi(void);
