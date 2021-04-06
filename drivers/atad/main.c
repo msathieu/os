@@ -34,7 +34,7 @@ static void identify(int bus, int drive) {
     return;
   }
   while (1) {
-    uint8_t status = inb(alternate_ports[bus]);
+    uint8_t status = inb(base_ports[bus] + ATA_PORT_COMMAND);
     if (status & ATA_STATUS_ERR) {
       syslog(LOG_ERR, "Error identifying drive %d on bus %d", drive, bus);
       return;
