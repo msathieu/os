@@ -26,7 +26,7 @@ _Noreturn void kmain(unsigned long magic, uintptr_t structptr) {
   setup_heap();
   disable_pic();
   parse_acpi();
-  start_aps();
   setup_lapic_timer(0);
+  start_aps();
   setup_multitasking();
 }

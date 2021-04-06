@@ -34,5 +34,11 @@ int main(void) {
   mbr.partitions[1].num_sectors = (iso_size + 511) / 512 - mbr.partitions[1].lba_start;
   rewind(iso_file);
   fwrite(&mbr, sizeof(struct mbr), 1, iso_file);
+  fseek(iso_file, 0, SEEK_END);
+  size_t size = ftell(iso_file);
+  if (size % 2048) {
+    uint8_t null[2048] = {0};
+    fwrite(null, 1, 2048 - size % 2048, iso_file);
+  }
   fclose(iso_file);
 }

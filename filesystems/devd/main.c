@@ -52,7 +52,7 @@ static int64_t register_device_handler(uint64_t arg0, uint64_t arg1, uint64_t ar
     }
   }
   free(buffer);
-  syslog(LOG_ERR, "Reached maximum number of devices");
+  syslog(LOG_CRIT, "Reached maximum number of devices");
   return -IPC_ERR_PROGRAM_DEFINED;
 }
 static int64_t open_handler(__attribute__((unused)) uint64_t mode, uint64_t arg1, uint64_t arg2, uint64_t address, uint64_t size) {

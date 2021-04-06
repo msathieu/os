@@ -80,7 +80,7 @@ static int64_t mount_handler(uint64_t arg0, uint64_t arg1, uint64_t arg2, uint64
     }
   }
   free(buffer);
-  syslog(LOG_ERR, "Reached maximum number of mounts");
+  syslog(LOG_CRIT, "Reached maximum number of mounts");
   return -IPC_ERR_PROGRAM_DEFINED;
 }
 static int64_t open_file_handler(uint64_t mode, uint64_t arg1, uint64_t arg2, uint64_t address, uint64_t size) {

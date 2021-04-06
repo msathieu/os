@@ -27,7 +27,7 @@ build-grub: build-multiboot
 	cp -r sysroot/sbin system
 	tools/bin/svfs
 	tools/bin/lvm
-	dd if=lvm.img >> os.iso
+	cat lvm.img >> os.iso
 	tools/bin/mbr
 build-multiboot: build
 	-cp -n public.key loader-mb

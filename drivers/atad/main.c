@@ -12,6 +12,9 @@ static uint16_t alternate_ports[] = {0x3f6, 0x376};
 static pid_t child_pid[4];
 
 static void identify(int bus, int drive) {
+  if (inb(alternate_ports[bus]) == 0xff) {
+    return;
+  }
   if (drive) {
     outb(base_ports[bus] + ATA_PORT_DRIVE, ATA_DRIVE_SLAVE);
   } else {
