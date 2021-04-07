@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <unistd.h>
 
 int main(int argc, char* argv[]) {
   int exit = 0;
@@ -9,11 +10,12 @@ int main(int argc, char* argv[]) {
       continue;
     }
     while (1) {
-      int c = getc(file);
-      if (c == EOF) {
+      char buffer[1024];
+      size_t size = read(fileno(file), buffer, 1024);
+      if (!size) {
         break;
       }
-      putchar(c);
+      fwrite(buffer, 1, size, stdout);
     }
     fclose(file);
   }

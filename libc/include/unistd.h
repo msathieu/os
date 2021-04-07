@@ -6,5 +6,7 @@
 pid_t getpid(void);
 pid_t getppid(void);
 uid_t getuid(void);
+ssize_t read(int fd, void* buffer, size_t size);
 unsigned sleep(unsigned duration);
 long sysconf(int name);
+ssize_t write(int fd, const void* buffer, size_t size);
