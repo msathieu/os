@@ -10,6 +10,7 @@
 static uint16_t base_ports[] = {0x1f0, 0x170};
 static uint16_t alternate_ports[] = {0x3f6, 0x376};
 static pid_t child_pid[4];
+static bool is_atapi[4];
 
 static void identify(int bus, int drive) {
   if (inb(alternate_ports[bus]) == 0xff) {
@@ -31,7 +32,10 @@ static void identify(int bus, int drive) {
   while (inb(alternate_ports[bus]) & ATA_STATUS_BSY)
     ;
   if (inb(base_ports[bus] + ATA_PORT_LBAMIDDLE) || inb(base_ports[bus] + ATA_PORT_LBAHIGH)) {
-    return;
+    is_atapi[bus * 2 + drive] = 1;
+    outb(base_ports[bus] + ATA_PORT_COMMAND, ATAPI_CMD_IDENTIFY);
+    while (inb(alternate_ports[bus]) & ATA_STATUS_BSY)
+      ;
   }
   while (1) {
     uint8_t status = inb(base_ports[bus] + ATA_PORT_COMMAND);
@@ -52,22 +56,48 @@ static void identify(int bus, int drive) {
   }
 }
 static void prepare_transfer(int bus, int drive, size_t lba) {
-  if (drive) {
-    outb(base_ports[bus] + ATA_PORT_DRIVE, ATA_DRIVE_SLAVE_PIO | ((lba >> 24) & 0xf));
+  if (is_atapi[bus * 2 + drive]) {
+    outb(base_ports[bus] + ATA_PORT_DRIVE, drive << 4);
   } else {
-    outb(base_ports[bus] + ATA_PORT_DRIVE, ATA_DRIVE_MASTER_PIO | ((lba >> 24) & 0xf));
+    outb(base_ports[bus] + ATA_PORT_DRIVE, ATA_DRIVE_PIO | drive << 4 | ((lba >> 24) & 0xf));
   }
-  outb(base_ports[bus] + ATA_PORT_SECTOR_COUNT, 1);
-  outb(base_ports[bus] + ATA_PORT_LBALOW, lba);
-  outb(base_ports[bus] + ATA_PORT_LBAMIDDLE, lba >> 8);
-  outb(base_ports[bus] + ATA_PORT_LBAHIGH, lba >> 16);
+  if (is_atapi[bus * 2 + drive]) {
+    outb(base_ports[bus] + ATA_PORT_FEATURES, 0);
+    outb(base_ports[bus] + ATA_PORT_LBAMIDDLE, (uint8_t) ATAPI_SECTOR);
+    outb(base_ports[bus] + ATA_PORT_LBAHIGH, ATAPI_SECTOR >> 8);
+    outb(base_ports[bus] + ATA_PORT_COMMAND, ATAPI_CMD_PACKET);
+    while (inb(alternate_ports[bus]) & ATA_STATUS_BSY)
+      ;
+    while (!(inb(alternate_ports[bus]) & ATA_STATUS_DRQ))
+      ;
+  } else {
+    outb(base_ports[bus] + ATA_PORT_SECTOR_COUNT, 1);
+    outb(base_ports[bus] + ATA_PORT_LBALOW, lba);
+    outb(base_ports[bus] + ATA_PORT_LBAMIDDLE, lba >> 8);
+    outb(base_ports[bus] + ATA_PORT_LBAHIGH, lba >> 16);
+  }
 }
 static void read(int bus, int drive, size_t lba, uint16_t* buffer) {
   prepare_transfer(bus, drive, lba);
-  outb(base_ports[bus] + ATA_PORT_COMMAND, ATA_CMD_READ);
+  if (is_atapi[bus * 2 + drive]) {
+    uint8_t cmd[12] = {ATAPI_CMD_READ, 0, lba >> 24, lba >> 16, lba >> 8, lba, 0, 0, 0, 1, 0, 0};
+    for (size_t i = 0; i < 6; i++) {
+      outw(base_ports[bus], ((uint16_t*) cmd)[i]);
+    }
+  } else {
+    outb(base_ports[bus] + ATA_PORT_COMMAND, ATA_CMD_READ);
+  }
   wait_irq();
-  for (size_t i = 0; i < 256; i++) {
+  size_t sector = ATA_SECTOR;
+  if (is_atapi[bus * 2 + drive]) {
+    sector = ATAPI_SECTOR;
+  }
+  for (size_t i = 0; i < sector / 2; i++) {
     buffer[i] = inw(base_ports[bus]);
+  }
+  if (is_atapi[bus * 2 + drive]) {
+    while (inb(alternate_ports[bus]) & (ATA_STATUS_BSY | ATA_STATUS_DRQ))
+      ;
   }
 }
 static void write(int bus, int drive, size_t lba, uint16_t* buffer) {
@@ -96,13 +126,17 @@ static int64_t read_handler(uint64_t offset, uint64_t arg1, uint64_t arg2, uint6
       break;
     }
   }
-  uint16_t buffer[256];
-  read(bus, drive, offset / 512, buffer);
-  size_t initial_size = 512 - offset % 512;
+  size_t sector = ATA_SECTOR;
+  if (is_atapi[bus * 2 + drive]) {
+    sector = ATAPI_SECTOR;
+  }
+  uint16_t buffer[sector / 2];
+  read(bus, drive, offset / sector, buffer);
+  size_t initial_size = sector - offset % sector;
   if (initial_size > size) {
     initial_size = size;
   }
-  memcpy((void*) address, (void*) buffer + offset % 512, initial_size);
+  memcpy((void*) address, (void*) buffer + offset % sector, initial_size);
   address += initial_size;
   size_t total_size;
   if (__builtin_uaddl_overflow(offset, size, &total_size)) {
@@ -110,17 +144,17 @@ static int64_t read_handler(uint64_t offset, uint64_t arg1, uint64_t arg2, uint6
     return -IPC_ERR_INVALID_ARGUMENTS;
   }
   size_t aligned_size;
-  if (__builtin_uaddl_overflow(total_size, 511, &aligned_size)) {
+  if (__builtin_uaddl_overflow(total_size, sector - 1, &aligned_size)) {
     syslog(LOG_DEBUG, "Can't access this much data");
     return -IPC_ERR_INVALID_ARGUMENTS;
   }
-  for (size_t i = offset / 512 + 1; i < aligned_size / 512; i++) {
-    if (total_size - i * 512 >= 512) {
+  for (size_t i = offset / sector + 1; i < aligned_size / sector; i++) {
+    if (total_size - i * sector >= sector) {
       read(bus, drive, i, (uint16_t*) address);
-      address += 512;
+      address += sector;
     } else {
       read(bus, drive, i, buffer);
-      size_t copy_size = total_size - i * 512;
+      size_t copy_size = total_size - i * sector;
       memcpy((void*) address, (void*) buffer, copy_size);
     }
   }
@@ -143,6 +177,10 @@ static int64_t write_handler(uint64_t offset, uint64_t arg1, uint64_t arg2, uint
       drive = i % 2;
       break;
     }
+  }
+  if (is_atapi[bus * 2 + drive]) {
+    syslog(LOG_DEBUG, "Can't write to ATAPI drive");
+    return -IPC_ERR_PROGRAM_DEFINED;
   }
   uint16_t buffer[256];
   read(bus, drive, offset / 512, buffer);

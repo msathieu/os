@@ -106,7 +106,7 @@ static int64_t write_handler(uint64_t file_num, uint64_t offset, uint64_t arg2, 
   }
   if (offset > (size_t) 1 << 32) {
     syslog(LOG_DEBUG, "Offset is too big");
-    return -IPC_ERR_INSUFFICIENT_PRIVILEGE;
+    return -IPC_ERR_INVALID_ARGUMENTS;
   }
   struct file* file = 0;
   for (struct file* file_i = (struct file*) files_list.first; file_i; file_i = (struct file*) file_i->list_member.next) {
