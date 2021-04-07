@@ -231,7 +231,7 @@ static int64_t seek_file_handler(uint64_t fd_num, uint64_t mode, uint64_t arg_po
             fd->position += position;
             break;
           }
-          return 0;
+          return fd->position;
         }
       }
       break;

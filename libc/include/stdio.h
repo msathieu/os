@@ -24,6 +24,8 @@ int fputs(const char* restrict str, FILE* restrict file);
 size_t fread(void* restrict buffer, size_t size, size_t num, FILE* restrict file);
 int fseek(FILE* file, long position, int mode);
 int fseeko(FILE* file, off_t position, int mode);
+long ftell(FILE* file);
+off_t ftello(FILE* file);
 size_t fwrite(const void* restrict buffer, size_t size, size_t num, FILE* restrict file);
 int getc(FILE* file);
 int putc(int c, FILE* file);
