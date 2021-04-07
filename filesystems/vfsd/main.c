@@ -3,6 +3,7 @@
 #include <ipccalls.h>
 #include <linked_list.h>
 #include <sched.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <syslog.h>
@@ -207,9 +208,13 @@ static int64_t read_file_handler(uint64_t fd_num, uint64_t arg1, uint64_t arg2, 
 static int64_t write_file_handler(uint64_t fd_num, uint64_t arg1, uint64_t arg2, uint64_t address, uint64_t size) {
   return handle_transfer(fd_num, arg1, arg2, address, size, 1);
 }
-static int64_t seek_file_handler(uint64_t fd_num, uint64_t position, uint64_t arg2, uint64_t arg3, uint64_t arg4) {
-  if (arg2 || arg3 || arg4) {
+static int64_t seek_file_handler(uint64_t fd_num, uint64_t mode, uint64_t arg_position, uint64_t arg3, uint64_t arg4) {
+  if (arg3 || arg4) {
     syslog(LOG_DEBUG, "Reserved argument is set");
+    return -IPC_ERR_INVALID_ARGUMENTS;
+  }
+  if (mode >= 2) {
+    syslog(LOG_DEBUG, "Argument out of range");
     return -IPC_ERR_INVALID_ARGUMENTS;
   }
   pid_t caller_pid = get_ipc_caller_pid();
@@ -217,7 +222,15 @@ static int64_t seek_file_handler(uint64_t fd_num, uint64_t position, uint64_t ar
     if (process->pid == caller_pid) {
       for (struct fd* fd = (struct fd*) process->fd_list.first; fd; fd = (struct fd*) fd->list_member.next) {
         if (fd->fd == fd_num) {
-          fd->position = position;
+          long position = arg_position;
+          switch (mode) {
+          case SEEK_SET:
+            fd->position = position;
+            break;
+          case SEEK_CUR:
+            fd->position += position;
+            break;
+          }
           return 0;
         }
       }
