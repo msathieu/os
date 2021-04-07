@@ -20,7 +20,9 @@ static int64_t print_handler(__attribute__((unused)) uint64_t offset, uint64_t a
     return -IPC_ERR_INSUFFICIENT_PRIVILEGE;
   }
   for (size_t i = 0; i < size; i++) {
-    put_character(((char*) address)[i], fb);
+    if (((char*) address)[i]) {
+      put_character(((char*) address)[i], fb);
+    }
   }
   update_fb();
   return size;
