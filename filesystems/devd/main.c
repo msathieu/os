@@ -55,7 +55,7 @@ static int64_t register_device_handler(uint64_t arg0, uint64_t arg1, uint64_t ar
   syslog(LOG_CRIT, "Reached maximum number of devices");
   return -IPC_ERR_PROGRAM_DEFINED;
 }
-static int64_t open_handler(__attribute__((unused)) uint64_t mode, uint64_t arg1, uint64_t arg2, uint64_t address, uint64_t size) {
+static int64_t open_handler(__attribute__((unused)) uint64_t flags, uint64_t arg1, uint64_t arg2, uint64_t address, uint64_t size) {
   if (arg1 || arg2) {
     syslog(LOG_DEBUG, "Reserved argument is set");
     return -IPC_ERR_INVALID_ARGUMENTS;

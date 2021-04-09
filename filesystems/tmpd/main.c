@@ -1,5 +1,6 @@
 #include <capability.h>
 #include <ctype.h>
+#include <fcntl.h>
 #include <ipccalls.h>
 #include <linked_list.h>
 #include <stdlib.h>
@@ -18,7 +19,7 @@ struct file {
 static struct linked_list files_list;
 static size_t next_file_i = 0;
 
-static int64_t open_handler(uint64_t mode, uint64_t arg1, uint64_t arg2, uint64_t address, uint64_t size) {
+static int64_t open_handler(uint64_t flags, uint64_t arg1, uint64_t arg2, uint64_t address, uint64_t size) {
   if (arg1 || arg2) {
     syslog(LOG_DEBUG, "Reserved argument is set");
     return -IPC_ERR_INVALID_ARGUMENTS;
@@ -41,14 +42,14 @@ static int64_t open_handler(uint64_t mode, uint64_t arg1, uint64_t arg2, uint64_
   for (struct file* file = (struct file*) files_list.first; file; file = (struct file*) file->list_member.next) {
     if (!strcmp(file->path, buffer)) {
       free(buffer);
-      if (mode == 1) {
+      if (flags & O_TRUNC) {
         free(file->data);
         file->size = 0;
       }
       return file->file_i;
     }
   }
-  if (mode == 1) {
+  if (flags & O_CREAT) {
     for (size_t i = 0; i < size - 1; i++) {
       if (!isprint(buffer[i]) || buffer[i] == '/') {
         free(buffer);

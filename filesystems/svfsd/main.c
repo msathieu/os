@@ -1,4 +1,5 @@
 #include <capability.h>
+#include <fcntl.h>
 #include <ipccalls.h>
 #include <monocypher.h>
 #include <stdlib.h>
@@ -25,7 +26,7 @@ static struct svfs_header* header;
 static pid_t parent_pid;
 __attribute__((weak)) extern int _binary_public_key_start;
 
-static int64_t open_handler(uint64_t mode, uint64_t arg1, uint64_t arg2, uint64_t address, uint64_t size) {
+static int64_t open_handler(uint64_t flags, uint64_t arg1, uint64_t arg2, uint64_t address, uint64_t size) {
   if (arg1 || arg2) {
     syslog(LOG_DEBUG, "Reserved argument is set");
     return -IPC_ERR_INVALID_ARGUMENTS;
@@ -34,7 +35,8 @@ static int64_t open_handler(uint64_t mode, uint64_t arg1, uint64_t arg2, uint64_
     syslog(LOG_DEBUG, "Not allowed to open file");
     return -IPC_ERR_INSUFFICIENT_PRIVILEGE;
   }
-  if (mode) {
+  if (flags & (O_RDWR | O_WRONLY)) {
+    syslog(LOG_DEBUG, "Not allowed to write to file");
     return -IPC_ERR_INSUFFICIENT_PRIVILEGE;
   }
   for (size_t i = 0; i < header->nfiles; i++) {

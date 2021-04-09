@@ -1,5 +1,6 @@
 #include <capability.h>
 #include <ctype.h>
+#include <fcntl.h>
 #include <ipccalls.h>
 #include <linked_list.h>
 #include <sched.h>
@@ -14,6 +15,7 @@ struct fd {
   size_t mount;
   size_t file_num;
   size_t position;
+  size_t flags;
 };
 struct process {
   struct linked_list_member list_member;
@@ -84,7 +86,7 @@ static int64_t mount_handler(uint64_t arg0, uint64_t arg1, uint64_t arg2, uint64
   syslog(LOG_CRIT, "Reached maximum number of mounts");
   return -IPC_ERR_PROGRAM_DEFINED;
 }
-static int64_t open_file_handler(uint64_t mode, uint64_t arg1, uint64_t arg2, uint64_t address, uint64_t size) {
+static int64_t open_file_handler(uint64_t flags, uint64_t arg1, uint64_t arg2, uint64_t address, uint64_t size) {
   if (arg1 || arg2) {
     syslog(LOG_DEBUG, "Reserved argument is set");
     return -IPC_ERR_INVALID_ARGUMENTS;
@@ -92,6 +94,15 @@ static int64_t open_file_handler(uint64_t mode, uint64_t arg1, uint64_t arg2, ui
   if (!ready) {
     blocked_calls++;
     return -IPC_ERR_BLOCK;
+  }
+  size_t access_flags = flags & (O_RDONLY | O_RDWR | O_WRONLY);
+  if (access_flags != O_RDONLY && access_flags != O_RDWR && access_flags != O_WRONLY) {
+    syslog(LOG_DEBUG, "Invalid flags");
+    return -IPC_ERR_INVALID_ARGUMENTS;
+  }
+  if ((flags & O_RDONLY) && (flags & O_TRUNC)) {
+    syslog(LOG_DEBUG, "Invalid flags");
+    return -IPC_ERR_INVALID_ARGUMENTS;
   }
   char* buffer = malloc(size);
   memcpy(buffer, (void*) address, size);
@@ -120,7 +131,7 @@ static int64_t open_file_handler(uint64_t mode, uint64_t arg1, uint64_t arg2, ui
   }
   long file_num = -IPC_ERR_INVALID_PID;
   while (file_num == -IPC_ERR_INVALID_PID) {
-    file_num = send_pid_ipc_call(mounts[mount_i].pid, IPC_VFSD_FS_OPEN, mode, 0, 0, (uintptr_t) buffer + mount_size, size - mount_size);
+    file_num = send_pid_ipc_call(mounts[mount_i].pid, IPC_VFSD_FS_OPEN, flags, 0, 0, (uintptr_t) buffer + mount_size, size - mount_size);
     if (file_num == -IPC_ERR_INVALID_PID) {
       sched_yield();
     }
@@ -147,6 +158,7 @@ static int64_t open_file_handler(uint64_t mode, uint64_t arg1, uint64_t arg2, ui
   fd->mount = mount_i;
   fd->file_num = file_num;
   fd->fd = process->next_fd++;
+  fd->flags = flags;
   insert_linked_list(&process->fd_list, &fd->list_member);
   return fd->fd;
 }
@@ -181,6 +193,14 @@ static int64_t handle_transfer(uint64_t fd_num, uint64_t arg1, uint64_t arg2, ui
     if (process->pid == caller_pid) {
       for (struct fd* fd = (struct fd*) process->fd_list.first; fd; fd = (struct fd*) fd->list_member.next) {
         if (fd->fd == fd_num) {
+          if (write && !(fd->flags & (O_RDWR | O_WRONLY))) {
+            syslog(LOG_DEBUG, "File not opened for writing");
+            return 0;
+          }
+          if (!write && !(fd->flags & (O_RDONLY | O_RDWR))) {
+            syslog(LOG_DEBUG, "File not opened for reading");
+            return 0;
+          }
           uint8_t call = IPC_VFSD_FS_READ;
           if (write) {
             call = IPC_VFSD_FS_WRITE;
