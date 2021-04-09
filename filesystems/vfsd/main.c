@@ -10,8 +10,7 @@
 #include <syslog.h>
 
 struct fd {
-  struct linked_list_member list_member;
-  size_t fd;
+  bool exists;
   size_t mount;
   size_t file_num;
   size_t position;
@@ -20,8 +19,8 @@ struct fd {
 struct process {
   struct linked_list_member list_member;
   pid_t pid;
-  struct linked_list fd_list;
-  size_t next_fd;
+  size_t nfds;
+  struct fd fds[];
 };
 struct mount {
   const char* path;
@@ -149,18 +148,35 @@ static int64_t open_file_handler(uint64_t flags, uint64_t arg1, uint64_t arg2, u
     }
   }
   if (!process) {
-    process = calloc(1, sizeof(struct process));
+    process = calloc(1, sizeof(struct process) + 128 * sizeof(struct fd));
     process->pid = caller_pid;
-    process->next_fd = 3;
+    process->nfds = 128;
+    process->fds[0].exists = 1;
+    process->fds[1].exists = 1;
+    process->fds[2].exists = 1;
     insert_linked_list(&process_list, &process->list_member);
   }
-  struct fd* fd = calloc(1, sizeof(struct fd));
+  struct fd* fd = 0;
+  size_t fd_i;
+  for (size_t i = 0; i < process->nfds; i++) {
+    if (!process->fds[i].exists) {
+      fd = &process->fds[i];
+      fd_i = i;
+      break;
+    }
+  }
+  if (!fd) {
+    fd_i = process->nfds;
+    process->nfds += 128;
+    process = realloc(process, sizeof(struct process) + process->nfds * sizeof(struct fd));
+    memset(process + sizeof(struct process) + (process->nfds - 128) * sizeof(struct fd), 0, 128 * sizeof(struct fd));
+    fd = &process->fds[fd_i];
+  }
+  fd->exists = 1;
   fd->mount = mount_i;
   fd->file_num = file_num;
-  fd->fd = process->next_fd++;
   fd->flags = flags;
-  insert_linked_list(&process->fd_list, &fd->list_member);
-  return fd->fd;
+  return fd_i;
 }
 static int64_t close_file_handler(uint64_t fd_num, uint64_t arg1, uint64_t arg2, uint64_t arg3, uint64_t arg4) {
   if (arg1 || arg2 || arg3 || arg4) {
@@ -170,14 +186,12 @@ static int64_t close_file_handler(uint64_t fd_num, uint64_t arg1, uint64_t arg2,
   pid_t caller_pid = get_ipc_caller_pid();
   for (struct process* process = (struct process*) process_list.first; process; process = (struct process*) process->list_member.next) {
     if (process->pid == caller_pid) {
-      for (struct fd* fd = (struct fd*) process->fd_list.first; fd; fd = (struct fd*) fd->list_member.next) {
-        if (fd->fd == fd_num) {
-          remove_linked_list(&process->fd_list, &fd->list_member);
-          free(fd);
-          return 0;
-        }
+      if (fd_num >= process->nfds || !process->fds[fd_num].exists) {
+        syslog(LOG_DEBUG, "File descriptor doesn't exist");
+        return -IPC_ERR_INVALID_ARGUMENTS;
       }
-      break;
+      memset(&process->fds[fd_num], 0, sizeof(struct fd));
+      return 0;
     }
   }
   syslog(LOG_DEBUG, "File descriptor doesn't exist");
@@ -188,36 +202,34 @@ static int64_t handle_transfer(uint64_t fd_num, uint64_t arg1, uint64_t arg2, ui
     syslog(LOG_DEBUG, "Reserved argument is set");
     return -IPC_ERR_INVALID_ARGUMENTS;
   }
+  if (write && (fd_num == 1 || fd_num == 2)) {
+    return send_ipc_call("ttyd", IPC_VFSD_FS_WRITE, 0, 0, 0, address, size);
+  }
   pid_t caller_pid = get_ipc_caller_pid();
   for (struct process* process = (struct process*) process_list.first; process; process = (struct process*) process->list_member.next) {
     if (process->pid == caller_pid) {
-      for (struct fd* fd = (struct fd*) process->fd_list.first; fd; fd = (struct fd*) fd->list_member.next) {
-        if (fd->fd == fd_num) {
-          if (write && !(fd->flags & (O_RDWR | O_WRONLY))) {
-            syslog(LOG_DEBUG, "File not opened for writing");
-            return 0;
-          }
-          if (!write && !(fd->flags & (O_RDONLY | O_RDWR))) {
-            syslog(LOG_DEBUG, "File not opened for reading");
-            return 0;
-          }
-          uint8_t call = IPC_VFSD_FS_READ;
-          if (write) {
-            call = IPC_VFSD_FS_WRITE;
-          }
-          int64_t return_value = send_pid_ipc_call(mounts[fd->mount].pid, call, fd->file_num, fd->position, 0, address, size);
-          if (return_value < 0) {
-            return 0;
-          }
-          fd->position += return_value;
-          return return_value;
-        }
+      if (fd_num >= process->nfds || !process->fds[fd_num].exists) {
+        syslog(LOG_DEBUG, "File descriptor doesn't exist");
+        return -IPC_ERR_INVALID_ARGUMENTS;
       }
-      break;
+      if (write && !(process->fds[fd_num].flags & (O_RDWR | O_WRONLY))) {
+        syslog(LOG_DEBUG, "File not opened for writing");
+        return -IPC_ERR_INSUFFICIENT_PRIVILEGE;
+      }
+      if (!write && !(process->fds[fd_num].flags & (O_RDONLY | O_RDWR))) {
+        syslog(LOG_DEBUG, "File not opened for reading");
+        return -IPC_ERR_INSUFFICIENT_PRIVILEGE;
+      }
+      uint8_t call = IPC_VFSD_FS_READ;
+      if (write) {
+        call = IPC_VFSD_FS_WRITE;
+      }
+      int64_t return_value = send_pid_ipc_call(mounts[process->fds[fd_num].mount].pid, call, process->fds[fd_num].file_num, process->fds[fd_num].position, 0, address, size);
+      if (return_value > 0) {
+        process->fds[fd_num].position += return_value;
+      }
+      return return_value;
     }
-  }
-  if (write && (fd_num == 1 || fd_num == 2)) {
-    return send_ipc_call("ttyd", IPC_VFSD_FS_WRITE, 0, 0, 0, address, size);
   }
   syslog(LOG_DEBUG, "File descriptor doesn't exist");
   return -IPC_ERR_INVALID_ARGUMENTS;
@@ -240,21 +252,20 @@ static int64_t seek_file_handler(uint64_t fd_num, uint64_t mode, uint64_t arg_po
   pid_t caller_pid = get_ipc_caller_pid();
   for (struct process* process = (struct process*) process_list.first; process; process = (struct process*) process->list_member.next) {
     if (process->pid == caller_pid) {
-      for (struct fd* fd = (struct fd*) process->fd_list.first; fd; fd = (struct fd*) fd->list_member.next) {
-        if (fd->fd == fd_num) {
-          long position = arg_position;
-          switch (mode) {
-          case SEEK_SET:
-            fd->position = position;
-            break;
-          case SEEK_CUR:
-            fd->position += position;
-            break;
-          }
-          return fd->position;
-        }
+      if (fd_num >= process->nfds || !process->fds[fd_num].exists) {
+        syslog(LOG_DEBUG, "File descriptor doesn't exist");
+        return -IPC_ERR_INVALID_ARGUMENTS;
       }
-      break;
+      long position = arg_position;
+      switch (mode) {
+      case SEEK_SET:
+        process->fds[fd_num].position = position;
+        break;
+      case SEEK_CUR:
+        process->fds[fd_num].position += position;
+        break;
+      }
+      return process->fds[fd_num].position;
     }
   }
   syslog(LOG_DEBUG, "File descriptor doesn't exist");
