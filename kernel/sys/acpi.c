@@ -12,9 +12,10 @@ struct fadt {
   uint32_t dsdt;
 };
 
-static unsigned short nheaders;
+static size_t nheaders;
 static struct acpi_header** headers;
 static struct fadt* fadt;
+int acpi_revision;
 
 static void check_checksum(struct acpi_header* header) {
   uint8_t checksum = 0;
@@ -47,7 +48,8 @@ struct acpi_header* acpi_find_table(const char* signature, bool panic, size_t in
   }
 }
 void parse_acpi(void) {
-  if (loader_struct.rsdp.revision >= 2) {
+  acpi_revision = loader_struct.rsdp.revision;
+  if (acpi_revision >= 2) {
     struct xsdt* xsdt = map_physical(loader_struct.rsdp.xsdt, sizeof(struct acpi_header), 0, 0);
     if (memcmp(xsdt->header.signature, "XSDT", 4)) {
       panic("Invalid XSDT signature");

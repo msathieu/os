@@ -47,3 +47,5 @@ struct generic_address_structure {
 
 struct acpi_header* acpi_find_table(const char*, bool, size_t);
 void parse_acpi(void);
+
+extern int acpi_revision;
