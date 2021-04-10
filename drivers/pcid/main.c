@@ -4,6 +4,8 @@
 #include <syslog.h>
 #define PCI_ADDRESS 0xcf8
 #define PCI_DATA 0xcfc
+#define PCI_VENDOR_ID 0
+#define PCI_HEADER_TYPE 0xe
 
 static uint32_t pci_readl(uint8_t bus, uint8_t device, uint8_t function, uint8_t offset) {
   outl(PCI_ADDRESS, 0x80000000 | bus << 16 | device << 11 | function << 8 | (offset & 0xfc));
@@ -75,8 +77,24 @@ static int64_t access_handler(uint64_t write, uint64_t width, uint64_t address, 
   }
   return 0;
 }
+void load_device(__attribute__((unused)) uint8_t bus, __attribute__((unused)) uint8_t device, __attribute__((unused)) uint8_t function) {
+}
 int main(void) {
   register_ipc(0);
+  for (size_t bus = 0; bus < 256; bus++) {
+    for (size_t device = 0; device < 32; device++) {
+      size_t nfunctions = 1;
+      if (pci_readb(bus, device, 0, PCI_HEADER_TYPE) & 0x80) {
+        nfunctions = 8;
+      }
+      for (size_t i = 0; i < nfunctions; i++) {
+        uint16_t vendor = pci_readw(bus, device, i, PCI_VENDOR_ID);
+        if (vendor != 0xffff) {
+          load_device(bus, device, i);
+        }
+      }
+    }
+  }
   ipc_handlers[IPC_PCID_ACCESS] = access_handler;
   while (1) {
     handle_ipc();

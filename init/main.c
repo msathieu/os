@@ -23,7 +23,7 @@ struct service services[] = {
   {"atad", 1, 0, {[CAP_NAMESPACE_FILESYSTEMS] = 1 << CAP_VFSD_MOUNT}, 0},
   {"ipcd", 1, 0, {}, 0},
   {"logd", 1, 0, {[CAP_NAMESPACE_SERVERS] = 1 << CAP_LOGD}, "logd"},
-  {"pcid", 1, 0, {}, "pcid"},
+  {"pcid", 1, 0, {[CAP_NAMESPACE_KERNEL] = 1 << CAP_KERNEL_IOPORT | 1 << CAP_KERNEL_IRQ | 1 << CAP_KERNEL_MAP_MEMORY}, "pcid"},
   {"/sbin/devd", 0, 0, {[CAP_NAMESPACE_FILESYSTEMS] = 1 << CAP_DEVD}, "devd"},
   {"/sbin/dev-nulld", 0, 0, {}, 0},
   {"/sbin/dev-zerod", 0, 0, {}, 0},
@@ -67,9 +67,6 @@ static void spawn(const char* name) {
     grant_ioport(0x376);
     register_irq(14);
     register_irq(15);
-  } else if (!strcmp(name, "pcid")) {
-    grant_ioport(0xcf8);
-    grant_ioport(0xcfc);
   } else if (!strcmp(name, "/sbin/devd")) {
     send_ipc_call("vfsd", IPC_VFSD_MOUNT, 0, 0, 0, (uintptr_t) "/dev/", 6);
   } else if (!strcmp(name, "/sbin/dev-nulld")) {
