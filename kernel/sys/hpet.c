@@ -39,10 +39,10 @@ static int sleep_compare(struct task* task1, struct task* task2) {
 
 static struct sorted_list sleeping_list = {.compare = (sorted_list_compare) sleep_compare};
 
-static uint64_t read_register(size_t register_i) {
+static __attribute__((noinline)) uint64_t read_register(size_t register_i) {
   return registers[register_i];
 }
-static void write_register(size_t register_i, uint64_t value) {
+static __attribute__((noinline)) void write_register(size_t register_i, uint64_t value) {
   registers[register_i] = value;
 }
 size_t get_time(void) {

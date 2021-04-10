@@ -14,11 +14,6 @@ static int green_index;
 static int blue_index;
 static char* framebuffer = (char*) PHYSICAL_MAPPINGS_START;
 
-static void draw_pixel(size_t x, size_t y, int color) {
-  framebuffer[y * pitch + x * bits_per_pixel / 8 + blue_index] = color;
-  framebuffer[y * pitch + x * bits_per_pixel / 8 + green_index] = color >> 8;
-  framebuffer[y * pitch + x * bits_per_pixel / 8 + red_index] = color >> 16;
-}
 static int64_t info_handler(uint64_t arg0, uint64_t arg1, uint64_t arg2, uint64_t arg3, uint64_t arg4) {
   if (arg1 || arg2 || arg3 || arg4) {
     syslog(LOG_DEBUG, "Reserved argument is set");
@@ -87,11 +82,7 @@ int main(void) {
   green_index = _syscall(_SYSCALL_GET_FB_INFO, 6, 0, 0, 0, 0);
   blue_index = _syscall(_SYSCALL_GET_FB_INFO, 7, 0, 0, 0, 0);
   drop_capability(CAP_NAMESPACE_KERNEL, CAP_KERNEL_GET_FB_INFO);
-  for (size_t y = 0; y < height; y++) {
-    for (size_t x = 0; x < width; x++) {
-      draw_pixel(x, y, 0);
-    }
-  }
+  memset(framebuffer, 0, height * pitch);
   ipc_handlers[IPC_FBD_INFO] = info_handler;
   ipc_handlers[IPC_FBD_COPY] = copy_handler;
   while (1) {
