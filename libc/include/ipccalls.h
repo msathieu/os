@@ -1,5 +1,6 @@
 #pragma once
 #include <ipc.h>
+#define IPC_ACPID_POWER_STATE 0
 #define IPC_FBD_INFO 0
 #define IPC_FBD_COPY IPC_CALL_MEMORY_SHARING
 #define IPC_PCID_ACCESS 0
