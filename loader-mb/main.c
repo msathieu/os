@@ -4,14 +4,12 @@
 #include <cpuid.h>
 #include <multiboot.h>
 #include <panic.h>
-#include <stdio.h>
 #include <struct.h>
 
 struct loader_struct loader_struct = {.version = 0};
 uint64_t loader_struct_ptr;
 
 void lmain(int magic, uintptr_t mbptr) {
-  printf("\n");
   if (magic != 0x36d76289) {
     panic("Magic value is incorrect");
   }
