@@ -77,7 +77,7 @@ static int64_t access_handler(uint64_t write, uint64_t width, uint64_t address, 
   }
   return 0;
 }
-void load_device(__attribute__((unused)) uint8_t bus, __attribute__((unused)) uint8_t device, __attribute__((unused)) uint8_t function) {
+static void load_device(__attribute__((unused)) uint8_t bus, __attribute__((unused)) uint8_t device, __attribute__((unused)) uint8_t function) {
 }
 int main(void) {
   register_ipc(0);
