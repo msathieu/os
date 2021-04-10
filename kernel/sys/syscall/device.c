@@ -191,7 +191,7 @@ void syscall_map_phys_memory(union syscall_args* args) {
     terminate_current_task(&args->registers);
     return;
   }
-  if (args->arg0 % 0x1000 || args->arg1 % 0x1000) {
+  if (args->arg0 % 0x1000 || args->arg1 % 0x1000 || !args->arg1) {
     puts("Invalid address or size");
     terminate_current_task(&args->registers);
     return;
@@ -207,16 +207,23 @@ void syscall_map_phys_memory(union syscall_args* args) {
     return;
   }
   if (args->arg2) {
-    switch_pml4(current_task->spawned_process->address_space);
     physical_mappings_process = current_task->spawned_process;
   } else {
     physical_mappings_process = current_task->process;
   }
   args->return_value = get_free_ipc_range(args->arg1);
+  physical_mappings_process = 0;
+  if (!args->return_value) {
+    puts("Out of memory reserved for physical mappings");
+    terminate_current_task(&args->registers);
+    return;
+  }
+  if (args->arg2) {
+    switch_pml4(current_task->spawned_process->address_space);
+  }
   for (size_t i = 0; i < args->arg1; i += 0x1000) {
     create_mapping(args->return_value + i, args->arg0 + i, 1, 1, 0, 1);
   }
-  physical_mappings_process = 0;
   if (args->arg2) {
     switch_pml4(current_task->process->address_space);
   }
@@ -279,6 +286,11 @@ void syscall_get_acpi_table(union syscall_args* args) {
     return;
   }
   args->return_value = get_free_range(table->size, 0, 0, 0x1000);
+  if (!args->return_value) {
+    puts("Not enough space for requested table");
+    terminate_current_task(&args->registers);
+    return;
+  }
   set_paging_flags(args->return_value, table->size, 0, 1, 0);
   memcpy((void*) args->return_value, table, table->size);
   set_paging_flags(args->return_value, table->size, 1, 0, 0);

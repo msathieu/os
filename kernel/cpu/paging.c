@@ -296,7 +296,7 @@ uintptr_t get_free_ipc_range(size_t size) {
       return PAGING_USER_PHYS_MAPPINGS_START + start;
     }
   }
-  panic("Out of memory reserved for physical mappings"); // TODO: Terminate task instead
+  return 0;
 }
 static void fault_handler(struct isr_registers* registers) {
   printf("Page fault at %lx: ", registers->rip);
