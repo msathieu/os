@@ -255,7 +255,6 @@ void syscall_unblock_ipc_call(union syscall_args* args) {
       return;
     }
   }
-  remove_linked_list(&current_task->process->blocked_ipc_calls_queue, &syscall_requester->list_member);
   current_task->process->syscall_handler = 0;
   syscall_handler->servicing_syscall_requester = syscall_requester;
   syscall_handler->blocked = 0;
@@ -273,5 +272,6 @@ void syscall_unblock_ipc_call(union syscall_args* args) {
   } else {
     syscall_handler->registers.r8 = syscall_requester->registers.r8;
   }
+  remove_linked_list(&current_task->process->blocked_ipc_calls_queue, &syscall_requester->list_member);
   schedule_task(syscall_handler, &args->registers);
 }
