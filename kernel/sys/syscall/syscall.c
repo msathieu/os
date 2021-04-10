@@ -37,6 +37,22 @@ static void syscall_get_time(union syscall_args* args) {
   }
   args->return_value = get_time();
 }
+static void syscall_reset(union syscall_args* args) {
+  if (args->arg0 || args->arg1 || args->arg2 || args->arg3 || args->arg4) {
+    puts("Reserved argument is set");
+    terminate_current_task(&args->registers);
+    return;
+  }
+  if (!has_process_capability(current_task->process, CAP_ACPI)) {
+    puts("No permission to reset system");
+    terminate_current_task(&args->registers);
+    return;
+  }
+  uint64_t idt[2] = {0};
+  asm volatile("lidt %0; int $0"
+               :
+               : "m"(idt));
+}
 static syscall_handler syscall_handlers[256] = {
   syscall_version,
   syscall_yield,
@@ -73,7 +89,8 @@ static syscall_handler syscall_handlers[256] = {
   syscall_has_environment_vars,
   syscall_change_priority,
   syscall_get_acpi_revision,
-  syscall_get_acpi_table};
+  syscall_get_acpi_table,
+  syscall_reset};
 
 void syscall_common(union syscall_args* args) {
   if (args->syscall & 0xffffffffffffff00) {
