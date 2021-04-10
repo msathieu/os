@@ -10,14 +10,14 @@
 
 struct file {
   struct linked_list_member list_member;
-  size_t file_i;
+  size_t inode;
   char* path;
   void* data;
   size_t size;
 };
 
 static struct linked_list files_list;
-static size_t next_file_i = 0;
+static size_t next_inode = 0;
 
 static int64_t open_handler(uint64_t flags, uint64_t arg1, uint64_t arg2, uint64_t address, uint64_t size) {
   if (arg1 || arg2) {
@@ -46,7 +46,7 @@ static int64_t open_handler(uint64_t flags, uint64_t arg1, uint64_t arg2, uint64
         free(file->data);
         file->size = 0;
       }
-      return file->file_i;
+      return file->inode;
     }
   }
   if (flags & O_CREAT) {
@@ -58,16 +58,16 @@ static int64_t open_handler(uint64_t flags, uint64_t arg1, uint64_t arg2, uint64
       }
     }
     struct file* file = calloc(1, sizeof(struct file));
-    file->file_i = next_file_i++;
+    file->inode = next_inode++;
     file->path = buffer;
     insert_linked_list(&files_list, &file->list_member);
-    return file->file_i;
+    return file->inode;
   } else {
     free(buffer);
     return -IPC_ERR_INVALID_ARGUMENTS;
   }
 }
-static int64_t read_handler(uint64_t file_num, uint64_t offset, uint64_t arg2, uint64_t address, uint64_t size) {
+static int64_t read_handler(uint64_t inode, uint64_t offset, uint64_t arg2, uint64_t address, uint64_t size) {
   if (arg2) {
     syslog(LOG_DEBUG, "Reserved argument is set");
     return -IPC_ERR_INVALID_ARGUMENTS;
@@ -78,13 +78,13 @@ static int64_t read_handler(uint64_t file_num, uint64_t offset, uint64_t arg2, u
   }
   struct file* file = 0;
   for (struct file* file_i = (struct file*) files_list.first; file_i; file_i = (struct file*) file_i->list_member.next) {
-    if (file_i->file_i == file_num) {
+    if (file_i->inode == inode) {
       file = file_i;
       break;
     }
   }
   if (!file) {
-    syslog(LOG_DEBUG, "Invalid file number");
+    syslog(LOG_DEBUG, "Invalid inode");
     return -IPC_ERR_INVALID_ARGUMENTS;
   }
   if (offset >= file->size) {
@@ -96,7 +96,7 @@ static int64_t read_handler(uint64_t file_num, uint64_t offset, uint64_t arg2, u
   memcpy((void*) address, file->data + offset, size);
   return size;
 }
-static int64_t write_handler(uint64_t file_num, uint64_t offset, uint64_t arg2, uint64_t address, uint64_t size) {
+static int64_t write_handler(uint64_t inode, uint64_t offset, uint64_t arg2, uint64_t address, uint64_t size) {
   if (arg2) {
     syslog(LOG_DEBUG, "Reserved argument is set");
     return -IPC_ERR_INVALID_ARGUMENTS;
@@ -111,13 +111,13 @@ static int64_t write_handler(uint64_t file_num, uint64_t offset, uint64_t arg2, 
   }
   struct file* file = 0;
   for (struct file* file_i = (struct file*) files_list.first; file_i; file_i = (struct file*) file_i->list_member.next) {
-    if (file_i->file_i == file_num) {
+    if (file_i->inode == inode) {
       file = file_i;
       break;
     }
   }
   if (!file) {
-    syslog(LOG_DEBUG, "Invalid file number");
+    syslog(LOG_DEBUG, "Invalid inode");
     return -IPC_ERR_INVALID_ARGUMENTS;
   }
   size_t total_size = offset + size;

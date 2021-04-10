@@ -80,7 +80,7 @@ static int64_t open_handler(__attribute__((unused)) uint64_t flags, uint64_t arg
   free(buffer);
   return -IPC_ERR_INVALID_ARGUMENTS;
 }
-static int64_t handle_transfer(uint64_t file_num, uint64_t offset, uint64_t arg2, uint64_t address, uint64_t size, bool write) {
+static int64_t handle_transfer(uint64_t inode, uint64_t offset, uint64_t arg2, uint64_t address, uint64_t size, bool write) {
   if (arg2) {
     syslog(LOG_DEBUG, "Reserved argument is set");
     return -IPC_ERR_INVALID_ARGUMENTS;
@@ -89,25 +89,25 @@ static int64_t handle_transfer(uint64_t file_num, uint64_t offset, uint64_t arg2
     syslog(LOG_DEBUG, "Not allowed to access file");
     return -IPC_ERR_INSUFFICIENT_PRIVILEGE;
   }
-  if (file_num >= 512) {
-    syslog(LOG_DEBUG, "Invalid file number");
+  if (inode >= 512) {
+    syslog(LOG_DEBUG, "Invalid inode");
     return -IPC_ERR_INVALID_ARGUMENTS;
   }
-  if (!devices[file_num].pid) {
-    syslog(LOG_DEBUG, "Invalid file number");
+  if (!devices[inode].pid) {
+    syslog(LOG_DEBUG, "Invalid inode");
     return -IPC_ERR_INVALID_ARGUMENTS;
   }
   uint8_t call = IPC_VFSD_FS_READ;
   if (write) {
     call = IPC_VFSD_FS_WRITE;
   }
-  return send_pid_ipc_call(devices[file_num].pid, call, offset, 0, 0, address, size);
+  return send_pid_ipc_call(devices[inode].pid, call, offset, 0, 0, address, size);
 }
-static int64_t read_handler(uint64_t file_num, uint64_t offset, uint64_t arg2, uint64_t address, uint64_t size) {
-  return handle_transfer(file_num, offset, arg2, address, size, 0);
+static int64_t read_handler(uint64_t inode, uint64_t offset, uint64_t arg2, uint64_t address, uint64_t size) {
+  return handle_transfer(inode, offset, arg2, address, size, 0);
 }
-static int64_t write_handler(uint64_t file_num, uint64_t offset, uint64_t arg2, uint64_t address, uint64_t size) {
-  return handle_transfer(file_num, offset, arg2, address, size, 1);
+static int64_t write_handler(uint64_t inode, uint64_t offset, uint64_t arg2, uint64_t address, uint64_t size) {
+  return handle_transfer(inode, offset, arg2, address, size, 1);
 }
 int main(void) {
   drop_capability(CAP_NAMESPACE_KERNEL, CAP_KERNEL_PRIORITY);

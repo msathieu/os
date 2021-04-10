@@ -49,7 +49,7 @@ static int64_t open_handler(uint64_t flags, uint64_t arg1, uint64_t arg2, uint64
   }
   return -IPC_ERR_INVALID_ARGUMENTS;
 }
-static int64_t read_handler(uint64_t file_num, uint64_t offset, uint64_t arg2, uint64_t address, uint64_t size) {
+static int64_t read_handler(uint64_t inode, uint64_t offset, uint64_t arg2, uint64_t address, uint64_t size) {
   if (arg2) {
     syslog(LOG_DEBUG, "Reserved argument is set");
     return -IPC_ERR_INVALID_ARGUMENTS;
@@ -58,17 +58,17 @@ static int64_t read_handler(uint64_t file_num, uint64_t offset, uint64_t arg2, u
     syslog(LOG_DEBUG, "Not allowed to read file");
     return -IPC_ERR_INSUFFICIENT_PRIVILEGE;
   }
-  if (file_num >= header->nfiles) {
-    syslog(LOG_DEBUG, "Invalid file number");
+  if (inode >= header->nfiles) {
+    syslog(LOG_DEBUG, "Invalid inode");
     return -IPC_ERR_INVALID_ARGUMENTS;
   }
-  if (offset >= header->files[file_num].size) {
+  if (offset >= header->files[inode].size) {
     return 0;
   }
-  if (size > header->files[file_num].size - offset) {
-    size = header->files[file_num].size - offset;
+  if (size > header->files[inode].size - offset) {
+    size = header->files[inode].size - offset;
   }
-  return send_pid_ipc_call(parent_pid, IPC_VFSD_FS_READ, sizeof(struct svfs_header) + header->nfiles * sizeof(struct svfs_file) + header->files[file_num].offset + offset, 0, 0, address, size);
+  return send_pid_ipc_call(parent_pid, IPC_VFSD_FS_READ, sizeof(struct svfs_header) + header->nfiles * sizeof(struct svfs_file) + header->files[inode].offset + offset, 0, 0, address, size);
 }
 int main(void) {
   drop_capability(CAP_NAMESPACE_KERNEL, CAP_KERNEL_PRIORITY);

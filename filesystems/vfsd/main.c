@@ -9,10 +9,14 @@
 #include <string.h>
 #include <syslog.h>
 
+struct fs_node {
+  size_t mount_i;
+  size_t inode;
+  size_t nfds;
+};
 struct fd {
   bool exists;
-  size_t mount;
-  size_t file_num;
+  struct fs_node* node;
   size_t position;
   size_t flags;
 };
@@ -128,15 +132,15 @@ static int64_t open_file_handler(uint64_t flags, uint64_t arg1, uint64_t arg2, u
     syslog(LOG_ERR, "No root filesystem mounted");
     return -IPC_ERR_PROGRAM_DEFINED;
   }
-  long file_num = -IPC_ERR_INVALID_PID;
-  while (file_num == -IPC_ERR_INVALID_PID) {
-    file_num = send_pid_ipc_call(mounts[mount_i].pid, IPC_VFSD_FS_OPEN, flags, 0, 0, (uintptr_t) buffer + mount_size, size - mount_size);
-    if (file_num == -IPC_ERR_INVALID_PID) {
+  long inode = -IPC_ERR_INVALID_PID;
+  while (inode == -IPC_ERR_INVALID_PID) {
+    inode = send_pid_ipc_call(mounts[mount_i].pid, IPC_VFSD_FS_OPEN, flags, 0, 0, (uintptr_t) buffer + mount_size, size - mount_size);
+    if (inode == -IPC_ERR_INVALID_PID) {
       sched_yield();
     }
   }
   free(buffer);
-  if (file_num < 0) {
+  if (inode < 0) {
     return -IPC_ERR_PROGRAM_DEFINED;
   }
   pid_t caller_pid = get_ipc_caller_pid();
@@ -173,8 +177,10 @@ static int64_t open_file_handler(uint64_t flags, uint64_t arg1, uint64_t arg2, u
     fd = &process->fds[fd_i];
   }
   fd->exists = 1;
-  fd->mount = mount_i;
-  fd->file_num = file_num;
+  fd->node = calloc(1, sizeof(struct fs_node));
+  fd->node->nfds = 1;
+  fd->node->mount_i = mount_i;
+  fd->node->inode = inode;
   fd->flags = flags;
   return fd_i;
 }
@@ -189,6 +195,10 @@ static int64_t close_file_handler(uint64_t fd_num, uint64_t arg1, uint64_t arg2,
       if (fd_num >= process->nfds || !process->fds[fd_num].exists) {
         syslog(LOG_DEBUG, "File descriptor doesn't exist");
         return -IPC_ERR_INVALID_ARGUMENTS;
+      }
+      process->fds[fd_num].node->nfds--;
+      if (!process->fds[fd_num].node->nfds) {
+        free(process->fds[fd_num].node);
       }
       memset(&process->fds[fd_num], 0, sizeof(struct fd));
       return 0;
@@ -224,7 +234,7 @@ static int64_t handle_transfer(uint64_t fd_num, uint64_t arg1, uint64_t arg2, ui
       if (write) {
         call = IPC_VFSD_FS_WRITE;
       }
-      int64_t return_value = send_pid_ipc_call(mounts[process->fds[fd_num].mount].pid, call, process->fds[fd_num].file_num, process->fds[fd_num].position, 0, address, size);
+      int64_t return_value = send_pid_ipc_call(mounts[process->fds[fd_num].node->mount_i].pid, call, process->fds[fd_num].node->inode, process->fds[fd_num].position, 0, address, size);
       if (return_value > 0) {
         process->fds[fd_num].position += return_value;
       }
