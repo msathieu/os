@@ -89,6 +89,25 @@ void syscall_get_pid(union syscall_args* args) {
     }
     args->return_value = requester->process->pid;
     break;
+  case 2:
+    if (current_task->process->parent) {
+      args->return_value = current_task->process->parent->pid;
+    } else {
+      args->return_value = 0;
+    }
+    break;
+  case 3:
+    if (!current_task->servicing_syscall_requester) {
+      puts("Not currently handling IPC call");
+      terminate_current_task(&args->registers);
+      return;
+    }
+    if (current_task->servicing_syscall_requester->spawned_process) {
+      args->return_value = current_task->servicing_syscall_requester->spawned_process->pid;
+    } else {
+      args->return_value = 0;
+    }
+    break;
   default:
     puts("Argument out of range");
     terminate_current_task(&args->registers);
@@ -116,23 +135,21 @@ void syscall_wait(union syscall_args* args) {
   block_current_task(&args->registers);
 }
 void syscall_has_arguments(union syscall_args* args) {
-  if (args->arg0 || args->arg1 || args->arg2 || args->arg3 || args->arg4) {
+  if (args->arg1 || args->arg2 || args->arg3 || args->arg4) {
     puts("Reserved argument is set");
     terminate_current_task(&args->registers);
     return;
   }
-  args->return_value = current_task->process->has_arguments;
-}
-void syscall_get_parent_pid(union syscall_args* args) {
-  if (args->arg0 || args->arg1 || args->arg2 || args->arg3 || args->arg4) {
-    puts("Reserved argument is set");
+  switch (args->arg0) {
+  case 0:
+    args->return_value = current_task->process->has_arguments;
+    break;
+  case 1:
+    args->return_value = current_task->process->has_environment_vars;
+    break;
+  default:
+    puts("Argument out of range");
     terminate_current_task(&args->registers);
-    return;
-  }
-  if (current_task->process->parent) {
-    args->return_value = current_task->process->parent->pid;
-  } else {
-    args->return_value = 0;
   }
 }
 void syscall_sleep(union syscall_args* args) {
@@ -142,14 +159,6 @@ void syscall_sleep(union syscall_args* args) {
     return;
   }
   sleep_current_task(args->arg0, &args->registers);
-}
-void syscall_has_environment_vars(union syscall_args* args) {
-  if (args->arg0 || args->arg1 || args->arg2 || args->arg3 || args->arg4) {
-    puts("Reserved argument is set");
-    terminate_current_task(&args->registers);
-    return;
-  }
-  args->return_value = current_task->process->has_environment_vars;
 }
 void syscall_change_priority(union syscall_args* args) {
   if (args->arg1 || args->arg2 || args->arg3 || args->arg4) {

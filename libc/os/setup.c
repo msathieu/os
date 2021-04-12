@@ -29,7 +29,7 @@ void _setup_libc(void) {
   } else {
     _argv = calloc(1, sizeof(char*));
   }
-  if (!&_noenvironment_vars && _syscall(_SYSCALL_HAS_ENVIRONMENT_VARS, 0, 0, 0, 0, 0)) {
+  if (!&_noenvironment_vars && _syscall(_SYSCALL_HAS_ARGUMENTS, 1, 0, 0, 0, 0)) {
     size_t nenvs = send_ipc_call("envd", IPC_ENVD_GET_NUM, 0, 0, 0, 0, 0);
     environ = malloc((nenvs + 1) * sizeof(char*));
     for (size_t i = 0; i < nenvs; i++) {

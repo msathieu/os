@@ -14,7 +14,6 @@ extern struct linked_list syscall_processes;
 
 void syscall_block_ipc_call(union syscall_args*);
 void syscall_get_ipc_caller_capabilities(union syscall_args*);
-void syscall_get_ipc_caller_spawned_pid(union syscall_args*);
 void syscall_handle_ipc(union syscall_args*);
 void syscall_is_caller_child(union syscall_args*);
 void syscall_register_ipc(union syscall_args*);

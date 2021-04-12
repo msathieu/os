@@ -82,20 +82,3 @@ void syscall_is_caller_child(union syscall_args* args) {
   }
   args->return_value = has_child_with_pid(current_task->servicing_syscall_requester->process->pid, current_task->process);
 }
-void syscall_get_ipc_caller_spawned_pid(union syscall_args* args) {
-  if (args->arg0 || args->arg1 || args->arg2 || args->arg3 || args->arg4) {
-    puts("Reserved argument is set");
-    terminate_current_task(&args->registers);
-    return;
-  }
-  if (!current_task->servicing_syscall_requester) {
-    puts("Not currently handling IPC call");
-    terminate_current_task(&args->registers);
-    return;
-  }
-  if (current_task->servicing_syscall_requester->spawned_process) {
-    args->return_value = current_task->servicing_syscall_requester->spawned_process->pid;
-  } else {
-    args->return_value = 0;
-  }
-}
