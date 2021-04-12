@@ -36,10 +36,7 @@ jobs:
     steps:
       - name: Install dependencies
         if: ${{ matrix.os == 'ubuntu-20.04' }}
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y qemu-system-x86 llvm lld
-          sudo apt-get remove -y grub-efi-amd64-bin
+        run: sudo apt-get update && sudo apt-get install -y qemu-system-x86 llvm lld mtools
       - name: Checkout
         uses: actions/checkout@v2
         with:
