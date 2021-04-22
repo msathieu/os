@@ -11,7 +11,7 @@ FILE* fopen(const char* restrict path, const char* restrict arg_mode) {
     flags = O_WRONLY | O_CREAT | O_TRUNC;
   }
   int fd = open(path, flags);
-  if (fd >= 0) {
+  if (fd != -1) {
     FILE* file = calloc(1, sizeof(FILE));
     file->fd = fd;
     return file;
