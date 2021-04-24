@@ -8,6 +8,12 @@ jobs:
       fail-fast: false
     runs-on: ${{ matrix.os }}
     steps:
+      - name: Install dependencies (Ubuntu)
+        if: ${{ matrix.os == 'ubuntu-20.04' }}
+        run: sudo apt-get update && sudo apt-get install -y ninja
+      - name: Install dependencies (MacOS)
+        if: ${{ matrix.os == 'macos-10.15' }}
+        run: brew install ninja
       - name: Checkout
         uses: actions/checkout@v2
         with:
@@ -44,7 +50,7 @@ jobs:
           key: toolchain-${{ matrix.os }}-${{ hashFiles('tools/Makefile') }}
           path: tools/toolchain
       - name: Build OS
-        run: PATH=/usr/local/opt/llvm/bin:$PATH make build-multiboot -j2
+        run: make build-multiboot -j2
       - name: Build OS image with GRUB
         if: ${{ matrix.os == 'ubuntu-20.04' }}
         run: make build-grub -j2
@@ -119,11 +125,17 @@ jobs:
           make run-grub-nographic
   style:
     runs-on: ubuntu-20.04
+    needs: toolchain
     steps:
       - name: Checkout
         uses: actions/checkout@v2
         with:
           submodules: recursive
+      - name: Cache toolchain
+        uses: actions/cache@v2
+        with:
+          key: toolchain-ubuntu-20.04-${{ hashFiles('tools/Makefile') }}
+          path: tools/toolchain
       - name: Format code
         run: make format
       - name: Check if there are any changes
