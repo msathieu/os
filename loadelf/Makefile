@@ -1,2 +1,2 @@
 $(DESTDIR)/boot/lelf: main.o
-	$(CC) -s -o $@ $^ -Wl,-Ttext-segment,0x40000000
+	$(CC) -s -o $@ $^ -Wl,--image-base,0x40000000

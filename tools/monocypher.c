@@ -255,7 +255,7 @@ u64 crypto_chacha20_ctr(u8* cipher_text, const u8* plain_text,
   u32 input[16];
   chacha20_init_key(input, key);
   input[12] = (u32) ctr;
-  input[13] = (u32)(ctr >> 32);
+  input[13] = (u32) (ctr >> 32);
   load32_le_buf(input + 14, nonce, 2);
 
   // Whole blocks
@@ -782,7 +782,7 @@ static void extended_hash(u8* digest, u32 digest_size,
   if (digest_size > 64) {
     // the conversion to u64 avoids integer overflow on
     // ludicrously big hash sizes.
-    u32 r = (u32)(((u64) digest_size + 31) >> 5) - 2;
+    u32 r = (u32) (((u64) digest_size + 31) >> 5) - 2;
     u32 i = 1;
     u32 in = 0;
     u32 out = 32;
@@ -969,7 +969,7 @@ static u32 gidx_next(gidx_ctx* ctx) {
   u64 y = (area_size * x) >> 32;
   u64 z = (area_size - 1) - y;
   u64 ref = start_pos + z; // ref < 2 * nb_blocks
-  return (u32)(ref < ctx->nb_blocks ? ref : ref - ctx->nb_blocks);
+  return (u32) (ref < ctx->nb_blocks ? ref : ref - ctx->nb_blocks);
 }
 
 // Main algorithm
@@ -2531,7 +2531,7 @@ static void slide_init(slide_ctx* ctx, const u8 scalar[32]) {
   while (i > 0 && scalar_bit(scalar, i) == 0) {
     i--;
   }
-  ctx->next_check = (u8)(i + 1);
+  ctx->next_check = (u8) (i + 1);
   ctx->next_index = -1;
   ctx->next_digit = -1;
 }
@@ -2551,8 +2551,8 @@ static int slide_step(slide_ctx* ctx, int width, int i, const u8 scalar[32]) {
       int lsb = v & (~v + 1);      // smallest bit of v
       int s = (((lsb & 0xAA) != 0) // log2(lsb)
                | (((lsb & 0xCC) != 0) << 1) | (((lsb & 0xF0) != 0) << 2));
-      ctx->next_index = (i16)(i - (w - 1) + s);
-      ctx->next_digit = (i8)(v >> s);
+      ctx->next_index = (i16) (i - (w - 1) + s);
+      ctx->next_digit = (i8) (v >> s);
       ctx->next_check -= (u8) w;
     }
   }
@@ -3246,10 +3246,10 @@ static const ge_precomp b_comb_high[8] = {
 
 static void lookup_add(ge* p, ge_precomp* tmp_c, fe tmp_a, fe tmp_b,
                        const ge_precomp comb[8], const u8 scalar[32], int i) {
-  u8 teeth = (u8)((scalar_bit(scalar, i)) +
-                  (scalar_bit(scalar, i + 32) << 1) +
-                  (scalar_bit(scalar, i + 64) << 2) +
-                  (scalar_bit(scalar, i + 96) << 3));
+  u8 teeth = (u8) ((scalar_bit(scalar, i)) +
+                   (scalar_bit(scalar, i + 32) << 1) +
+                   (scalar_bit(scalar, i + 64) << 2) +
+                   (scalar_bit(scalar, i + 96) << 3));
   u8 high = teeth >> 3;
   u8 index = (teeth ^ (high - 1)) & 7;
   FOR(j, 0, 8) {

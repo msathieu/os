@@ -1,9 +1,5 @@
-CC:=clang
-AS:=clang
-AR:=llvm-ar
-OBJCOPY:=llvm-objcopy
 CFLAGS+=--target=i686-elf -ffreestanding --sysroot=/dev/null -fstack-protector-strong -mretpoline -mno-mmx -mno-sse -flto -fbuiltin -Ilibc/include
-ASFLAGS:=--target=i686-elf -c
+ASFLAGS+=--target=i686-elf
 
 LIBC:=$(patsubst %.c, %.o, $(wildcard libc/*/*.c) $(wildcard libc/arch/generic/*.c))
 SFILES:=$(wildcard cpu/*.s)

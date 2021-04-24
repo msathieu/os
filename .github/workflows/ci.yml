@@ -8,9 +8,6 @@ jobs:
       fail-fast: false
     runs-on: ${{ matrix.os }}
     steps:
-      - name: Install dependencies
-        if: ${{ matrix.os == 'ubuntu-20.04' }}
-        run: sudo apt-get update && sudo apt-get install -y libmpc-dev libmpfr-dev
       - name: Checkout
         uses: actions/checkout@v2
         with:
@@ -23,7 +20,7 @@ jobs:
           path: tools/toolchain
       - name: Build toolchain
         if: steps.cache-toolchain.outputs.cache-hit != 'true'
-        run: make toolchain -j2
+        run: make toolchain
       - name: Clean toolchain directory
         run: make clean
   multiboot:
@@ -36,7 +33,7 @@ jobs:
     steps:
       - name: Install dependencies
         if: ${{ matrix.os == 'ubuntu-20.04' }}
-        run: sudo apt-get update && sudo apt-get install -y qemu-system-x86 llvm lld mtools
+        run: sudo apt-get update && sudo apt-get install -y qemu-system-x86 mtools
       - name: Checkout
         uses: actions/checkout@v2
         with:
@@ -135,8 +132,6 @@ jobs:
     runs-on: ubuntu-20.04
     needs: toolchain
     steps:
-      - name: Install dependencies
-        run: sudo apt-get update && sudo apt-get install -y clang-tools llvm lld
       - name: Checkout
         uses: actions/checkout@v2
         with:

@@ -13,7 +13,7 @@ int setenv(const char* name, const char* value, int overwrite) {
   size_t i;
   for (i = 0; environ[i]; i++) {
     char* env_value = strchr(environ[i], '=');
-    if ((size_t)(env_value - environ[i]) == strlen(name) && !memcmp(environ[i], name, env_value - environ[i])) {
+    if ((size_t) (env_value - environ[i]) == strlen(name) && !memcmp(environ[i], name, env_value - environ[i])) {
       if (overwrite) {
         free(environ[i]);
         environ[i] = malloc(env_value - environ[i] + 1 + strlen(value) + 1);
