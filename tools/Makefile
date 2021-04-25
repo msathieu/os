@@ -19,7 +19,7 @@ build-toolchain: $(LLVM).tar.gz
 	mkdir -p toolchain/os-llvm-$(LLVM)/build
 	cd toolchain/os-llvm-$(LLVM)/build && CFLAGS= cmake ../llvm -G Ninja -DCMAKE_BUILD_TYPE=Release -DLLVM_TARGETS_TO_BUILD=X86 -DLLVM_ENABLE_PROJECTS="clang;lld" -DLLVM_DEFAULT_TARGET_TRIPLE="x86_64-os" -DDEFAULT_SYSROOT=$(DESTDIR) -DCMAKE_INSTALL_PREFIX=$(CURDIR)/toolchain
 	cd toolchain/os-llvm-$(LLVM)/build && ninja
-	cd toolchain/os-llvm-$(LLVM)/build && ninja install
+	unset DESTDIR && cd toolchain/os-llvm-$(LLVM)/build && ninja install
 clean:
 	rm -rf toolchain/os-llvm-$(LLVM) *.tar.gz
 .DELETE_ON_ERROR:
