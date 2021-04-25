@@ -41,7 +41,7 @@ void _setup_libc(void) {
   } else {
     environ = calloc(1, sizeof(char*));
   }
-  for (size_t i = 0; i < (size_t)(__init_array_end - __init_array_start); i++) {
+  for (size_t i = 0; i < (size_t) (__init_array_end - __init_array_start); i++) {
     __init_array_start[i]();
   }
 }

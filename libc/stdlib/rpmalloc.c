@@ -23,6 +23,7 @@
 #if defined(__clang__)
 #pragma clang diagnostic ignored "-Wunused-macros"
 #pragma clang diagnostic ignored "-Wunused-function"
+#pragma clang diagnostic ignored "-Wunused-parameter"
 #elif defined(__GNUC__)
 #pragma GCC diagnostic ignored "-Wunused-macros"
 #pragma GCC diagnostic ignored "-Wunused-function"
@@ -310,15 +311,15 @@ static FORCEINLINE int atomic_cas_ptr(atomicptr_t* dst, void* val, void* ref) {
 #if ENABLE_STATISTICS
 #define _rpmalloc_stat_inc(counter) atomic_incr32(counter)
 #define _rpmalloc_stat_dec(counter) atomic_decr32(counter)
-#define _rpmalloc_stat_add(counter, value) atomic_add32(counter, (int32_t)(value))
-#define _rpmalloc_stat_add64(counter, value) atomic_add64(counter, (int64_t)(value))
-#define _rpmalloc_stat_add_peak(counter, value, peak)             \
-  do {                                                            \
-    int32_t _cur_count = atomic_add32(counter, (int32_t)(value)); \
-    if (_cur_count > (peak))                                      \
-      peak = _cur_count;                                          \
+#define _rpmalloc_stat_add(counter, value) atomic_add32(counter, (int32_t) (value))
+#define _rpmalloc_stat_add64(counter, value) atomic_add64(counter, (int64_t) (value))
+#define _rpmalloc_stat_add_peak(counter, value, peak)              \
+  do {                                                             \
+    int32_t _cur_count = atomic_add32(counter, (int32_t) (value)); \
+    if (_cur_count > (peak))                                       \
+      peak = _cur_count;                                           \
   } while (0)
-#define _rpmalloc_stat_sub(counter, value) atomic_add32(counter, -(int32_t)(value))
+#define _rpmalloc_stat_sub(counter, value) atomic_add32(counter, -(int32_t) (value))
 #define _rpmalloc_stat_inc_alloc(heap, class_idx)                                          \
   do {                                                                                     \
     int32_t alloc_current = atomic_incr32(&heap->size_class_use[class_idx].alloc_current); \
@@ -404,7 +405,7 @@ _Static_assert((SPAN_HEADER_SIZE & (SPAN_HEADER_SIZE - 1)) == 0, "Span header si
 #define MAX_ALLOC_SIZE (((size_t) -1) - _memory_span_size)
 #endif
 
-#define pointer_offset(ptr, ofs) (void*) ((char*) (ptr) + (ptrdiff_t)(ofs))
+#define pointer_offset(ptr, ofs) (void*) ((char*) (ptr) + (ptrdiff_t) (ofs))
 #define pointer_diff(first, second) (ptrdiff_t)((const char*) (first) - (const char*) (second))
 
 #define INVALID_POINTER ((void*) ((uintptr_t) -1))
@@ -648,7 +649,7 @@ struct global_cache_t {
 //! Default span size (64KiB)
 #define _memory_default_span_size (64 * 1024)
 #define _memory_default_span_size_shift 16
-#define _memory_default_span_mask (~((uintptr_t)(_memory_span_size - 1)))
+#define _memory_default_span_mask (~((uintptr_t) (_memory_span_size - 1)))
 
 //! Initialized flag
 static int _rpmalloc_initialized;
@@ -785,7 +786,7 @@ get_thread_heap(void) {
 static inline uintptr_t
 get_thread_id(void) {
 #if defined(_WIN32)
-  return (uintptr_t)((void*) NtCurrentTeb());
+  return (uintptr_t) ((void*) NtCurrentTeb());
 #elif defined(__GNUC__) || defined(__clang__)
   uintptr_t tid;
 #if defined(__i386__)
@@ -815,11 +816,11 @@ get_thread_id(void) {
                    : "=r"(tid));
 #endif
 #else
-  tid = (uintptr_t)((void*) get_thread_heap_raw());
+  tid = (uintptr_t) ((void*) get_thread_heap_raw());
 #endif
   return tid;
 #else
-  return (uintptr_t)((void*) get_thread_heap_raw());
+  return (uintptr_t) ((void*) get_thread_heap_raw());
 #endif
 }
 
@@ -937,10 +938,10 @@ _rpmalloc_mmap_os(size_t size, size_t* offset) {
 #elif defined(MAP_HUGETLB)
   void* ptr = mmap(0, size + padding, PROT_READ | PROT_WRITE, (_memory_huge_pages ? MAP_HUGETLB : 0) | flags, -1, 0);
 #elif defined(MAP_ALIGNED)
-  const size_t align = (sizeof(size_t) * 8) - (size_t)(__builtin_clzl(size - 1));
+  const size_t align = (sizeof(size_t) * 8) - (size_t) (__builtin_clzl(size - 1));
   void* ptr = mmap(0, size + padding, PROT_READ | PROT_WRITE, (_memory_huge_pages ? MAP_ALIGNED(align) : 0) | flags, -1, 0);
 #elif defined(MAP_ALIGN)
-  caddr_t base = (_memory_huge_pages ? (caddr_t)(4 << 20) : 0);
+  caddr_t base = (_memory_huge_pages ? (caddr_t) (4 << 20) : 0);
   void* ptr = mmap(base, size + padding, PROT_READ | PROT_WRITE, (_memory_huge_pages ? MAP_ALIGN : 0) | flags, -1, 0);
 #else
   void* ptr = mmap(0, size + padding, PROT_READ | PROT_WRITE, flags, -1, 0);
@@ -951,7 +952,7 @@ _rpmalloc_mmap_os(size_t size, size_t* offset) {
     return 0;
   }
 #endif
-  _rpmalloc_stat_add(&_mapped_pages_os, (int32_t)((size + padding) >> _memory_page_size_shift));
+  _rpmalloc_stat_add(&_mapped_pages_os, (int32_t) ((size + padding) >> _memory_page_size_shift));
   if (padding) {
     size_t final_padding = padding - ((uintptr_t) ptr & ~_memory_span_mask);
     assert(final_padding <= _memory_span_size);
@@ -1095,7 +1096,7 @@ _rpmalloc_span_mark_as_subspan_unless_master(span_t* master, span_t* subspan, si
   assert((subspan != master) || (subspan->flags & SPAN_FLAG_MASTER));
   if (subspan != master) {
     subspan->flags = SPAN_FLAG_SUBSPAN;
-    subspan->offset_from_master = (uint32_t)((uintptr_t) pointer_diff(subspan, master) >> _memory_span_size_shift);
+    subspan->offset_from_master = (uint32_t) ((uintptr_t) pointer_diff(subspan, master) >> _memory_span_size_shift);
     subspan->align_offset = 0;
   }
   subspan->span_count = (uint32_t) span_count;
@@ -1218,7 +1219,7 @@ _rpmalloc_span_unmap(span_t* span) {
   assert(!(span->flags & SPAN_FLAG_MASTER) || !(span->flags & SPAN_FLAG_SUBSPAN));
 
   int is_master = !!(span->flags & SPAN_FLAG_MASTER);
-  span_t* master = is_master ? span : ((span_t*) pointer_offset(span, -(intptr_t)((uintptr_t) span->offset_from_master * _memory_span_size)));
+  span_t* master = is_master ? span : ((span_t*) pointer_offset(span, -(intptr_t) ((uintptr_t) span->offset_from_master * _memory_span_size)));
   assert(is_master || (span->flags & SPAN_FLAG_SUBSPAN));
   assert(master->flags & SPAN_FLAG_MASTER);
 
@@ -2073,7 +2074,7 @@ static void*
 _rpmalloc_allocate_small(heap_t* heap, size_t size) {
   assert(heap);
   //Small sizes have unique size classes
-  const uint32_t class_idx = (uint32_t)((size + (SMALL_GRANULARITY - 1)) >> SMALL_GRANULARITY_SHIFT);
+  const uint32_t class_idx = (uint32_t) ((size + (SMALL_GRANULARITY - 1)) >> SMALL_GRANULARITY_SHIFT);
   _rpmalloc_stat_inc_alloc(heap, class_idx);
   if (EXPECTED(heap->size_class[class_idx].free_list != 0))
     return free_list_pop(&heap->size_class[class_idx].free_list);
@@ -2085,7 +2086,7 @@ static void*
 _rpmalloc_allocate_medium(heap_t* heap, size_t size) {
   assert(heap);
   //Calculate the size class index and do a dependent lookup of the final class index (in case of merged classes)
-  const uint32_t base_idx = (uint32_t)(SMALL_CLASS_COUNT + ((size - (SMALL_SIZE_LIMIT + 1)) >> MEDIUM_GRANULARITY_SHIFT));
+  const uint32_t base_idx = (uint32_t) (SMALL_CLASS_COUNT + ((size - (SMALL_SIZE_LIMIT + 1)) >> MEDIUM_GRANULARITY_SHIFT));
   const uint32_t class_idx = _memory_size_class[base_idx].class_idx;
   _rpmalloc_stat_inc_alloc(heap, class_idx);
   if (EXPECTED(heap->size_class[class_idx].free_list != 0))
@@ -2184,7 +2185,7 @@ _rpmalloc_aligned_allocate(heap_t* heap, size_t alignment, size_t size) {
     // If alignment is less or equal to span header size (which is power of two),
     // and size aligned to span header size multiples is less than size + alignment,
     // then use natural alignment of blocks to provide alignment
-    size_t multiple_size = size ? (size + (SPAN_HEADER_SIZE - 1)) & ~(uintptr_t)(SPAN_HEADER_SIZE - 1) : SPAN_HEADER_SIZE;
+    size_t multiple_size = size ? (size + (SPAN_HEADER_SIZE - 1)) & ~(uintptr_t) (SPAN_HEADER_SIZE - 1) : SPAN_HEADER_SIZE;
     assert(!(multiple_size % SPAN_HEADER_SIZE));
     if (multiple_size <= (size + alignment))
       return _rpmalloc_allocate(heap, multiple_size);
@@ -2346,7 +2347,7 @@ _rpmalloc_deallocate_small_or_medium(span_t* span, void* p) {
     //Realign pointer to block start
     void* blocks_start = pointer_offset(span, SPAN_HEADER_SIZE);
     uint32_t block_offset = (uint32_t) pointer_diff(p, blocks_start);
-    p = pointer_offset(p, -(int32_t)(block_offset % span->block_size));
+    p = pointer_offset(p, -(int32_t) (block_offset % span->block_size));
   }
   //Check if block belongs to this heap or if deallocation should be deferred
 #if RPMALLOC_FIRST_CLASS_HEAPS
@@ -2394,7 +2395,7 @@ _rpmalloc_deallocate_large(span_t* span) {
     if (span->flags & SPAN_FLAG_MASTER) {
       heap->span_reserve_master = span;
     } else { //SPAN_FLAG_SUBSPAN
-      span_t* master = (span_t*) pointer_offset(span, -(intptr_t)((size_t) span->offset_from_master * _memory_span_size));
+      span_t* master = (span_t*) pointer_offset(span, -(intptr_t) ((size_t) span->offset_from_master * _memory_span_size));
       heap->span_reserve_master = master;
       assert(master->flags & SPAN_FLAG_MASTER);
       assert(atomic_load32(&master->remaining_spans) >= (int32_t) span->span_count);
@@ -2469,7 +2470,7 @@ _rpmalloc_reallocate(heap_t* heap, void* p, size_t size, size_t oldsize, unsigne
       uint32_t block_idx = block_offset / span->block_size;
       void* block = pointer_offset(blocks_start, (size_t) block_idx * span->block_size);
       if (!oldsize)
-        oldsize = (size_t)((ptrdiff_t) span->block_size - pointer_diff(p, block));
+        oldsize = (size_t) ((ptrdiff_t) span->block_size - pointer_diff(p, block));
       if ((size_t) span->block_size >= size) {
         //Still fits in block, never mind trying to save memory, but preserve data if alignment changed
         if ((p != block) && !(flags & RPMALLOC_NO_PRESERVE))
@@ -2752,7 +2753,7 @@ int rpmalloc_initialize_config(const rpmalloc_config_t* config) {
       _memory_span_size <<= 1;
       ++_memory_span_size_shift;
     }
-    _memory_span_mask = ~(uintptr_t)(_memory_span_size - 1);
+    _memory_span_mask = ~(uintptr_t) (_memory_span_size - 1);
   }
 #endif
 
@@ -3119,35 +3120,35 @@ _memory_heap_dump_statistics(heap_t* heap, void* file) {
             _memory_size_class[iclass].block_count,
             atomic_load32(&heap->size_class_use[iclass].spans_current),
             heap->size_class_use[iclass].spans_peak,
-            ((size_t) heap->size_class_use[iclass].alloc_peak * (size_t) _memory_size_class[iclass].block_size) / (size_t)(1024 * 1024),
-            ((size_t) atomic_load32(&heap->size_class_use[iclass].spans_to_cache) * _memory_span_size) / (size_t)(1024 * 1024),
-            ((size_t) atomic_load32(&heap->size_class_use[iclass].spans_from_cache) * _memory_span_size) / (size_t)(1024 * 1024),
-            ((size_t) atomic_load32(&heap->size_class_use[iclass].spans_from_reserved) * _memory_span_size) / (size_t)(1024 * 1024),
+            ((size_t) heap->size_class_use[iclass].alloc_peak * (size_t) _memory_size_class[iclass].block_size) / (size_t) (1024 * 1024),
+            ((size_t) atomic_load32(&heap->size_class_use[iclass].spans_to_cache) * _memory_span_size) / (size_t) (1024 * 1024),
+            ((size_t) atomic_load32(&heap->size_class_use[iclass].spans_from_cache) * _memory_span_size) / (size_t) (1024 * 1024),
+            ((size_t) atomic_load32(&heap->size_class_use[iclass].spans_from_reserved) * _memory_span_size) / (size_t) (1024 * 1024),
             atomic_load32(&heap->size_class_use[iclass].spans_map_calls));
   }
   fprintf(file, "Spans  Current     Peak  PeakMiB  Cached  ToCacheMiB FromCacheMiB ToReserveMiB FromReserveMiB ToGlobalMiB FromGlobalMiB  MmapCalls\n");
   for (size_t iclass = 0; iclass < LARGE_CLASS_COUNT; ++iclass) {
     if (!atomic_load32(&heap->span_use[iclass].high) && !atomic_load32(&heap->span_use[iclass].spans_map_calls))
       continue;
-    fprintf(file, "%4u: %8d %8u %8zu %7u %11zu %12zu %12zu %14zu %11zu %13zu %10u\n", (uint32_t)(iclass + 1),
+    fprintf(file, "%4u: %8d %8u %8zu %7u %11zu %12zu %12zu %14zu %11zu %13zu %10u\n", (uint32_t) (iclass + 1),
             atomic_load32(&heap->span_use[iclass].current),
             atomic_load32(&heap->span_use[iclass].high),
-            ((size_t) atomic_load32(&heap->span_use[iclass].high) * (size_t) _memory_span_size * (iclass + 1)) / (size_t)(1024 * 1024),
+            ((size_t) atomic_load32(&heap->span_use[iclass].high) * (size_t) _memory_span_size * (iclass + 1)) / (size_t) (1024 * 1024),
 #if ENABLE_THREAD_CACHE
             (unsigned int) (!iclass ? heap->span_cache.count : heap->span_large_cache[iclass - 1].count),
-            ((size_t) atomic_load32(&heap->span_use[iclass].spans_to_cache) * (iclass + 1) * _memory_span_size) / (size_t)(1024 * 1024),
-            ((size_t) atomic_load32(&heap->span_use[iclass].spans_from_cache) * (iclass + 1) * _memory_span_size) / (size_t)(1024 * 1024),
+            ((size_t) atomic_load32(&heap->span_use[iclass].spans_to_cache) * (iclass + 1) * _memory_span_size) / (size_t) (1024 * 1024),
+            ((size_t) atomic_load32(&heap->span_use[iclass].spans_from_cache) * (iclass + 1) * _memory_span_size) / (size_t) (1024 * 1024),
 #else
             0, (size_t) 0, (size_t) 0,
 #endif
-            ((size_t) atomic_load32(&heap->span_use[iclass].spans_to_reserved) * (iclass + 1) * _memory_span_size) / (size_t)(1024 * 1024),
-            ((size_t) atomic_load32(&heap->span_use[iclass].spans_from_reserved) * (iclass + 1) * _memory_span_size) / (size_t)(1024 * 1024),
-            ((size_t) atomic_load32(&heap->span_use[iclass].spans_to_global) * (size_t) _memory_span_size * (iclass + 1)) / (size_t)(1024 * 1024),
-            ((size_t) atomic_load32(&heap->span_use[iclass].spans_from_global) * (size_t) _memory_span_size * (iclass + 1)) / (size_t)(1024 * 1024),
+            ((size_t) atomic_load32(&heap->span_use[iclass].spans_to_reserved) * (iclass + 1) * _memory_span_size) / (size_t) (1024 * 1024),
+            ((size_t) atomic_load32(&heap->span_use[iclass].spans_from_reserved) * (iclass + 1) * _memory_span_size) / (size_t) (1024 * 1024),
+            ((size_t) atomic_load32(&heap->span_use[iclass].spans_to_global) * (size_t) _memory_span_size * (iclass + 1)) / (size_t) (1024 * 1024),
+            ((size_t) atomic_load32(&heap->span_use[iclass].spans_from_global) * (size_t) _memory_span_size * (iclass + 1)) / (size_t) (1024 * 1024),
             atomic_load32(&heap->span_use[iclass].spans_map_calls));
   }
   fprintf(file, "ThreadToGlobalMiB GlobalToThreadMiB\n");
-  fprintf(file, "%17zu %17zu\n", (size_t) atomic_load64(&heap->thread_to_global) / (size_t)(1024 * 1024), (size_t) atomic_load64(&heap->global_to_thread) / (size_t)(1024 * 1024));
+  fprintf(file, "%17zu %17zu\n", (size_t) atomic_load64(&heap->thread_to_global) / (size_t) (1024 * 1024), (size_t) atomic_load64(&heap->global_to_thread) / (size_t) (1024 * 1024));
 }
 
 #endif
@@ -3182,7 +3183,7 @@ void rpmalloc_dump_statistics(void* file) {
   size_t huge_current = (size_t) atomic_load32(&_huge_pages_current) * _memory_page_size;
   size_t huge_peak = (size_t) _huge_pages_peak * _memory_page_size;
   fprintf(file, "HugeCurrentMiB HugePeakMiB\n");
-  fprintf(file, "%14zu %11zu\n", huge_current / (size_t)(1024 * 1024), huge_peak / (size_t)(1024 * 1024));
+  fprintf(file, "%14zu %11zu\n", huge_current / (size_t) (1024 * 1024), huge_peak / (size_t) (1024 * 1024));
 
   size_t mapped = (size_t) atomic_load32(&_mapped_pages) * _memory_page_size;
   size_t mapped_os = (size_t) atomic_load32(&_mapped_pages_os) * _memory_page_size;
@@ -3192,12 +3193,12 @@ void rpmalloc_dump_statistics(void* file) {
   size_t reserved_total = (size_t) atomic_load32(&_reserved_spans) * _memory_span_size;
   fprintf(file, "MappedMiB MappedOSMiB MappedPeakMiB MappedTotalMiB UnmappedTotalMiB ReservedTotalMiB\n");
   fprintf(file, "%9zu %11zu %13zu %14zu %16zu %16zu\n",
-          mapped / (size_t)(1024 * 1024),
-          mapped_os / (size_t)(1024 * 1024),
-          mapped_peak / (size_t)(1024 * 1024),
-          mapped_total / (size_t)(1024 * 1024),
-          unmapped_total / (size_t)(1024 * 1024),
-          reserved_total / (size_t)(1024 * 1024));
+          mapped / (size_t) (1024 * 1024),
+          mapped_os / (size_t) (1024 * 1024),
+          mapped_peak / (size_t) (1024 * 1024),
+          mapped_total / (size_t) (1024 * 1024),
+          unmapped_total / (size_t) (1024 * 1024),
+          reserved_total / (size_t) (1024 * 1024));
 
   fprintf(file, "\n");
 #else

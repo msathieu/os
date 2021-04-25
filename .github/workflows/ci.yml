@@ -8,9 +8,12 @@ jobs:
       fail-fast: false
     runs-on: ${{ matrix.os }}
     steps:
-      - name: Install dependencies
+      - name: Install dependencies (Ubuntu)
         if: ${{ matrix.os == 'ubuntu-20.04' }}
-        run: sudo apt-get update && sudo apt-get install -y libmpc-dev libmpfr-dev
+        run: sudo apt-get update && sudo apt-get install -y ninja-build
+      - name: Install dependencies (MacOS)
+        if: ${{ matrix.os == 'macos-10.15' }}
+        run: brew install ninja
       - name: Checkout
         uses: actions/checkout@v2
         with:
@@ -23,7 +26,7 @@ jobs:
           path: tools/toolchain
       - name: Build toolchain
         if: steps.cache-toolchain.outputs.cache-hit != 'true'
-        run: make toolchain -j2
+        run: make toolchain
       - name: Clean toolchain directory
         run: make clean
   multiboot:
@@ -36,7 +39,7 @@ jobs:
     steps:
       - name: Install dependencies
         if: ${{ matrix.os == 'ubuntu-20.04' }}
-        run: sudo apt-get update && sudo apt-get install -y qemu-system-x86 llvm lld mtools
+        run: sudo apt-get update && sudo apt-get install -y qemu-system-x86 mtools
       - name: Checkout
         uses: actions/checkout@v2
         with:
@@ -47,7 +50,7 @@ jobs:
           key: toolchain-${{ matrix.os }}-${{ hashFiles('tools/Makefile') }}
           path: tools/toolchain
       - name: Build OS
-        run: PATH=/usr/local/opt/llvm/bin:$PATH make build-multiboot -j2
+        run: make build-multiboot -j2
       - name: Build OS image with GRUB
         if: ${{ matrix.os == 'ubuntu-20.04' }}
         run: make build-grub -j2
@@ -122,11 +125,17 @@ jobs:
           make run-grub-nographic
   style:
     runs-on: ubuntu-20.04
+    needs: toolchain
     steps:
       - name: Checkout
         uses: actions/checkout@v2
         with:
           submodules: recursive
+      - name: Cache toolchain
+        uses: actions/cache@v2
+        with:
+          key: toolchain-ubuntu-20.04-${{ hashFiles('tools/Makefile') }}
+          path: tools/toolchain
       - name: Format code
         run: make format
       - name: Check if there are any changes
@@ -135,8 +144,6 @@ jobs:
     runs-on: ubuntu-20.04
     needs: toolchain
     steps:
-      - name: Install dependencies
-        run: sudo apt-get update && sudo apt-get install -y clang-tools llvm lld
       - name: Checkout
         uses: actions/checkout@v2
         with:

@@ -96,11 +96,11 @@ int main(void) {
       send_pid_ipc_call(parent_pid, IPC_VFSD_FS_READ, sizeof(struct svfs_header) + header->nfiles * sizeof(struct svfs_file) + header->files[i].offset, 0, 0, (uintptr_t) file, header->files[i].size);
       uint8_t hash[64];
       crypto_blake2b(hash, file, header->files[i].size);
+      free(file);
       if (memcmp(hash, header->files[i].hash, 64)) {
         syslog(LOG_ERR, "File %s has invalid hash", header->files[i].name);
         return 1;
       }
-      free(file);
     }
   }
   ipc_handlers[IPC_VFSD_FS_OPEN] = open_handler;

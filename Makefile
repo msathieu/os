@@ -1,10 +1,11 @@
 export DESTDIR:=$(CURDIR)/sysroot
-export PATH:=$(PATH):$(CURDIR)/tools/toolchain/bin
-export CC:=x86_64-os-gcc
-export AR:=x86_64-os-ar
-export AS:=x86_64-os-as
-export OBJCOPY:=x86_64-os-objcopy
+export PATH:=$(CURDIR)/tools/toolchain/bin:$(PATH)
+export CC:=clang
+export AR:=llvm-ar
+export AS:=clang
+export OBJCOPY:=llvm-objcopy
 export CFLAGS:=-Wall -Wextra -Werror -O2 -MMD -Iinclude -Wshadow
+export ASFLAGS:=-c
 export LDTARGET:=elf
 ifeq ($(shell uname),Darwin)
 export LDTARGET:=linux-elf
@@ -64,15 +65,15 @@ analyze:
 	scan-build --status-bugs --use-cc=clang $(MAKE) -Cloader-mb
 	scan-build --status-bugs --use-cc=clang $(MAKE) -Ckernel
 	$(MAKE) install-headers -Clibc
-	scan-build --status-bugs --use-cc=x86_64-os-gcc $(MAKE) -Clibc
-	scan-build --status-bugs --use-cc=x86_64-os-gcc $(MAKE) -Clibraries
-	scan-build --status-bugs --use-cc=x86_64-os-gcc $(MAKE) -Cinit
-	scan-build --status-bugs --use-cc=x86_64-os-gcc $(MAKE) -Cdrivers
-	scan-build --status-bugs --use-cc=x86_64-os-gcc $(MAKE) -Cservers
-	scan-build --status-bugs --use-cc=x86_64-os-gcc $(MAKE) -Cfilesystems
-	scan-build --status-bugs --use-cc=x86_64-os-gcc $(MAKE) -Cloadelf
-	scan-build --status-bugs --use-cc=x86_64-os-gcc $(MAKE) -Csh
-	scan-build --status-bugs --use-cc=x86_64-os-gcc $(MAKE) -Ccoreutils
+	scan-build --status-bugs --use-cc=clang $(MAKE) -Clibc
+	scan-build --status-bugs --use-cc=clang $(MAKE) -Clibraries
+	scan-build --status-bugs --use-cc=clang $(MAKE) -Cinit
+	scan-build --status-bugs --use-cc=clang $(MAKE) -Cdrivers
+	scan-build --status-bugs --use-cc=clang $(MAKE) -Cservers
+	scan-build --status-bugs --use-cc=clang $(MAKE) -Cfilesystems
+	scan-build --status-bugs --use-cc=clang $(MAKE) -Cloadelf
+	scan-build --status-bugs --use-cc=clang $(MAKE) -Csh
+	scan-build --status-bugs --use-cc=clang $(MAKE) -Ccoreutils
 clean:
-	rm -rf sysroot boot system *.img os.iso tools/bin $(filter-out $(shell find ./tools/toolchain -name *.o), $(shell find . -name *.o)) $(filter-out $(shell find ./tools/toolchain -name *.d), $(shell find . -name *.d)) $(wildcard */*.key)
 	$(MAKE) clean -Ctools
+	rm -rf sysroot boot system *.img os.iso tools/bin `find . -name *.o` `find . -name *.d` $(wildcard */*.key)
