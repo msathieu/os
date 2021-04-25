@@ -76,4 +76,4 @@ analyze:
 	scan-build --status-bugs --use-cc=clang $(MAKE) -Ccoreutils
 clean:
 	$(MAKE) clean -Ctools
-	rm -rf sysroot boot system *.img os.iso tools/bin $(shell find . -name *.o) $(shell find . -name *.d) $(wildcard */*.key)
+	rm -rf sysroot boot system *.img os.iso tools/bin `find . -name *.o` `find . -name *.d` $(wildcard */*.key)
