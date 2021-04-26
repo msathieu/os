@@ -42,12 +42,6 @@ void __ubsan_handle_builtin_unreachable(struct source_location* source) {
 void __ubsan_handle_divrem_overflow(struct source_location* source) {
   syslog(LOG_WARNING, "Undefined behavior: %s:%d\n", source->file, source->line);
 }
-void __ubsan_handle_nonnull_arg(struct source_location* source) {
-  syslog(LOG_WARNING, "Undefined behavior: %s:%d\n", source->file, source->line);
-}
 void __ubsan_handle_invalid_builtin(struct source_location* source) {
-  syslog(LOG_WARNING, "Undefined behavior: %s:%d\n", source->file, source->line);
-}
-void __ubsan_handle_vla_bound_not_positive(struct source_location* source) {
   syslog(LOG_WARNING, "Undefined behavior: %s:%d\n", source->file, source->line);
 }

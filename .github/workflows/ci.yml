@@ -11,7 +11,7 @@ jobs:
       - name: Install dependencies (Ubuntu)
         if: ${{ matrix.os == 'ubuntu-20.04' }}
         run: sudo apt-get update && sudo apt-get install -y ninja-build
-      - name: Install dependencies (MacOS)
+      - name: Install dependencies (macOS)
         if: ${{ matrix.os == 'macos-10.15' }}
         run: brew install ninja
       - name: Checkout
