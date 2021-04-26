@@ -11,8 +11,8 @@ int main(int argc, char* argv[]) {
     }
     while (1) {
       char buffer[1024];
-      size_t size = read(fileno(file), buffer, 1024);
-      if (!size) {
+      ssize_t size = read(fileno(file), buffer, 1024);
+      if (!size || size == -1) {
         break;
       }
       fwrite(buffer, 1, size, stdout);

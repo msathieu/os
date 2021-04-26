@@ -17,7 +17,7 @@ struct file {
 };
 
 static struct linked_list files_list;
-static size_t next_inode = 0;
+static size_t next_inode = 1;
 
 static int64_t open_handler(uint64_t flags, uint64_t arg1, uint64_t arg2, uint64_t address, uint64_t size) {
   if (arg1 || arg2) {
@@ -29,8 +29,7 @@ static int64_t open_handler(uint64_t flags, uint64_t arg1, uint64_t arg2, uint64
     return -IPC_ERR_INSUFFICIENT_PRIVILEGE;
   }
   if (size == 1) {
-    syslog(LOG_DEBUG, "No file path specified");
-    return -IPC_ERR_INVALID_ARGUMENTS;
+    return 0;
   }
   char* buffer = malloc(size);
   memcpy(buffer, (void*) address, size);

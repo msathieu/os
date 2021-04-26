@@ -64,6 +64,9 @@ static int64_t open_handler(__attribute__((unused)) uint64_t flags, uint64_t arg
     syslog(LOG_DEBUG, "Not allowed to open file");
     return -IPC_ERR_INSUFFICIENT_PRIVILEGE;
   }
+  if (size == 1) {
+    return 512;
+  }
   char* buffer = malloc(size);
   memcpy(buffer, (void*) address, size);
   if (buffer[size - 1]) {

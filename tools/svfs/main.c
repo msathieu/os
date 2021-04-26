@@ -7,11 +7,16 @@
 #include <sys/stat.h>
 #define SVFS_MAGIC 0x55ce581be6Bfa5a6
 
+enum {
+  TYPE_FILE,
+  TYPE_DIR
+};
 struct svfs_file {
   uint8_t name[256];
   uint64_t offset;
   uint64_t size;
   uint8_t hash[64];
+  uint8_t type;
 };
 struct svfs_header {
   uint8_t signature[64];
@@ -39,16 +44,16 @@ static void loop_directory(const char* path, int step) {
     stat(abs_name, &entry_stat);
     if (S_ISDIR(entry_stat.st_mode)) {
       loop_directory(abs_name, step);
-    } else {
-      if (!step) {
-        header->nfiles++;
-        header = realloc(header, sizeof(struct svfs_header) + header->nfiles * sizeof(struct svfs_file));
-        strncpy((char*) header->files[header->nfiles - 1].name, abs_name + strlen("system/"), 256);
-        if (header->nfiles == 1) {
-          header->files[0].offset = 0;
-        } else {
-          header->files[header->nfiles - 1].offset = header->files[header->nfiles - 2].offset + header->files[header->nfiles - 2].size;
-        }
+    }
+    if (!step) {
+      header->nfiles++;
+      header = realloc(header, sizeof(struct svfs_header) + header->nfiles * sizeof(struct svfs_file));
+      strncpy((char*) header->files[header->nfiles - 1].name, abs_name + strlen("system/"), 256);
+      header->files[header->nfiles - 1].type = TYPE_DIR;
+      header->files[header->nfiles - 1].offset = header->files[header->nfiles - 2].offset + header->files[header->nfiles - 2].size;
+      header->files[header->nfiles - 1].size = 0;
+      if (!S_ISDIR(entry_stat.st_mode)) {
+        header->files[header->nfiles - 1].type = TYPE_FILE;
         header->files[header->nfiles - 1].size = entry_stat.st_size;
         uint8_t* content = malloc(entry_stat.st_size);
         FILE* file = fopen(abs_name, "r");
@@ -59,7 +64,9 @@ static void loop_directory(const char* path, int step) {
         fclose(file);
         crypto_blake2b(header->files[header->nfiles - 1].hash, content, entry_stat.st_size);
         free(content);
-      } else {
+      }
+    } else {
+      if (!S_ISDIR(entry_stat.st_mode)) {
         uint8_t* content = malloc(entry_stat.st_size);
         FILE* file = fopen(abs_name, "r");
         if (fread(content, 1, entry_stat.st_size, file) != (size_t) entry_stat.st_size) {
@@ -75,9 +82,11 @@ static void loop_directory(const char* path, int step) {
   closedir(directory);
 }
 int main(void) {
-  header = calloc(1, sizeof(struct svfs_header));
+  header = calloc(1, sizeof(struct svfs_header) + sizeof(struct svfs_file));
   header->magic = SVFS_MAGIC;
   header->version = 0;
+  header->nfiles = 1;
+  header->files[0].type = TYPE_DIR;
   loop_directory("system", 0);
   FILE* private_file = fopen("private.key", "r");
   FILE* public_file = fopen("public.key", "r");

@@ -8,11 +8,16 @@
 #include <unistd.h>
 #define SVFS_MAGIC 0x55ce581be6Bfa5a6
 
+enum {
+  TYPE_FILE,
+  TYPE_DIR
+};
 struct svfs_file {
   uint8_t name[256];
   uint64_t offset;
   uint64_t size;
   uint8_t hash[64];
+  uint8_t type;
 };
 struct svfs_header {
   uint8_t signature[64];
@@ -62,6 +67,10 @@ static int64_t read_handler(uint64_t inode, uint64_t offset, uint64_t arg2, uint
     syslog(LOG_DEBUG, "Invalid inode");
     return -IPC_ERR_INVALID_ARGUMENTS;
   }
+  if (header->files[inode].type != TYPE_FILE) {
+    syslog(LOG_DEBUG, "Invalid inode");
+    return -IPC_ERR_INVALID_ARGUMENTS;
+  }
   if (offset >= header->files[inode].size) {
     return 0;
   }
@@ -92,6 +101,9 @@ int main(void) {
       return 1;
     }
     for (size_t i = 0; i < header->nfiles; i++) {
+      if (header->files[i].type != TYPE_FILE) {
+        continue;
+      }
       uint8_t* file = calloc(header->files[i].size, 1);
       send_pid_ipc_call(parent_pid, IPC_VFSD_FS_READ, sizeof(struct svfs_header) + header->nfiles * sizeof(struct svfs_file) + header->files[i].offset, 0, 0, (uintptr_t) file, header->files[i].size);
       uint8_t hash[64];
