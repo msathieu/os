@@ -58,7 +58,7 @@ toolchain:
 	$(MAKE) install-headers -Clibc
 	$(MAKE) build-toolchain -Ctools
 format:
-	clang-format -i $(shell find . -name *.c) $(shell find . -name *.h)
+	clang-format -i $(filter-out $(shell find ./acpid/lai -name *.c) $(shell find ./acpid/lai -name *.h), $(shell find . -name *.c) $(shell find . -name *.h))
 analyze: export CFLAGS+=-I$(DESTDIR)/usr/include
 analyze:
 	mkdir -p sysroot/boot sysroot/sbin sysroot/bin sysroot/lib sysroot/usr
