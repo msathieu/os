@@ -11,7 +11,7 @@ $(PROGRAMS): $$(patsubst %.c, %.o, $$(wildcard $$(patsubst bin/%, %, $$@)/*.c)) 
 	mkdir -p bin
 	$(CC) -s -o $@ $^
 $(LLVM).tar.gz:
-	wget https://github.com/MSathieu/os-llvm/archive/$(LLVM).tar.gz
+	wget https://github.com/msathieu/os-llvm/archive/$(LLVM).tar.gz
 	echo "5b7eef3eff013054f3381dac6bb34cf1bc5a70c3d722f8adf0975ae88c1a1df616780d544713ca2c8e15d752906f924f1186ab7d052b41a621d2baf90ee5e799  $(LLVM).tar.gz" | shasum -c
 build-toolchain: $(LLVM).tar.gz
 	mkdir -p toolchain
