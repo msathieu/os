@@ -1,4 +1,4 @@
-CFLAGS+=--target=x86_64-elf -ffreestanding --sysroot=/dev/null -fstack-protector-strong -mretpoline -mcmodel=kernel -mno-red-zone -mno-mmx -mno-sse -mno-sse2 -flto -fbuiltin -Ilibc/include
+CFLAGS+=--target=x86_64-elf -ffreestanding --sysroot=/dev/null -fstack-protector-strong -mretpoline -mcmodel=kernel -mno-red-zone -mno-mmx -mno-sse -mno-sse2 -flto -fvisibility=hidden -fsanitize=cfi -fbuiltin -Ilibc/include
 ASFLAGS+=--target=x86_64-elf
 
 LIBC:=$(patsubst %.c, %.o, $(wildcard libc/*/*.c)) $(patsubst %.s, %.o, $(wildcard libc/arch/x86_64/*.s))

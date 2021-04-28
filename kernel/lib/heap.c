@@ -24,8 +24,8 @@ static struct sorted_list heap_list;
 bool heap_enabled;
 static size_t heap_size = HEAP_INITIAL_SIZE;
 
-static int heap_compare(struct heap_header* header1, struct heap_header* header2) {
-  if (header1->size <= header2->size) {
+static int heap_compare(void* header1, void* header2) {
+  if (((struct heap_header*) header1)->size <= ((struct heap_header*) header2)->size) {
     return -1;
   } else {
     return 1;
@@ -172,6 +172,7 @@ void free(void* address) {
     header = previous_header;
   }
   struct heap_header* next_header = (struct heap_header*) (footer + 1);
+  asm volatile("nop;nop;nop;nop");
   if ((uintptr_t) next_header < HEAP_START + heap_size) {
     if (next_header->magic != heap_magic) {
       panic("Invalid magic value");

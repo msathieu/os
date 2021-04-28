@@ -1,4 +1,4 @@
-CFLAGS+=--target=i686-elf -ffreestanding --sysroot=/dev/null -fstack-protector-strong -mretpoline -mno-mmx -mno-sse -flto -fbuiltin -Ilibc/include
+CFLAGS+=--target=i686-elf -ffreestanding --sysroot=/dev/null -fstack-protector-strong -mretpoline -mno-mmx -mno-sse -flto -fvisibility=hidden -fsanitize=cfi -fbuiltin -Ilibc/include
 ASFLAGS+=--target=i686-elf
 
 LIBC:=$(patsubst %.c, %.o, $(wildcard libc/*/*.c) $(wildcard libc/arch/generic/*.c))
