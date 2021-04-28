@@ -2,6 +2,7 @@
 #include <cpu/idt.h>
 #include <cpu/paging.h>
 #include <cpu/smp.h>
+#include <cpuid.h>
 #include <elf.h>
 #include <heap.h>
 #include <panic.h>
@@ -17,6 +18,11 @@ struct loader_struct loader_struct;
 _Noreturn void kmain(unsigned long magic, uintptr_t structptr) {
   if (magic != 0x375f3b9858ea0482) {
     panic("Magic value is incorrect");
+  }
+  unsigned eax, ebx, ecx = 0, edx;
+  __get_cpuid(1, &eax, &ebx, &ecx, &edx);
+  if (!(ecx & 0x100000)) {
+    panic("SSE 4.2 isn't supported");
   }
   memcpy(&loader_struct, (void*) structptr, sizeof(struct loader_struct));
   setup_gdt(0);
