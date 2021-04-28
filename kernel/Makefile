@@ -9,7 +9,7 @@ OFILES:=$(patsubst %.c, %.o, $(CFILES)) $(patsubst %.s, %.o, $(SFILES)) $(patsub
 
 $(LIBC): CFLAGS+=-fno-builtin
 $(DESTDIR)/boot/kernel.bin: $(OFILES) $(LIBC)
-	$(CC) --target=x86_64-$(LDTARGET) -fuse-ld=lld -flto -static -nostdlib -s -T link.ld -o $@ $^
+	$(CC) --target=x86_64-$(LDTARGET) -fuse-ld=lld -static -nostdlib -s -T link.ld -o $@ $^
 %.o: %.key
 	$(OBJCOPY) -O elf64-x86-64 -I binary $^ $@
 -include $(OFILES:.o=.d)

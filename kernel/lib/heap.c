@@ -65,7 +65,7 @@ __attribute__((optnone)) void test_alloc(void) {
 }
 void setup_heap(void) {
   heap_magic = rdrand();
-  heap_list.compare = (sorted_list_compare) heap_compare;
+  heap_list.compare = heap_compare;
   map_range(HEAP_START, HEAP_INITIAL_SIZE, 0, 1, 0);
   struct heap_header* initial_header = (struct heap_header*) HEAP_START;
   initial_header->size = HEAP_INITIAL_SIZE - sizeof(struct heap_header) - sizeof(struct heap_footer);
