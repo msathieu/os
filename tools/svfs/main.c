@@ -48,10 +48,10 @@ static void loop_directory(const char* path, int step) {
     if (!step) {
       header->nfiles++;
       header = realloc(header, sizeof(struct svfs_header) + header->nfiles * sizeof(struct svfs_file));
+      memset(&header->files[header->nfiles - 1], 0, sizeof(struct svfs_file));
       strncpy((char*) header->files[header->nfiles - 1].name, abs_name + strlen("system/"), 256);
       header->files[header->nfiles - 1].type = TYPE_DIR;
       header->files[header->nfiles - 1].offset = header->files[header->nfiles - 2].offset + header->files[header->nfiles - 2].size;
-      header->files[header->nfiles - 1].size = 0;
       if (!S_ISDIR(entry_stat.st_mode)) {
         header->files[header->nfiles - 1].type = TYPE_FILE;
         header->files[header->nfiles - 1].size = entry_stat.st_size;

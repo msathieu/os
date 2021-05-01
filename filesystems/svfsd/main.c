@@ -6,12 +6,9 @@
 #include <string.h>
 #include <syslog.h>
 #include <unistd.h>
+#include <vfs.h>
 #define SVFS_MAGIC 0x55ce581be6Bfa5a6
 
-enum {
-  TYPE_FILE,
-  TYPE_DIR
-};
 struct svfs_file {
   uint8_t name[256];
   uint64_t offset;
@@ -54,6 +51,27 @@ static int64_t open_handler(uint64_t flags, uint64_t arg1, uint64_t arg2, uint64
   }
   return -IPC_ERR_INVALID_ARGUMENTS;
 }
+static int64_t stat_handler(uint64_t inode, uint64_t arg1, uint64_t arg2, uint64_t address, uint64_t size) {
+  if (arg1 || arg2) {
+    syslog(LOG_DEBUG, "Reserved argument is set");
+    return -IPC_ERR_INVALID_ARGUMENTS;
+  }
+  if (!has_ipc_caller_capability(CAP_NAMESPACE_FILESYSTEMS, CAP_VFSD)) {
+    syslog(LOG_DEBUG, "Not allowed to stat file");
+    return -IPC_ERR_INSUFFICIENT_PRIVILEGE;
+  }
+  if (inode >= header->nfiles) {
+    syslog(LOG_DEBUG, "Invalid inode");
+    return -IPC_ERR_INVALID_ARGUMENTS;
+  }
+  if (size != sizeof(struct vfs_stat)) {
+    syslog(LOG_DEBUG, "Invalid stat size");
+    return -IPC_ERR_INVALID_ARGUMENTS;
+  }
+  struct vfs_stat* stat = (struct vfs_stat*) address;
+  stat->type = header->files[inode].type;
+  return 0;
+}
 static int64_t read_handler(uint64_t inode, uint64_t offset, uint64_t arg2, uint64_t address, uint64_t size) {
   if (arg2) {
     syslog(LOG_DEBUG, "Reserved argument is set");
@@ -64,10 +82,6 @@ static int64_t read_handler(uint64_t inode, uint64_t offset, uint64_t arg2, uint
     return -IPC_ERR_INSUFFICIENT_PRIVILEGE;
   }
   if (inode >= header->nfiles) {
-    syslog(LOG_DEBUG, "Invalid inode");
-    return -IPC_ERR_INVALID_ARGUMENTS;
-  }
-  if (header->files[inode].type != TYPE_FILE) {
     syslog(LOG_DEBUG, "Invalid inode");
     return -IPC_ERR_INVALID_ARGUMENTS;
   }
@@ -101,7 +115,7 @@ int main(void) {
       return 1;
     }
     for (size_t i = 0; i < header->nfiles; i++) {
-      if (header->files[i].type != TYPE_FILE) {
+      if (header->files[i].type != VFS_TYPE_FILE) {
         continue;
       }
       uint8_t* file = calloc(header->files[i].size, 1);
@@ -117,6 +131,7 @@ int main(void) {
   }
   ipc_handlers[IPC_VFSD_FS_OPEN] = open_handler;
   ipc_handlers[IPC_VFSD_FS_READ] = read_handler;
+  ipc_handlers[IPC_VFSD_FS_STAT] = stat_handler;
   while (1) {
     handle_ipc();
   }

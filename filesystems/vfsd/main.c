@@ -8,11 +8,13 @@
 #include <stdlib.h>
 #include <string.h>
 #include <syslog.h>
+#include <vfs.h>
 
 struct fs_node {
   size_t mount_i;
   size_t inode;
   size_t nfds;
+  struct vfs_stat stat;
 };
 struct fd {
   bool exists;
@@ -182,6 +184,7 @@ static int64_t open_file_handler(uint64_t flags, uint64_t arg1, uint64_t arg2, u
   fd->node->mount_i = mount_i;
   fd->node->inode = inode;
   fd->flags = flags;
+  send_pid_ipc_call(mounts[fd->node->mount_i].pid, IPC_VFSD_FS_STAT, fd->node->inode, 0, 0, (uintptr_t) fd->node + offsetof(struct fs_node, stat), sizeof(struct vfs_stat));
   return fd_i;
 }
 static int64_t close_file_handler(uint64_t fd_num, uint64_t arg1, uint64_t arg2, uint64_t arg3, uint64_t arg4) {
@@ -221,6 +224,10 @@ static int64_t handle_transfer(uint64_t fd_num, uint64_t arg1, uint64_t arg2, ui
       if (fd_num >= process->nfds || !process->fds[fd_num].exists) {
         syslog(LOG_DEBUG, "File descriptor doesn't exist");
         return -IPC_ERR_INVALID_ARGUMENTS;
+      }
+      if (process->fds[fd_num].node->stat.type != VFS_TYPE_FILE) {
+        syslog(LOG_DEBUG, "Can't access file");
+        return -IPC_ERR_PROGRAM_DEFINED;
       }
       if (write && !(process->fds[fd_num].flags & (O_RDWR | O_WRONLY))) {
         syslog(LOG_DEBUG, "File not opened for writing");

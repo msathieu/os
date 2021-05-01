@@ -6,6 +6,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <syslog.h>
+#include <vfs.h>
 #define TMP_MAGIC 0x5381835340924865
 
 struct file {
@@ -65,6 +66,38 @@ static int64_t open_handler(uint64_t flags, uint64_t arg1, uint64_t arg2, uint64
     free(buffer);
     return -IPC_ERR_INVALID_ARGUMENTS;
   }
+}
+static int64_t stat_handler(uint64_t inode, uint64_t arg1, uint64_t arg2, uint64_t address, uint64_t size) {
+  if (arg1 || arg2) {
+    syslog(LOG_DEBUG, "Reserved argument is set");
+    return -IPC_ERR_INVALID_ARGUMENTS;
+  }
+  if (!has_ipc_caller_capability(CAP_NAMESPACE_FILESYSTEMS, CAP_VFSD)) {
+    syslog(LOG_DEBUG, "Not allowed to stat file");
+    return -IPC_ERR_INSUFFICIENT_PRIVILEGE;
+  }
+  if (size != sizeof(struct vfs_stat)) {
+    syslog(LOG_DEBUG, "Invalid stat size");
+    return -IPC_ERR_INVALID_ARGUMENTS;
+  }
+  struct vfs_stat* stat = (struct vfs_stat*) address;
+  if (!inode) {
+    stat->type = VFS_TYPE_DIR;
+    return 0;
+  }
+  struct file* file = 0;
+  for (struct file* file_i = (struct file*) files_list.first; file_i; file_i = (struct file*) file_i->list_member.next) {
+    if (file_i->inode == inode) {
+      file = file_i;
+      break;
+    }
+  }
+  if (!file) {
+    syslog(LOG_DEBUG, "Invalid inode");
+    return -IPC_ERR_INVALID_ARGUMENTS;
+  }
+  stat->type = VFS_TYPE_FILE;
+  return 0;
 }
 static int64_t read_handler(uint64_t inode, uint64_t offset, uint64_t arg2, uint64_t address, uint64_t size) {
   if (arg2) {
@@ -138,6 +171,7 @@ int main(void) {
   ipc_handlers[IPC_VFSD_FS_OPEN] = open_handler;
   ipc_handlers[IPC_VFSD_FS_WRITE] = write_handler;
   ipc_handlers[IPC_VFSD_FS_READ] = read_handler;
+  ipc_handlers[IPC_VFSD_FS_STAT] = stat_handler;
   while (1) {
     handle_ipc();
   }

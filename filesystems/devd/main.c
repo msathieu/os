@@ -4,6 +4,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <syslog.h>
+#include <vfs.h>
 
 struct device {
   const char* name;
@@ -83,6 +84,35 @@ static int64_t open_handler(__attribute__((unused)) uint64_t flags, uint64_t arg
   free(buffer);
   return -IPC_ERR_INVALID_ARGUMENTS;
 }
+static int64_t stat_handler(uint64_t inode, uint64_t arg1, uint64_t arg2, uint64_t address, uint64_t size) {
+  if (arg1 || arg2) {
+    syslog(LOG_DEBUG, "Reserved argument is set");
+    return -IPC_ERR_INVALID_ARGUMENTS;
+  }
+  if (!has_ipc_caller_capability(CAP_NAMESPACE_FILESYSTEMS, CAP_VFSD)) {
+    syslog(LOG_DEBUG, "Not allowed to stat file");
+    return -IPC_ERR_INSUFFICIENT_PRIVILEGE;
+  }
+  if (size != sizeof(struct vfs_stat)) {
+    syslog(LOG_DEBUG, "Invalid stat size");
+    return -IPC_ERR_INVALID_ARGUMENTS;
+  }
+  struct vfs_stat* stat = (struct vfs_stat*) address;
+  if (inode == 512) {
+    stat->type = VFS_TYPE_DIR;
+    return 0;
+  }
+  if (inode >= 512) {
+    syslog(LOG_DEBUG, "Invalid inode");
+    return -IPC_ERR_INVALID_ARGUMENTS;
+  }
+  if (!devices[inode].pid) {
+    syslog(LOG_DEBUG, "Invalid inode");
+    return -IPC_ERR_INVALID_ARGUMENTS;
+  }
+  stat->type = VFS_TYPE_FILE;
+  return 0;
+}
 static int64_t handle_transfer(uint64_t inode, uint64_t offset, uint64_t arg2, uint64_t address, uint64_t size, bool write) {
   if (arg2) {
     syslog(LOG_DEBUG, "Reserved argument is set");
@@ -119,6 +149,7 @@ int main(void) {
   ipc_handlers[IPC_VFSD_FS_WRITE] = write_handler;
   ipc_handlers[IPC_DEVD_REGISTER] = register_device_handler;
   ipc_handlers[IPC_VFSD_FS_READ] = read_handler;
+  ipc_handlers[IPC_VFSD_FS_STAT] = stat_handler;
   while (1) {
     handle_ipc();
   }
