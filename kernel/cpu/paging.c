@@ -299,7 +299,7 @@ uintptr_t get_free_ipc_range(size_t size) {
   return 0;
 }
 static void fault_handler(struct isr_registers* registers) {
-  printf("Page fault at %lx: ", registers->rip);
+  printf("Page fault at 0x%lx: ", registers->rip);
   if (!(registers->error & 1)) {
     printf("not present ");
   }

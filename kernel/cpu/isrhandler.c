@@ -55,9 +55,10 @@ void isr_handler_common(struct isr_registers* registers) {
   }
   if (registers->isr < 32) {
     if (registers->cs == 0x23 && registers->isr != 2 && registers->isr != 8) {
-      printf("Exception (%s) occurred in user mode, terminating task\n", exceptions[registers->isr]);
+      printf("Exception (%s) occurred at 0x%lx in user mode, terminating task\n", exceptions[registers->isr], registers->rip);
       return terminate_current_task(registers);
     }
+    printf("RIP: 0x%lx\n", registers->rip);
     panic(exceptions[registers->isr]);
   }
   printf("Unhandled interrupt %d\n", (int) registers->isr);
