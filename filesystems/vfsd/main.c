@@ -31,11 +31,12 @@ struct process {
 struct mount {
   const char* path;
   pid_t pid;
+  struct fs_node node;
+  bool mounted;
 };
 
 static struct mount mounts[512];
 static struct linked_list process_list;
-static bool ready;
 static size_t blocked_calls;
 
 static int64_t mount_handler(uint64_t arg0, uint64_t arg1, uint64_t arg2, uint64_t address, uint64_t size) {
@@ -84,6 +85,7 @@ static int64_t mount_handler(uint64_t arg0, uint64_t arg1, uint64_t arg2, uint64
     if (!mounts[i].path) {
       mounts[i].path = buffer;
       mounts[i].pid = pid;
+      mounts[i].node.mount_i = i;
       return 0;
     }
   }
@@ -91,14 +93,35 @@ static int64_t mount_handler(uint64_t arg0, uint64_t arg1, uint64_t arg2, uint64
   syslog(LOG_CRIT, "Reached maximum number of mounts");
   return -IPC_ERR_PROGRAM_DEFINED;
 }
-static int64_t open_file_handler(uint64_t flags, uint64_t arg1, uint64_t arg2, uint64_t address, uint64_t size) {
+static int64_t finish_mount_handler(uint64_t inode, uint64_t arg1, uint64_t arg2, uint64_t address, uint64_t size) {
   if (arg1 || arg2) {
     syslog(LOG_DEBUG, "Reserved argument is set");
     return -IPC_ERR_INVALID_ARGUMENTS;
   }
-  if (!ready) {
-    blocked_calls++;
-    return -IPC_ERR_BLOCK;
+  if (size != sizeof(struct vfs_stat)) {
+    syslog(LOG_DEBUG, "Invalid stat size");
+    return -IPC_ERR_INVALID_ARGUMENTS;
+  }
+  pid_t pid = get_ipc_caller_pid();
+  for (size_t i = 0; i < 512; i++) {
+    if (mounts[i].pid == pid) {
+      mounts[i].mounted = 1;
+      mounts[i].node.inode = inode;
+      memcpy(&mounts[i].node.stat, (void*) address, sizeof(struct vfs_stat));
+      for (size_t j = 0; j < blocked_calls; j++) {
+        ipc_unblock(0);
+      }
+      blocked_calls = 0;
+      return 0;
+    }
+  }
+  syslog(LOG_DEBUG, "Process doesn't handle mount");
+  return -IPC_ERR_INSUFFICIENT_PRIVILEGE;
+}
+static int64_t open_file_handler(uint64_t flags, uint64_t arg1, uint64_t arg2, uint64_t address, uint64_t size) {
+  if (arg1 || arg2) {
+    syslog(LOG_DEBUG, "Reserved argument is set");
+    return -IPC_ERR_INVALID_ARGUMENTS;
   }
   size_t access_flags = flags & (O_RDONLY | O_RDWR | O_WRONLY);
   if (access_flags != O_RDONLY && access_flags != O_RDWR && access_flags != O_WRONLY) {
@@ -129,18 +152,12 @@ static int64_t open_file_handler(uint64_t flags, uint64_t arg1, uint64_t arg2, u
       mount_size = strlen(mounts[i].path);
     }
   }
-  if (mount_i == -1) {
+  if (mount_i == -1 || !mounts[mount_i].mounted) {
     free(buffer);
-    syslog(LOG_ERR, "No root filesystem mounted");
-    return -IPC_ERR_PROGRAM_DEFINED;
+    blocked_calls++;
+    return -IPC_ERR_BLOCK;
   }
-  long inode = -IPC_ERR_INVALID_PID;
-  while (inode == -IPC_ERR_INVALID_PID) {
-    inode = send_pid_ipc_call(mounts[mount_i].pid, IPC_VFSD_FS_OPEN, flags, 0, 0, (uintptr_t) buffer + mount_size, size - mount_size);
-    if (inode == -IPC_ERR_INVALID_PID) {
-      sched_yield();
-    }
-  }
+  long inode = send_pid_ipc_call(mounts[mount_i].pid, IPC_VFSD_FS_OPEN, flags, 0, 0, (uintptr_t) buffer + mount_size, size - mount_size);
   free(buffer);
   if (inode < 0) {
     return -IPC_ERR_PROGRAM_DEFINED;
@@ -288,31 +305,15 @@ static int64_t seek_file_handler(uint64_t fd_num, uint64_t mode, uint64_t arg_po
   syslog(LOG_DEBUG, "File descriptor doesn't exist");
   return -IPC_ERR_INVALID_ARGUMENTS;
 }
-static int64_t set_ready_handler(uint64_t arg0, uint64_t arg1, uint64_t arg2, uint64_t arg3, uint64_t arg4) {
-  if (arg0 || arg1 || arg2 || arg3 || arg4) {
-    syslog(LOG_DEBUG, "Reserved argument is set");
-    return -IPC_ERR_INVALID_ARGUMENTS;
-  }
-  if (!has_ipc_caller_capability(CAP_NAMESPACE_FILESYSTEMS, CAP_VFSD_MOUNT)) {
-    syslog(LOG_DEBUG, "No permission to set ready flag");
-    return -IPC_ERR_INSUFFICIENT_PRIVILEGE;
-  }
-  ready = 1;
-  for (size_t i = 0; i < blocked_calls; i++) {
-    ipc_unblock(0);
-  }
-  blocked_calls = 0;
-  return 0;
-}
 int main(void) {
   drop_capability(CAP_NAMESPACE_KERNEL, CAP_KERNEL_PRIORITY);
   register_ipc(1);
   ipc_handlers[IPC_VFSD_CLOSE] = close_file_handler;
   ipc_handlers[IPC_VFSD_SEEK] = seek_file_handler;
-  ipc_handlers[IPC_VFSD_SET_READY] = set_ready_handler;
   ipc_handlers[IPC_VFSD_OPEN] = open_file_handler;
   ipc_handlers[IPC_VFSD_MOUNT] = mount_handler;
   ipc_handlers[IPC_VFSD_WRITE] = write_file_handler;
+  ipc_handlers[IPC_VFSD_FINISH_MOUNT] = finish_mount_handler;
   ipc_handlers[IPC_VFSD_READ] = read_file_handler;
   while (1) {
     handle_ipc();

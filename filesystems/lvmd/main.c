@@ -106,7 +106,6 @@ int main(void) {
     grant_capability(CAP_NAMESPACE_KERNEL, CAP_KERNEL_PRIORITY);
     start_process();
   }
-  send_ipc_call("vfsd", IPC_VFSD_SET_READY, 0, 0, 0, 0, 0);
   ipc_handlers[IPC_VFSD_FS_WRITE] = write_handler;
   ipc_handlers[IPC_VFSD_FS_READ] = read_handler;
   while (1) {

@@ -129,6 +129,9 @@ int main(void) {
       }
     }
   }
+  struct vfs_stat stat = {0};
+  stat.type = VFS_TYPE_DIR;
+  send_ipc_call("vfsd", IPC_VFSD_FINISH_MOUNT, 0, 0, 0, (uintptr_t) &stat, sizeof(struct vfs_stat));
   ipc_handlers[IPC_VFSD_FS_OPEN] = open_handler;
   ipc_handlers[IPC_VFSD_FS_READ] = read_handler;
   ipc_handlers[IPC_VFSD_FS_STAT] = stat_handler;
