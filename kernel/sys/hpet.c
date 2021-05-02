@@ -29,8 +29,8 @@ static size_t tick_length;
 static volatile bool sleep_done;
 static bool kernel_sleep;
 
-static int sleep_compare(struct task* task1, struct task* task2) {
-  if (task1->sleep_until <= task2->sleep_until) {
+static int sleep_compare(void* task1, void* task2) {
+  if (((struct task*) task1)->sleep_until <= ((struct task*) task2)->sleep_until) {
     return -1;
   } else {
     return 1;
