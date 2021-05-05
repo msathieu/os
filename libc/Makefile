@@ -9,7 +9,7 @@ install: $(DESTDIR)/lib/libc.a crt0.o
 $(DESTDIR)/lib/libc.a: $(OFILES)
 	$(AR) rcD $@ $(OFILES)
 install-headers:
-	mkdir -p $(DESTDIR)/usr/include/__/freestanding
-	cp -r include $(DESTDIR)/usr
-	cp freestanding/include/*.h $(DESTDIR)/usr/include/__/freestanding
+	mkdir -p $(DESTDIR)/include/__/freestanding
+	cp -r include $(DESTDIR)
+	cp freestanding/include/*.h $(DESTDIR)/include/__/freestanding
 -include $(OFILES:.o=.d)

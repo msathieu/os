@@ -1,2 +1,2 @@
--I../sysroot/usr/include
+-I../sysroot/include
 -Iinclude

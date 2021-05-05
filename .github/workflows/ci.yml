@@ -17,7 +17,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v2
         with:
-          submodules: recursive
+          submodules: true
       - name: Cache toolchain
         id: cache-toolchain
         uses: actions/cache@v2
@@ -43,7 +43,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v2
         with:
-          submodules: recursive
+          submodules: true
       - name: Cache toolchain
         uses: actions/cache@v2
         with:
@@ -130,7 +130,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v2
         with:
-          submodules: recursive
+          submodules: true
       - name: Cache toolchain
         uses: actions/cache@v2
         with:
@@ -147,7 +147,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v2
         with:
-          submodules: recursive
+          submodules: true
       - name: Cache toolchain
         uses: actions/cache@v2
         with:

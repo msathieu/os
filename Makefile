@@ -24,6 +24,7 @@ build-grub: build-multiboot
 	grub-mkrescue -o os.iso boot -quiet
 	mkdir -p system
 	cp -r sysroot/bin system
+	cp -r sysroot/include system
 	cp -r sysroot/lib system
 	cp -r sysroot/sbin system
 	tools/bin/svfs
@@ -34,10 +35,10 @@ build-multiboot: build
 	-cp -n public.key loader-mb
 	$(MAKE) -Cloader-mb
 build:
-	mkdir -p sysroot/boot sysroot/sbin sysroot/bin sysroot/lib sysroot/usr
+	mkdir -p sysroot/boot sysroot/sbin sysroot/bin sysroot/lib sysroot/include
 	-cp -n public.key kernel
 	$(MAKE) -Ckernel
-	CFLAGS="$(CFLAGS) -fno-sanitize=all -Wno-shadow" $(MAKE) -Ctools
+	CFLAGS="$(CFLAGS) -fno-sanitize=all" $(MAKE) -Ctools
 	$(MAKE) install-headers -Clibc
 	$(MAKE) -Clibc
 	$(MAKE) -Clibraries
@@ -59,22 +60,9 @@ toolchain:
 	$(MAKE) build-toolchain -Ctools
 format:
 	clang-format -i $(filter-out $(shell find ./acpid/lai -name *.c) $(shell find ./acpid/lai -name *.h), $(shell find . -name *.c) $(shell find . -name *.h))
-analyze: export CFLAGS+=-I$(DESTDIR)/usr/include
 analyze:
-	mkdir -p sysroot/boot sysroot/sbin sysroot/bin sysroot/lib sysroot/usr
-	scan-build --status-bugs --use-cc=clang $(MAKE) -Cloader-mb
-	scan-build --status-bugs --use-cc=clang $(MAKE) -Ckernel
-	$(MAKE) install-headers -Clibc
-	scan-build --status-bugs --use-cc=clang $(MAKE) -Clibc
-	scan-build --status-bugs --use-cc=clang $(MAKE) -Clibraries
-	scan-build --status-bugs --use-cc=clang $(MAKE) -Cinit
-	scan-build --status-bugs --use-cc=clang $(MAKE) -Cdrivers
-	scan-build --status-bugs --use-cc=clang $(MAKE) -Cacpid
-	scan-build --status-bugs --use-cc=clang $(MAKE) -Cservers
-	scan-build --status-bugs --use-cc=clang $(MAKE) -Cfilesystems
-	scan-build --status-bugs --use-cc=clang $(MAKE) -Cloadelf
-	scan-build --status-bugs --use-cc=clang $(MAKE) -Csh
-	scan-build --status-bugs --use-cc=clang $(MAKE) -Ccoreutils
+	CFLAGS="$(CFLAGS) -fno-sanitize=all" $(MAKE) -Ctools
+	scan-build --status-bugs --use-cc=clang $(MAKE) build-multiboot
 clean:
 	$(MAKE) clean -Ctools
 	rm -rf sysroot boot system *.img os.iso tools/bin `find . -name *.o` `find . -name *.d` $(wildcard */*.key)
