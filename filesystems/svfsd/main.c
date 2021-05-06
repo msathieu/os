@@ -26,7 +26,7 @@ struct svfs_header {
 
 static struct svfs_header* header;
 static pid_t parent_pid;
-__attribute__((weak)) extern int _binary_public_key_start;
+extern int _binary____public_key_start;
 
 static int64_t open_handler(uint64_t flags, uint64_t arg1, uint64_t arg2, uint64_t address, uint64_t size) {
   if (arg1 || arg2) {
@@ -109,24 +109,22 @@ int main(void) {
   header = realloc(header, sizeof(struct svfs_header) + header->nfiles * sizeof(struct svfs_file));
   memset((void*) header + sizeof(struct svfs_header), 0, header->nfiles * sizeof(struct svfs_file));
   send_pid_ipc_call(parent_pid, IPC_VFSD_FS_READ, sizeof(struct svfs_header), 0, 0, (uintptr_t) header + sizeof(struct svfs_header), header->nfiles * sizeof(struct svfs_file));
-  if (&_binary_public_key_start) {
-    if (crypto_check(header->signature, (uint8_t*) &_binary_public_key_start, (uint8_t*) header + offsetof(struct svfs_header, magic), sizeof(struct svfs_header) - offsetof(struct svfs_header, magic) + header->nfiles * sizeof(struct svfs_file))) {
-      syslog(LOG_ERR, "Filesystem has invalid signature");
-      return 1;
+  if (crypto_check(header->signature, (uint8_t*) &_binary____public_key_start, (uint8_t*) header + offsetof(struct svfs_header, magic), sizeof(struct svfs_header) - offsetof(struct svfs_header, magic) + header->nfiles * sizeof(struct svfs_file))) {
+    syslog(LOG_ERR, "Filesystem has invalid signature");
+    return 1;
+  }
+  for (size_t i = 0; i < header->nfiles; i++) {
+    if (header->files[i].type != VFS_TYPE_FILE) {
+      continue;
     }
-    for (size_t i = 0; i < header->nfiles; i++) {
-      if (header->files[i].type != VFS_TYPE_FILE) {
-        continue;
-      }
-      uint8_t* file = calloc(header->files[i].size, 1);
-      send_pid_ipc_call(parent_pid, IPC_VFSD_FS_READ, sizeof(struct svfs_header) + header->nfiles * sizeof(struct svfs_file) + header->files[i].offset, 0, 0, (uintptr_t) file, header->files[i].size);
-      uint8_t hash[64];
-      crypto_blake2b(hash, file, header->files[i].size);
-      free(file);
-      if (memcmp(hash, header->files[i].hash, 64)) {
-        syslog(LOG_ERR, "File %s has invalid hash", header->files[i].name);
-        return 1;
-      }
+    uint8_t* file = calloc(header->files[i].size, 1);
+    send_pid_ipc_call(parent_pid, IPC_VFSD_FS_READ, sizeof(struct svfs_header) + header->nfiles * sizeof(struct svfs_file) + header->files[i].offset, 0, 0, (uintptr_t) file, header->files[i].size);
+    uint8_t hash[64];
+    crypto_blake2b(hash, file, header->files[i].size);
+    free(file);
+    if (memcmp(hash, header->files[i].hash, 64)) {
+      syslog(LOG_ERR, "File %s has invalid hash", header->files[i].name);
+      return 1;
     }
   }
   struct vfs_stat stat = {0};

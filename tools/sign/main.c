@@ -32,7 +32,7 @@ static void sign(void) {
   FILE* private_file = fopen("private.key", "r");
   if (!private_file) {
     puts("Can't open private key");
-    return;
+    exit(1);
   }
   uint8_t private[32];
   if (fread(private, 1, 32, private_file) != 32) {
@@ -43,7 +43,7 @@ static void sign(void) {
   FILE* public_file = fopen("public.key", "r");
   if (!public_file) {
     puts("Can't open public key");
-    return;
+    exit(1);
   }
   uint8_t public[32];
   if (fread(public, 1, 32, public_file) != 32) {

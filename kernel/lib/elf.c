@@ -40,27 +40,25 @@ struct program_header {
 };
 
 extern void jmp_user(uintptr_t);
-__attribute__((weak)) extern int _binary_public_key_start;
+extern int _binary____public_key_start;
 
 void load_elf(size_t file_i) {
   uintptr_t address = loader_struct.files[file_i].address;
-  if (&_binary_public_key_start) {
-    char signature_name[strlen((char*) loader_struct.files[file_i].name) + 5];
-    strcpy(signature_name, (char*) loader_struct.files[file_i].name);
-    strcat(signature_name, ".sig");
-    bool verified = 0;
-    for (size_t i = 0; i < 64; i++) {
-      if (!strcmp((char*) loader_struct.files[i].name, signature_name)) {
-        if (crypto_check((uint8_t*) loader_struct.files[i].address, (uint8_t*) &_binary_public_key_start, (uint8_t*) address, loader_struct.files[file_i].size)) {
-          panic("Invalid executable signature");
-        }
-        verified = 1;
-        break;
+  char signature_name[strlen((char*) loader_struct.files[file_i].name) + 5];
+  strcpy(signature_name, (char*) loader_struct.files[file_i].name);
+  strcat(signature_name, ".sig");
+  bool verified = 0;
+  for (size_t i = 0; i < 64; i++) {
+    if (!strcmp((char*) loader_struct.files[i].name, signature_name)) {
+      if (crypto_check((uint8_t*) loader_struct.files[i].address, (uint8_t*) &_binary____public_key_start, (uint8_t*) address, loader_struct.files[file_i].size)) {
+        panic("Invalid executable signature");
       }
+      verified = 1;
+      break;
     }
-    if (!verified) {
-      panic("No valid signature found");
-    }
+  }
+  if (!verified) {
+    panic("No valid signature found");
   }
   struct elf_header* header = (struct elf_header*) address;
   if (header->magic[0] != ELF_MAGIC || header->magic[1] != 'E' || header->magic[2] != 'L' || header->magic[3] != 'F') {

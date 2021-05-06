@@ -37,7 +37,7 @@ static int sleep_compare(void* task1, void* task2) {
   }
 }
 
-static struct sorted_list sleeping_list = {.compare = (sorted_list_compare) sleep_compare};
+static struct sorted_list sleeping_list = {.compare = sleep_compare};
 
 static __attribute__((noinline)) uint64_t read_register(size_t register_i) {
   return registers[register_i];

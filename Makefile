@@ -17,7 +17,6 @@ endif
 build-grub: build-multiboot
 	mkdir -p sysroot/boot/grub
 	cp grub.cfg sysroot/boot/grub
-	-test -f public.key && cp grub-signed.cfg sysroot/boot/grub/grub.cfg
 	tools/bin/sign sign
 	mkdir -p boot
 	cp -r sysroot/boot boot
@@ -32,13 +31,14 @@ build-grub: build-multiboot
 	cat lvm.img >> os.iso
 	tools/bin/mbr
 build-multiboot: build
-	-cp -n public.key loader-mb
 	$(MAKE) -Cloader-mb
-build:
-	mkdir -p sysroot/boot sysroot/sbin sysroot/bin sysroot/lib sysroot/include
-	-cp -n public.key kernel
-	$(MAKE) -Ckernel
+private.key:
 	CFLAGS="$(CFLAGS) -fno-sanitize=all" $(MAKE) -Ctools
+	tools/bin/sign generate
+build: private.key
+	CFLAGS="$(CFLAGS) -fno-sanitize=all" $(MAKE) -Ctools
+	mkdir -p sysroot/boot sysroot/sbin sysroot/bin sysroot/lib sysroot/include
+	$(MAKE) -Ckernel
 	$(MAKE) install-headers -Clibc
 	$(MAKE) -Clibc
 	$(MAKE) -Clibraries
@@ -46,7 +46,6 @@ build:
 	$(MAKE) -Cdrivers
 	$(MAKE) -Cacpid
 	$(MAKE) -Cservers
-	-cp -n public.key filesystems
 	$(MAKE) -Cfilesystems
 	$(MAKE) -Cloadelf
 	$(MAKE) -Csh
@@ -65,4 +64,4 @@ analyze:
 	scan-build --status-bugs --use-cc=clang $(MAKE) build-multiboot
 clean:
 	$(MAKE) clean -Ctools
-	rm -rf sysroot boot system *.img os.iso tools/bin `find . -name *.o` `find . -name *.d` $(wildcard */*.key)
+	rm -rf sysroot boot system *.img os.iso tools/bin `find . -name *.o` `find . -name *.d`
