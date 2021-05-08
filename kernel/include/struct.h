@@ -26,6 +26,7 @@ struct loader_struct {
   uint16_t fb_green_index;
   uint16_t fb_blue_index;
   uint8_t ci;
+  uint16_t debug_port;
 } __attribute__((packed));
 
 extern struct loader_struct loader_struct;
