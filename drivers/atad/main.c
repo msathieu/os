@@ -77,7 +77,7 @@ static void prepare_transfer(int bus, int drive, size_t lba) {
     outb(base_ports[bus] + ATA_PORT_LBAHIGH, lba >> 16);
   }
 }
-static void read(int bus, int drive, size_t lba, uint16_t* buffer) {
+static void read(int bus, int drive, size_t lba, uint8_t* buffer) {
   prepare_transfer(bus, drive, lba);
   if (is_atapi[bus * 2 + drive]) {
     uint8_t cmd[12] = {ATAPI_CMD_READ, 0, lba >> 24, lba >> 16, lba >> 8, lba, 0, 0, 0, 1, 0, 0};
@@ -93,19 +93,23 @@ static void read(int bus, int drive, size_t lba, uint16_t* buffer) {
     sector = ATAPI_SECTOR;
   }
   for (size_t i = 0; i < sector / 2; i++) {
-    buffer[i] = inw(base_ports[bus]);
+    uint16_t value = inw(base_ports[bus]);
+    buffer[i * 2] = value;
+    buffer[i * 2 + 1] = value >> 8;
   }
   if (is_atapi[bus * 2 + drive]) {
     while (inb(alternate_ports[bus]) & (ATA_STATUS_BSY | ATA_STATUS_DRQ))
       ;
   }
 }
-static void write(int bus, int drive, size_t lba, uint16_t* buffer) {
+static void write(int bus, int drive, size_t lba, uint8_t* buffer) {
   prepare_transfer(bus, drive, lba);
   outb(base_ports[bus] + ATA_PORT_COMMAND, ATA_CMD_WRITE);
   wait_irq();
   for (size_t i = 0; i < 256; i++) {
-    outw(base_ports[bus], buffer[i]);
+    uint16_t value = buffer[i * 2];
+    value |= buffer[i * 2 + 1] << 8;
+    outw(base_ports[bus], value);
   }
 }
 static int64_t read_handler(uint64_t offset, uint64_t arg1, uint64_t arg2, uint64_t address, uint64_t size) {
@@ -130,7 +134,7 @@ static int64_t read_handler(uint64_t offset, uint64_t arg1, uint64_t arg2, uint6
   if (is_atapi[bus * 2 + drive]) {
     sector = ATAPI_SECTOR;
   }
-  uint16_t buffer[sector / 2];
+  uint8_t buffer[sector];
   read(bus, drive, offset / sector, buffer);
   size_t initial_size = sector - offset % sector;
   if (initial_size > size) {
@@ -150,7 +154,7 @@ static int64_t read_handler(uint64_t offset, uint64_t arg1, uint64_t arg2, uint6
   }
   for (size_t i = offset / sector + 1; i < aligned_size / sector; i++) {
     if (total_size - i * sector >= sector) {
-      read(bus, drive, i, (uint16_t*) address);
+      read(bus, drive, i, (uint8_t*) address);
       address += sector;
     } else {
       read(bus, drive, i, buffer);
@@ -182,14 +186,14 @@ static int64_t write_handler(uint64_t offset, uint64_t arg1, uint64_t arg2, uint
     syslog(LOG_DEBUG, "Can't write to ATAPI drive");
     return -IPC_ERR_PROGRAM_DEFINED;
   }
-  uint16_t buffer[256];
-  read(bus, drive, offset / 512, buffer);
-  size_t initial_size = 512 - offset % 512;
+  uint8_t buffer[ATA_SECTOR];
+  read(bus, drive, offset / ATA_SECTOR, buffer);
+  size_t initial_size = ATA_SECTOR - offset % ATA_SECTOR;
   if (initial_size > size) {
     initial_size = size;
   }
-  memcpy((void*) buffer + offset % 512, (void*) address, initial_size);
-  write(bus, drive, offset / 512, buffer);
+  memcpy((void*) buffer + offset % ATA_SECTOR, (void*) address, initial_size);
+  write(bus, drive, offset / ATA_SECTOR, buffer);
   address += initial_size;
   size_t total_size;
   if (__builtin_uaddl_overflow(offset, size, &total_size)) {
@@ -201,13 +205,13 @@ static int64_t write_handler(uint64_t offset, uint64_t arg1, uint64_t arg2, uint
     syslog(LOG_DEBUG, "Can't access this much data");
     return -IPC_ERR_INVALID_ARGUMENTS;
   }
-  for (size_t i = offset / 512 + 1; i < aligned_size / 512; i++) {
-    if (total_size - i * 512 >= 512) {
-      write(bus, drive, i, (uint16_t*) address);
-      address += 512;
+  for (size_t i = offset / ATA_SECTOR + 1; i < aligned_size / ATA_SECTOR; i++) {
+    if (total_size - i * ATA_SECTOR >= ATA_SECTOR) {
+      write(bus, drive, i, (uint8_t*) address);
+      address += ATA_SECTOR;
     } else {
       read(bus, drive, i, buffer);
-      size_t copy_size = total_size - i * 512;
+      size_t copy_size = total_size - i * ATA_SECTOR;
       memcpy((void*) buffer, (void*) address, copy_size);
       write(bus, drive, i, buffer);
     }
