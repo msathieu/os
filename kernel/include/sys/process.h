@@ -12,7 +12,8 @@ enum {
   CAP_MAP_MEMORY,
   CAP_GET_FB_INFO,
   CAP_PRIORITY,
-  CAP_ACPI
+  CAP_ACPI,
+  CAP_LOG
 };
 
 struct process {

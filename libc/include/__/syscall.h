@@ -35,7 +35,8 @@ enum {
   _SYSCALL_CHANGE_PRIORITY,
   _SYSCALL_GET_ACPI_REVISION,
   _SYSCALL_GET_ACPI_TABLE,
-  _SYSCALL_RESET
+  _SYSCALL_RESET,
+  _SYSCALL_LOG
 };
 
 int64_t _syscall(uint64_t syscall, uint64_t arg0, uint64_t arg1, uint64_t arg2, uint64_t arg3, uint64_t arg4);

@@ -1,3 +1,4 @@
+#include <ctype.h>
 #include <stdio.h>
 #include <sys/hpet.h>
 #include <sys/ipc.h>
@@ -53,6 +54,24 @@ static void syscall_reset(union syscall_args* args) {
                :
                : "m"(idt));
 }
+static void syscall_log(union syscall_args* args) {
+  if (args->arg1 || args->arg2 || args->arg3 || args->arg4) {
+    puts("Reserved argument is set");
+    terminate_current_task(&args->registers);
+    return;
+  }
+  if (!has_process_capability(current_task->process, CAP_LOG)) {
+    puts("No permission to log to console");
+    terminate_current_task(&args->registers);
+    return;
+  }
+  if (!isprint(args->arg0) && args->arg0 != '\n') {
+    puts("Invalid character");
+    terminate_current_task(&args->registers);
+    return;
+  }
+  putchar(args->arg0);
+}
 static syscall_handler syscall_handlers[256] = {
   syscall_version,
   syscall_yield,
@@ -87,7 +106,8 @@ static syscall_handler syscall_handlers[256] = {
   syscall_change_priority,
   syscall_get_acpi_revision,
   syscall_get_acpi_table,
-  syscall_reset};
+  syscall_reset,
+  syscall_log};
 
 void syscall_common(union syscall_args* args) {
   if (args->syscall & 0xffffffffffffff00) {

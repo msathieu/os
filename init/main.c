@@ -22,7 +22,7 @@ struct service services[] = {
   {"argd", 1, 0, {}, "argd"},
   {"atad", 1, 0, {[CAP_NAMESPACE_FILESYSTEMS] = 1 << CAP_VFSD_MOUNT}, 0},
   {"ipcd", 1, 0, {}, 0},
-  {"logd", 1, 0, {[CAP_NAMESPACE_SERVERS] = 1 << CAP_LOGD}, "logd"},
+  {"logd", 1, 0, {[CAP_NAMESPACE_KERNEL] = 1 << CAP_KERNEL_LOG, [CAP_NAMESPACE_SERVERS] = 1 << CAP_LOGD}, "logd"},
   {"pcid", 1, 0, {[CAP_NAMESPACE_KERNEL] = 1 << CAP_KERNEL_IOPORT | 1 << CAP_KERNEL_IRQ | 1 << CAP_KERNEL_MAP_MEMORY}, "pcid"},
   {"/sbin/devd", 0, 0, {[CAP_NAMESPACE_FILESYSTEMS] = 1 << CAP_DEVD}, "devd"},
   {"/sbin/dev-nulld", 0, 0, {}, 0},

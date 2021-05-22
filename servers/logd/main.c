@@ -1,4 +1,6 @@
+#include <__/syscall.h>
 #include <capability.h>
+#include <cpuid.h>
 #include <ctype.h>
 #include <ipccalls.h>
 #include <stdlib.h>
@@ -6,6 +8,7 @@
 
 static pid_t ttyd;
 static char* buffer;
+static bool log_kernel;
 
 static int64_t registration_handler(uint64_t arg0, uint64_t arg1, uint64_t arg2, uint64_t arg3, uint64_t arg4) {
   if (arg0 || arg1 || arg2 || arg3 || arg4) {
@@ -38,6 +41,11 @@ static int64_t log_handler(uint64_t arg0, uint64_t arg1, uint64_t arg2, uint64_t
   }
   msg[size - 1] = '\n';
   msg[size] = 0;
+  if (log_kernel) {
+    for (size_t i = 0; i < size; i++) {
+      _syscall(_SYSCALL_LOG, msg[i], 0, 0, 0, 0);
+    }
+  }
   if (ttyd) {
     send_pid_ipc_call(ttyd, IPC_VFSD_FS_WRITE, 0, 0, 0, (uintptr_t) msg, size);
   } else {
@@ -54,6 +62,11 @@ static int64_t log_handler(uint64_t arg0, uint64_t arg1, uint64_t arg2, uint64_t
 int main(void) {
   drop_capability(CAP_NAMESPACE_KERNEL, CAP_KERNEL_PRIORITY);
   register_ipc(1);
+  unsigned eax, ebx, ecx, edx;
+  __get_cpuid(1, &eax, &ebx, &ecx, &edx);
+  if (ecx & 0x80000000) {
+    log_kernel = 1;
+  }
   ipc_handlers[IPC_LOGD_REGISTER] = registration_handler;
   ipc_handlers[IPC_LOGD_LOG] = log_handler;
   while (1) {
