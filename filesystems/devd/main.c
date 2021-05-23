@@ -56,8 +56,8 @@ static int64_t register_device_handler(uint64_t arg0, uint64_t arg1, uint64_t ar
   syslog(LOG_CRIT, "Reached maximum number of devices");
   return -IPC_ERR_PROGRAM_DEFINED;
 }
-static int64_t open_handler(__attribute__((unused)) uint64_t flags, uint64_t arg1, uint64_t arg2, uint64_t address, uint64_t size) {
-  if (arg1 || arg2) {
+static int64_t open_handler(__attribute__((unused)) uint64_t flags, uint64_t parent_inode, uint64_t arg2, uint64_t address, uint64_t size) {
+  if (arg2) {
     syslog(LOG_DEBUG, "Reserved argument is set");
     return -IPC_ERR_INVALID_ARGUMENTS;
   }
@@ -65,8 +65,9 @@ static int64_t open_handler(__attribute__((unused)) uint64_t flags, uint64_t arg
     syslog(LOG_DEBUG, "Not allowed to open file");
     return -IPC_ERR_INSUFFICIENT_PRIVILEGE;
   }
-  if (size == 1) {
-    return 512;
+  if (parent_inode != 512) {
+    syslog(LOG_DEBUG, "Invalid parent inode");
+    return -IPC_ERR_INVALID_ARGUMENTS;
   }
   char* buffer = malloc(size);
   memcpy(buffer, (void*) address, size);

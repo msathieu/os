@@ -139,11 +139,6 @@ static int64_t open_file_handler(uint64_t flags, uint64_t arg1, uint64_t arg2, u
     syslog(LOG_DEBUG, "Path isn't null terminated");
     return -IPC_ERR_INVALID_ARGUMENTS;
   }
-  if (buffer[0] != '/') {
-    free(buffer);
-    syslog(LOG_DEBUG, "Path isn't absolute");
-    return -IPC_ERR_INVALID_ARGUMENTS;
-  }
   int mount_i = -1;
   size_t mount_size = 0;
   for (size_t i = 0; i < 512; i++) {
@@ -157,11 +152,20 @@ static int64_t open_file_handler(uint64_t flags, uint64_t arg1, uint64_t arg2, u
     blocked_calls++;
     return -IPC_ERR_BLOCK;
   }
-  long inode = send_pid_ipc_call(mounts[mount_i].pid, IPC_VFSD_FS_OPEN, flags, 0, 0, (uintptr_t) buffer + mount_size, size - mount_size);
-  free(buffer);
-  if (inode < 0) {
-    return -IPC_ERR_PROGRAM_DEFINED;
+  long inode = mounts[mount_i].node.inode;
+  char* next_part;
+  for (char* part = strtok(buffer + mount_size, "/"); part; part = next_part) {
+    next_part = strtok(0, "/");
+    if (next_part) {
+      inode = send_pid_ipc_call(mounts[mount_i].pid, IPC_VFSD_FS_OPEN, O_RDONLY, inode, 0, (uintptr_t) part, strlen(part) + 1);
+    } else {
+      inode = send_pid_ipc_call(mounts[mount_i].pid, IPC_VFSD_FS_OPEN, flags, inode, 0, (uintptr_t) part, strlen(part) + 1);
+    }
+    if (inode < 0) {
+      return -IPC_ERR_PROGRAM_DEFINED;
+    }
   }
+  free(buffer);
   pid_t caller_pid = get_ipc_caller_pid();
   struct process* process = 0;
   for (struct process* loop_process = (struct process*) process_list.first; loop_process; loop_process = (struct process*) loop_process->list_member.next) {

@@ -28,8 +28,8 @@ static struct svfs_header* header;
 static pid_t parent_pid;
 extern int _binary____public_key_start;
 
-static int64_t open_handler(uint64_t flags, uint64_t arg1, uint64_t arg2, uint64_t address, uint64_t size) {
-  if (arg1 || arg2) {
+static int64_t open_handler(uint64_t flags, uint64_t parent_inode, uint64_t arg2, uint64_t address, uint64_t size) {
+  if (arg2) {
     syslog(LOG_DEBUG, "Reserved argument is set");
     return -IPC_ERR_INVALID_ARGUMENTS;
   }
@@ -41,14 +41,25 @@ static int64_t open_handler(uint64_t flags, uint64_t arg1, uint64_t arg2, uint64
     syslog(LOG_DEBUG, "Not allowed to write to file");
     return -IPC_ERR_INSUFFICIENT_PRIVILEGE;
   }
+  if (parent_inode >= header->nfiles) {
+    syslog(LOG_DEBUG, "Invalid parent inode");
+    return -IPC_ERR_INVALID_ARGUMENTS;
+  }
+  size_t parent_path_size = strlen((char*) header->files[parent_inode].name);
+  char* full_path = malloc(parent_path_size + 1 + size);
+  strcpy(full_path, (char*) header->files[parent_inode].name);
+  strcat(full_path, "/");
+  memcpy(full_path + parent_path_size + 1, (void*) address, size);
   for (size_t i = 0; i < header->nfiles; i++) {
-    if (size != strlen((char*) header->files[i].name) + 1) {
+    if (parent_path_size + 1 + size != strlen((char*) header->files[i].name) + 1) {
       continue;
     }
-    if (!strcmp((char*) header->files[i].name, (char*) address)) {
+    if (!strcmp((char*) header->files[i].name, (char*) full_path)) {
+      free(full_path);
       return i;
     }
   }
+  free(full_path);
   return -IPC_ERR_INVALID_ARGUMENTS;
 }
 static int64_t stat_handler(uint64_t inode, uint64_t arg1, uint64_t arg2, uint64_t address, uint64_t size) {

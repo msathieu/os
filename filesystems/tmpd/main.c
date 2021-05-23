@@ -20,8 +20,8 @@ struct file {
 static struct linked_list files_list;
 static size_t next_inode = 1;
 
-static int64_t open_handler(uint64_t flags, uint64_t arg1, uint64_t arg2, uint64_t address, uint64_t size) {
-  if (arg1 || arg2) {
+static int64_t open_handler(uint64_t flags, uint64_t parent_inode, uint64_t arg2, uint64_t address, uint64_t size) {
+  if (arg2) {
     syslog(LOG_DEBUG, "Reserved argument is set");
     return -IPC_ERR_INVALID_ARGUMENTS;
   }
@@ -29,8 +29,9 @@ static int64_t open_handler(uint64_t flags, uint64_t arg1, uint64_t arg2, uint64
     syslog(LOG_DEBUG, "Not allowed to open file");
     return -IPC_ERR_INSUFFICIENT_PRIVILEGE;
   }
-  if (size == 1) {
-    return 0;
+  if (parent_inode) {
+    syslog(LOG_DEBUG, "Invalid parent inode");
+    return -IPC_ERR_INVALID_ARGUMENTS;
   }
   char* buffer = malloc(size);
   memcpy(buffer, (void*) address, size);
