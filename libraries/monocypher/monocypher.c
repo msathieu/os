@@ -1,5 +1,4 @@
-// Taken from https://github.com/LoupVaillant/Monocypher/blob/master/src/monocypher.c (84f6c35df3ae9da87b98e0ad17e069cc0ae22c6f)
-#pragma GCC diagnostic ignored "-Wshadow"
+// Taken from https://github.com/LoupVaillant/Monocypher/blob/master/src/monocypher.c (c25c6405df6271874d4d42f49c7b6d9f8fe242fb)
 // Monocypher version __git__
 //
 // Written in 2017-2020 by Loup Vaillant
@@ -20,11 +19,11 @@
 #define FOR_T(type, i, start, end) for (type i = (start); i < (end); i++)
 #define FOR(i, start, end) FOR_T(size_t, i, start, end)
 #define COPY(dst, src, size) \
-  FOR(i, 0, size)            \
-  (dst)[i] = (src)[i]
+  FOR(i__, 0, size)          \
+  (dst)[i__] = (src)[i__]
 #define ZERO(buf, size) \
-  FOR(i, 0, size)       \
-  (buf)[i] = 0
+  FOR(i__, 0, size)     \
+  (buf)[i__] = 0
 #define WIPE_CTX(ctx) crypto_wipe(ctx, sizeof(*(ctx)))
 #define WIPE_BUFFER(buffer) crypto_wipe(buffer, sizeof(buffer))
 #define MIN(a, b) ((a) <= (b) ? (a) : (b))
@@ -964,22 +963,18 @@ void crypto_argon2i_general(u8* hash, u32 hash_size,
     crypto_blake2b_final(&ctx, initial_hash);
 
     // fill first 2 blocks
-    block tmp_block;
     u8 hash_area[1024];
     store32_le(initial_hash + 64, 0); // first  additional word
     store32_le(initial_hash + 68, 0); // second additional word
     extended_hash(hash_area, 1024, initial_hash, 72);
-    load_block(&tmp_block, hash_area);
-    copy_block(blocks, &tmp_block);
+    load_block(blocks, hash_area);
 
     store32_le(initial_hash + 64, 1); // slight modification
     extended_hash(hash_area, 1024, initial_hash, 72);
-    load_block(&tmp_block, hash_area);
-    copy_block(blocks + 1, &tmp_block);
+    load_block(blocks + 1, hash_area);
 
     WIPE_BUFFER(initial_hash);
     WIPE_BUFFER(hash_area);
-    wipe_block(&tmp_block);
   }
 
   // Actual number of blocks
@@ -1585,68 +1580,6 @@ static void fe_sq2(fe h, const fe f) {
   fe_mul_small(h, h, 2);
 }
 
-// This could be simplified, but it would be slower
-static void fe_pow22523(fe out, const fe z) {
-  fe t0, t1, t2;
-  fe_sq(t0, z);
-  fe_sq(t1, t0);
-  fe_sq(t1, t1);
-  fe_mul(t1, z, t1);
-  fe_mul(t0, t0, t1);
-  fe_sq(t0, t0);
-  fe_mul(t0, t1, t0);
-  fe_sq(t1, t0);
-  FOR(i, 1, 5)
-  fe_sq(t1, t1);
-  fe_mul(t0, t1, t0);
-  fe_sq(t1, t0);
-  FOR(i, 1, 10)
-  fe_sq(t1, t1);
-  fe_mul(t1, t1, t0);
-  fe_sq(t2, t1);
-  FOR(i, 1, 20)
-  fe_sq(t2, t2);
-  fe_mul(t1, t2, t1);
-  fe_sq(t1, t1);
-  FOR(i, 1, 10)
-  fe_sq(t1, t1);
-  fe_mul(t0, t1, t0);
-  fe_sq(t1, t0);
-  FOR(i, 1, 50)
-  fe_sq(t1, t1);
-  fe_mul(t1, t1, t0);
-  fe_sq(t2, t1);
-  FOR(i, 1, 100)
-  fe_sq(t2, t2);
-  fe_mul(t1, t2, t1);
-  fe_sq(t1, t1);
-  FOR(i, 1, 50)
-  fe_sq(t1, t1);
-  fe_mul(t0, t1, t0);
-  fe_sq(t0, t0);
-  FOR(i, 1, 2)
-  fe_sq(t0, t0);
-  fe_mul(out, t0, z);
-  WIPE_BUFFER(t0);
-  WIPE_BUFFER(t1);
-  WIPE_BUFFER(t2);
-}
-
-// Inverting means multiplying by 2^255 - 21
-// 2^255 - 21 = (2^252 - 3) * 8 + 3
-// So we reuse the multiplication chain of fe_pow22523
-static void fe_invert(fe out, const fe z) {
-  fe tmp;
-  fe_pow22523(tmp, z);
-  // tmp2^8 * z^3
-  fe_sq(tmp, tmp); // 0
-  fe_sq(tmp, tmp);
-  fe_mul(tmp, tmp, z); // 1
-  fe_sq(tmp, tmp);
-  fe_mul(out, tmp, z); // 1
-  WIPE_BUFFER(tmp);
-}
-
 //  Parity check.  Returns 0 if even, 1 if odd
 static int fe_isodd(const fe f) {
   u8 s[32];
@@ -1671,7 +1604,7 @@ static int fe_isequal(const fe f, const fe g) {
 // Inverse square root.
 // Returns true if x is a non zero square, false otherwise.
 // After the call:
-//   isr = sqrt(1/x)        if x is non-zero square.
+//   isr = sqrt(1/x)        if x is a non-zero square.
 //   isr = sqrt(sqrt(-1)/x) if x is not a square.
 //   isr = 0                if x is zero.
 // We do not guarantee the sign of the square root.
@@ -1726,22 +1659,91 @@ static int fe_isequal(const fe f, const fe g) {
 //      x^((p-5)/8) * sqrt(-1) = sqrt( sqrt(-1)/x) * -1
 //      x^((p-5)/8) * sqrt(-1) = -sqrt(sqrt(-1)/x) or sqrt(sqrt(-1)/x)
 static int invsqrt(fe isr, const fe x) {
-  fe check, quartic;
-  fe_copy(check, x);
-  fe_pow22523(isr, check);
-  fe_sq(quartic, isr);
-  fe_mul(quartic, quartic, check);
+  fe t0, t1, t2;
+
+  // t0 = x^((p-5)/8)
+  // Can be achieved with a simple double & add ladder,
+  // but it would be slower.
+  fe_sq(t0, x);
+  fe_sq(t1, t0);
+  fe_sq(t1, t1);
+  fe_mul(t1, x, t1);
+  fe_mul(t0, t0, t1);
+  fe_sq(t0, t0);
+  fe_mul(t0, t1, t0);
+  fe_sq(t1, t0);
+  FOR(i, 1, 5)
+  fe_sq(t1, t1);
+  fe_mul(t0, t1, t0);
+  fe_sq(t1, t0);
+  FOR(i, 1, 10)
+  fe_sq(t1, t1);
+  fe_mul(t1, t1, t0);
+  fe_sq(t2, t1);
+  FOR(i, 1, 20)
+  fe_sq(t2, t2);
+  fe_mul(t1, t2, t1);
+  fe_sq(t1, t1);
+  FOR(i, 1, 10)
+  fe_sq(t1, t1);
+  fe_mul(t0, t1, t0);
+  fe_sq(t1, t0);
+  FOR(i, 1, 50)
+  fe_sq(t1, t1);
+  fe_mul(t1, t1, t0);
+  fe_sq(t2, t1);
+  FOR(i, 1, 100)
+  fe_sq(t2, t2);
+  fe_mul(t1, t2, t1);
+  fe_sq(t1, t1);
+  FOR(i, 1, 50)
+  fe_sq(t1, t1);
+  fe_mul(t0, t1, t0);
+  fe_sq(t0, t0);
+  FOR(i, 1, 2)
+  fe_sq(t0, t0);
+  fe_mul(t0, t0, x);
+
+  // quartic = x^((p-1)/4)
+  i32* quartic = t1;
+  fe_sq(quartic, t0);
+  fe_mul(quartic, quartic, x);
+
+  i32* check = t2;
   fe_1(check);
   int p1 = fe_isequal(quartic, check);
   fe_neg(check, check);
   int m1 = fe_isequal(quartic, check);
   fe_neg(check, sqrtm1);
   int ms = fe_isequal(quartic, check);
-  fe_mul(check, isr, sqrtm1);
-  fe_ccopy(isr, check, m1 | ms);
-  WIPE_BUFFER(quartic);
-  WIPE_BUFFER(check);
+
+  // if quartic == -1 or sqrt(-1)
+  // then  isr = x^((p-1)/4) * sqrt(-1)
+  // else  isr = x^((p-1)/4)
+  fe_mul(isr, t0, sqrtm1);
+  fe_ccopy(isr, t0, 1 - (m1 | ms));
+
+  WIPE_BUFFER(t0);
+  WIPE_BUFFER(t1);
+  WIPE_BUFFER(t2);
   return p1 | m1;
+}
+
+// Inverse in terms of inverse square root.
+// Requires two additional squarings to get rid of the sign.
+//
+//   1/x = x * (+invsqrt(x^2))^2
+//       = x * (-invsqrt(x^2))^2
+//
+// A fully optimised exponentiation by p-1 would save 6 field
+// multiplications, but it would require more code.
+static void fe_invert(fe out, const fe x) {
+  fe tmp;
+  fe_sq(tmp, x);
+  invsqrt(tmp, tmp);
+  fe_sq(tmp, tmp);
+  fe_mul(out, tmp, x);
+  WIPE_BUFFER(tmp);
 }
 
 // trim a scalar for scalar multiplication
@@ -3576,39 +3578,42 @@ void crypto_x25519_dirty_small(u8 public_key[32], const u8 secret_key[32]) {
   // Base point of order 8*L
   // Raw scalar multiplication with it does not clear the cofactor,
   // and the resulting public key will reveal 3 bits of the scalar.
+  //
+  // The low order component of this base point  has been chosen
+  // to yield the same results as crypto_x25519_dirty_fast().
   static const u8 dirty_base_point[32] = {
-    0x34,
-    0xfc,
-    0x6c,
-    0xb7,
-    0xc8,
-    0xde,
-    0x58,
-    0x97,
-    0x77,
-    0x70,
+    0xd8,
+    0x86,
+    0x1a,
+    0xa2,
+    0x78,
+    0x7a,
     0xd9,
-    0x52,
-    0x16,
-    0xcc,
-    0xdc,
-    0x6c,
-    0x85,
-    0x90,
+    0x26,
+    0x8b,
+    0x74,
+    0x74,
+    0xb6,
+    0x82,
+    0xe3,
     0xbe,
-    0xcd,
-    0x91,
-    0x9c,
-    0x07,
-    0x59,
-    0x94,
-    0x14,
-    0x56,
-    0x3b,
-    0x4b,
-    0xa4,
+    0xc3,
+    0xce,
+    0x36,
+    0x9a,
+    0x1e,
+    0x5e,
+    0x31,
     0x47,
-    0x0f,
+    0xa2,
+    0x6d,
+    0x37,
+    0x7c,
+    0xfd,
+    0x20,
+    0xb5,
+    0xdf,
+    0x75,
   };
   // separate the main factor & the cofactor of the scalar
   u8 scalar[32];
@@ -3621,11 +3626,9 @@ void crypto_x25519_dirty_small(u8 public_key[32], const u8 secret_key[32]) {
   // least significant bits however still have a main factor.  We must
   // remove it for X25519 compatibility.
   //
-  // We exploit the fact that 5*L = 1 (modulo 8)
-  //   cofactor = lsb * 5 * L             (modulo 8*L)
-  //   combined = scalar + cofactor       (modulo 8*L)
-  //   combined = scalar + (lsb * 5 * L)  (modulo 8*L)
-  add_xl(scalar, secret_key[0] * 5);
+  //   cofactor = lsb * L            (modulo 8*L)
+  //   combined = scalar + cofactor  (modulo 8*L)
+  add_xl(scalar, secret_key[0]);
   scalarmult(public_key, scalar, dirty_base_point, 256);
   WIPE_BUFFER(scalar);
 }
