@@ -56,7 +56,7 @@ static int64_t register_device_handler(uint64_t arg0, uint64_t arg1, uint64_t ar
   syslog(LOG_CRIT, "Reached maximum number of devices");
   return -IPC_ERR_PROGRAM_DEFINED;
 }
-static int64_t open_handler(__attribute__((unused)) uint64_t flags, uint64_t parent_inode, uint64_t arg2, uint64_t address, uint64_t size) {
+static int64_t open_handler(__attribute__((unused)) uint64_t flags, __attribute__((unused)) uint64_t parent_inode, uint64_t arg2, uint64_t address, uint64_t size) {
   if (arg2) {
     syslog(LOG_DEBUG, "Reserved argument is set");
     return -IPC_ERR_INVALID_ARGUMENTS;
@@ -65,17 +65,8 @@ static int64_t open_handler(__attribute__((unused)) uint64_t flags, uint64_t par
     syslog(LOG_DEBUG, "Not allowed to open file");
     return -IPC_ERR_INSUFFICIENT_PRIVILEGE;
   }
-  if (parent_inode != 512) {
-    syslog(LOG_DEBUG, "Invalid parent inode");
-    return -IPC_ERR_INVALID_ARGUMENTS;
-  }
   char* buffer = malloc(size);
   memcpy(buffer, (void*) address, size);
-  if (buffer[size - 1]) {
-    free(buffer);
-    syslog(LOG_DEBUG, "Name isn't null terminated");
-    return -IPC_ERR_INVALID_ARGUMENTS;
-  }
   for (size_t i = 0; i < 512; i++) {
     if (devices[i].name && !strcmp(devices[i].name, buffer)) {
       free(buffer);
@@ -85,7 +76,7 @@ static int64_t open_handler(__attribute__((unused)) uint64_t flags, uint64_t par
   free(buffer);
   return -IPC_ERR_INVALID_ARGUMENTS;
 }
-static int64_t stat_handler(uint64_t inode, uint64_t arg1, uint64_t arg2, uint64_t address, uint64_t size) {
+static int64_t stat_handler(__attribute__((unused)) uint64_t inode, uint64_t arg1, uint64_t arg2, uint64_t address, __attribute__((unused)) uint64_t size) {
   if (arg1 || arg2) {
     syslog(LOG_DEBUG, "Reserved argument is set");
     return -IPC_ERR_INVALID_ARGUMENTS;
@@ -94,23 +85,7 @@ static int64_t stat_handler(uint64_t inode, uint64_t arg1, uint64_t arg2, uint64
     syslog(LOG_DEBUG, "Not allowed to stat file");
     return -IPC_ERR_INSUFFICIENT_PRIVILEGE;
   }
-  if (size != sizeof(struct vfs_stat)) {
-    syslog(LOG_DEBUG, "Invalid stat size");
-    return -IPC_ERR_INVALID_ARGUMENTS;
-  }
   struct vfs_stat* stat = (struct vfs_stat*) address;
-  if (inode == 512) {
-    stat->type = VFS_TYPE_DIR;
-    return 0;
-  }
-  if (inode >= 512) {
-    syslog(LOG_DEBUG, "Invalid inode");
-    return -IPC_ERR_INVALID_ARGUMENTS;
-  }
-  if (!devices[inode].pid) {
-    syslog(LOG_DEBUG, "Invalid inode");
-    return -IPC_ERR_INVALID_ARGUMENTS;
-  }
   stat->type = VFS_TYPE_FILE;
   return 0;
 }
@@ -122,14 +97,6 @@ static int64_t handle_transfer(uint64_t inode, uint64_t offset, uint64_t arg2, u
   if (!has_ipc_caller_capability(CAP_NAMESPACE_FILESYSTEMS, CAP_VFSD)) {
     syslog(LOG_DEBUG, "Not allowed to access file");
     return -IPC_ERR_INSUFFICIENT_PRIVILEGE;
-  }
-  if (inode >= 512) {
-    syslog(LOG_DEBUG, "Invalid inode");
-    return -IPC_ERR_INVALID_ARGUMENTS;
-  }
-  if (!devices[inode].pid) {
-    syslog(LOG_DEBUG, "Invalid inode");
-    return -IPC_ERR_INVALID_ARGUMENTS;
   }
   uint8_t call = IPC_VFSD_FS_READ;
   if (write) {

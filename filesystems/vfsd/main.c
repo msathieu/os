@@ -105,9 +105,13 @@ static int64_t finish_mount_handler(uint64_t inode, uint64_t arg1, uint64_t arg2
   pid_t pid = get_ipc_caller_pid();
   for (size_t i = 0; i < 512; i++) {
     if (mounts[i].pid == pid) {
+      memcpy(&mounts[i].node.stat, (void*) address, sizeof(struct vfs_stat));
+      if (mounts[i].node.stat.type != VFS_TYPE_DIR) {
+        syslog(LOG_DEBUG, "Mount isn't a directory");
+        return -IPC_ERR_INVALID_ARGUMENTS;
+      }
       mounts[i].mounted = 1;
       mounts[i].node.inode = inode;
-      memcpy(&mounts[i].node.stat, (void*) address, sizeof(struct vfs_stat));
       for (size_t j = 0; j < blocked_calls; j++) {
         ipc_unblock(0);
       }
@@ -139,6 +143,16 @@ static int64_t open_file_handler(uint64_t flags, uint64_t arg1, uint64_t arg2, u
     syslog(LOG_DEBUG, "Path isn't null terminated");
     return -IPC_ERR_INVALID_ARGUMENTS;
   }
+  if (buffer[0] != '/') {
+    free(buffer);
+    return -IPC_ERR_INVALID_ARGUMENTS;
+  }
+  for (size_t i = 0; i < size - 1; i++) {
+    if (!isprint(buffer[i])) {
+      free(buffer);
+      return -IPC_ERR_INVALID_ARGUMENTS;
+    }
+  }
   int mount_i = -1;
   size_t mount_size = 0;
   for (size_t i = 0; i < 512; i++) {
@@ -158,6 +172,12 @@ static int64_t open_file_handler(uint64_t flags, uint64_t arg1, uint64_t arg2, u
     next_part = strtok(0, "/");
     if (next_part) {
       inode = send_pid_ipc_call(mounts[mount_i].pid, IPC_VFSD_FS_OPEN, O_RDONLY, inode, 0, (uintptr_t) part, strlen(part) + 1);
+      struct vfs_stat stat = {0};
+      send_pid_ipc_call(mounts[mount_i].pid, IPC_VFSD_FS_STAT, inode, 0, 0, (uintptr_t) &stat, sizeof(struct vfs_stat));
+      if (stat.type != VFS_TYPE_DIR) {
+        free(buffer);
+        return -IPC_ERR_INVALID_ARGUMENTS;
+      }
     } else {
       inode = send_pid_ipc_call(mounts[mount_i].pid, IPC_VFSD_FS_OPEN, flags, inode, 0, (uintptr_t) part, strlen(part) + 1);
     }
@@ -205,7 +225,11 @@ static int64_t open_file_handler(uint64_t flags, uint64_t arg1, uint64_t arg2, u
   fd->node->mount_i = mount_i;
   fd->node->inode = inode;
   fd->flags = flags;
-  send_pid_ipc_call(mounts[fd->node->mount_i].pid, IPC_VFSD_FS_STAT, fd->node->inode, 0, 0, (uintptr_t) fd->node + offsetof(struct fs_node, stat), sizeof(struct vfs_stat));
+  if (fd->node->inode == mounts[fd->node->mount_i].node.inode) {
+    memcpy((void*) fd->node + offsetof(struct fs_node, stat), &mounts[fd->node->mount_i].node.stat, sizeof(struct vfs_stat));
+  } else {
+    send_pid_ipc_call(mounts[fd->node->mount_i].pid, IPC_VFSD_FS_STAT, fd->node->inode, 0, 0, (uintptr_t) fd->node + offsetof(struct fs_node, stat), sizeof(struct vfs_stat));
+  }
   return fd_i;
 }
 static int64_t close_file_handler(uint64_t fd_num, uint64_t arg1, uint64_t arg2, uint64_t arg3, uint64_t arg4) {
@@ -247,7 +271,6 @@ static int64_t handle_transfer(uint64_t fd_num, uint64_t arg1, uint64_t arg2, ui
         return -IPC_ERR_INVALID_ARGUMENTS;
       }
       if (process->fds[fd_num].node->stat.type != VFS_TYPE_FILE) {
-        syslog(LOG_DEBUG, "Can't access file");
         return -IPC_ERR_PROGRAM_DEFINED;
       }
       if (write && !(process->fds[fd_num].flags & (O_RDWR | O_WRONLY))) {

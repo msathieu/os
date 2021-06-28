@@ -20,7 +20,7 @@ struct file {
 static struct linked_list files_list;
 static size_t next_inode = 1;
 
-static int64_t open_handler(uint64_t flags, uint64_t parent_inode, uint64_t arg2, uint64_t address, uint64_t size) {
+static int64_t open_handler(uint64_t flags, __attribute__((unused)) uint64_t parent_inode, uint64_t arg2, uint64_t address, uint64_t size) {
   if (arg2) {
     syslog(LOG_DEBUG, "Reserved argument is set");
     return -IPC_ERR_INVALID_ARGUMENTS;
@@ -29,17 +29,8 @@ static int64_t open_handler(uint64_t flags, uint64_t parent_inode, uint64_t arg2
     syslog(LOG_DEBUG, "Not allowed to open file");
     return -IPC_ERR_INSUFFICIENT_PRIVILEGE;
   }
-  if (parent_inode) {
-    syslog(LOG_DEBUG, "Invalid parent inode");
-    return -IPC_ERR_INVALID_ARGUMENTS;
-  }
   char* buffer = malloc(size);
   memcpy(buffer, (void*) address, size);
-  if (buffer[size - 1]) {
-    free(buffer);
-    syslog(LOG_DEBUG, "Path isn't null terminated");
-    return -IPC_ERR_INVALID_ARGUMENTS;
-  }
   for (struct file* file = (struct file*) files_list.first; file; file = (struct file*) file->list_member.next) {
     if (!strcmp(file->path, buffer)) {
       free(buffer);
@@ -51,13 +42,6 @@ static int64_t open_handler(uint64_t flags, uint64_t parent_inode, uint64_t arg2
     }
   }
   if (flags & O_CREAT) {
-    for (size_t i = 0; i < size - 1; i++) {
-      if (!isprint(buffer[i]) || buffer[i] == '/') {
-        free(buffer);
-        syslog(LOG_DEBUG, "Path contains invalid characters");
-        return -IPC_ERR_INVALID_ARGUMENTS;
-      }
-    }
     struct file* file = calloc(1, sizeof(struct file));
     file->inode = next_inode++;
     file->path = buffer;
@@ -68,7 +52,7 @@ static int64_t open_handler(uint64_t flags, uint64_t parent_inode, uint64_t arg2
     return -IPC_ERR_INVALID_ARGUMENTS;
   }
 }
-static int64_t stat_handler(uint64_t inode, uint64_t arg1, uint64_t arg2, uint64_t address, uint64_t size) {
+static int64_t stat_handler(__attribute__((unused)) uint64_t inode, uint64_t arg1, uint64_t arg2, uint64_t address, __attribute__((unused)) uint64_t size) {
   if (arg1 || arg2) {
     syslog(LOG_DEBUG, "Reserved argument is set");
     return -IPC_ERR_INVALID_ARGUMENTS;
@@ -77,26 +61,7 @@ static int64_t stat_handler(uint64_t inode, uint64_t arg1, uint64_t arg2, uint64
     syslog(LOG_DEBUG, "Not allowed to stat file");
     return -IPC_ERR_INSUFFICIENT_PRIVILEGE;
   }
-  if (size != sizeof(struct vfs_stat)) {
-    syslog(LOG_DEBUG, "Invalid stat size");
-    return -IPC_ERR_INVALID_ARGUMENTS;
-  }
   struct vfs_stat* stat = (struct vfs_stat*) address;
-  if (!inode) {
-    stat->type = VFS_TYPE_DIR;
-    return 0;
-  }
-  struct file* file = 0;
-  for (struct file* file_i = (struct file*) files_list.first; file_i; file_i = (struct file*) file_i->list_member.next) {
-    if (file_i->inode == inode) {
-      file = file_i;
-      break;
-    }
-  }
-  if (!file) {
-    syslog(LOG_DEBUG, "Invalid inode");
-    return -IPC_ERR_INVALID_ARGUMENTS;
-  }
   stat->type = VFS_TYPE_FILE;
   return 0;
 }
@@ -109,16 +74,12 @@ static int64_t read_handler(uint64_t inode, uint64_t offset, uint64_t arg2, uint
     syslog(LOG_DEBUG, "Not allowed to read file");
     return -IPC_ERR_INSUFFICIENT_PRIVILEGE;
   }
-  struct file* file = 0;
-  for (struct file* file_i = (struct file*) files_list.first; file_i; file_i = (struct file*) file_i->list_member.next) {
+  struct file* file;
+  for (struct file* file_i = (struct file*) files_list.first;; file_i = (struct file*) file_i->list_member.next) {
     if (file_i->inode == inode) {
       file = file_i;
       break;
     }
-  }
-  if (!file) {
-    syslog(LOG_DEBUG, "Invalid inode");
-    return -IPC_ERR_INVALID_ARGUMENTS;
   }
   if (offset >= file->size) {
     return 0;
@@ -142,16 +103,12 @@ static int64_t write_handler(uint64_t inode, uint64_t offset, uint64_t arg2, uin
     syslog(LOG_DEBUG, "Offset is too big");
     return -IPC_ERR_INVALID_ARGUMENTS;
   }
-  struct file* file = 0;
-  for (struct file* file_i = (struct file*) files_list.first; file_i; file_i = (struct file*) file_i->list_member.next) {
+  struct file* file;
+  for (struct file* file_i = (struct file*) files_list.first;; file_i = (struct file*) file_i->list_member.next) {
     if (file_i->inode == inode) {
       file = file_i;
       break;
     }
-  }
-  if (!file) {
-    syslog(LOG_DEBUG, "Invalid inode");
-    return -IPC_ERR_INVALID_ARGUMENTS;
   }
   size_t total_size = offset + size;
   if (total_size > file->size) {

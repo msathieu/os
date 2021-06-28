@@ -41,10 +41,6 @@ static int64_t open_handler(uint64_t flags, uint64_t parent_inode, uint64_t arg2
     syslog(LOG_DEBUG, "Not allowed to write to file");
     return -IPC_ERR_INSUFFICIENT_PRIVILEGE;
   }
-  if (parent_inode >= header->nfiles) {
-    syslog(LOG_DEBUG, "Invalid parent inode");
-    return -IPC_ERR_INVALID_ARGUMENTS;
-  }
   size_t parent_path_size = strlen((char*) header->files[parent_inode].name);
   char* full_path = malloc(parent_path_size + 1 + size);
   strcpy(full_path, (char*) header->files[parent_inode].name);
@@ -62,7 +58,7 @@ static int64_t open_handler(uint64_t flags, uint64_t parent_inode, uint64_t arg2
   free(full_path);
   return -IPC_ERR_INVALID_ARGUMENTS;
 }
-static int64_t stat_handler(uint64_t inode, uint64_t arg1, uint64_t arg2, uint64_t address, uint64_t size) {
+static int64_t stat_handler(uint64_t inode, uint64_t arg1, uint64_t arg2, uint64_t address, __attribute__((unused)) uint64_t size) {
   if (arg1 || arg2) {
     syslog(LOG_DEBUG, "Reserved argument is set");
     return -IPC_ERR_INVALID_ARGUMENTS;
@@ -70,14 +66,6 @@ static int64_t stat_handler(uint64_t inode, uint64_t arg1, uint64_t arg2, uint64
   if (!has_ipc_caller_capability(CAP_NAMESPACE_FILESYSTEMS, CAP_VFSD)) {
     syslog(LOG_DEBUG, "Not allowed to stat file");
     return -IPC_ERR_INSUFFICIENT_PRIVILEGE;
-  }
-  if (inode >= header->nfiles) {
-    syslog(LOG_DEBUG, "Invalid inode");
-    return -IPC_ERR_INVALID_ARGUMENTS;
-  }
-  if (size != sizeof(struct vfs_stat)) {
-    syslog(LOG_DEBUG, "Invalid stat size");
-    return -IPC_ERR_INVALID_ARGUMENTS;
   }
   struct vfs_stat* stat = (struct vfs_stat*) address;
   stat->type = header->files[inode].type;
@@ -91,10 +79,6 @@ static int64_t read_handler(uint64_t inode, uint64_t offset, uint64_t arg2, uint
   if (!has_ipc_caller_capability(CAP_NAMESPACE_FILESYSTEMS, CAP_VFSD)) {
     syslog(LOG_DEBUG, "Not allowed to read file");
     return -IPC_ERR_INSUFFICIENT_PRIVILEGE;
-  }
-  if (inode >= header->nfiles) {
-    syslog(LOG_DEBUG, "Invalid inode");
-    return -IPC_ERR_INVALID_ARGUMENTS;
   }
   if (offset >= header->files[inode].size) {
     return 0;
