@@ -86,6 +86,7 @@ static int64_t mount_handler(uint64_t arg0, uint64_t arg1, uint64_t arg2, uint64
       mounts[i].path = buffer;
       mounts[i].pid = pid;
       mounts[i].node.mount_i = i;
+      mounts[i].node.nfds = 1; // Prevent node from being freed
       return 0;
     }
   }
@@ -220,14 +221,15 @@ static int64_t open_file_handler(uint64_t flags, uint64_t arg1, uint64_t arg2, u
     fd = &process->fds[fd_i];
   }
   fd->exists = 1;
-  fd->node = calloc(1, sizeof(struct fs_node));
-  fd->node->nfds = 1;
-  fd->node->mount_i = mount_i;
-  fd->node->inode = inode;
   fd->flags = flags;
-  if (fd->node->inode == mounts[fd->node->mount_i].node.inode) {
-    memcpy((void*) fd->node + offsetof(struct fs_node, stat), &mounts[fd->node->mount_i].node.stat, sizeof(struct vfs_stat));
+  if ((size_t) inode == mounts[mount_i].node.inode) {
+    fd->node = &mounts[mount_i].node;
+    fd->node->nfds++;
   } else {
+    fd->node = calloc(1, sizeof(struct fs_node));
+    fd->node->nfds = 1;
+    fd->node->mount_i = mount_i;
+    fd->node->inode = inode;
     send_pid_ipc_call(mounts[fd->node->mount_i].pid, IPC_VFSD_FS_STAT, fd->node->inode, 0, 0, (uintptr_t) fd->node + offsetof(struct fs_node, stat), sizeof(struct vfs_stat));
   }
   return fd_i;

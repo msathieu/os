@@ -31,7 +31,7 @@ static int heap_compare(void* header1, void* header2) {
     return 1;
   }
 }
-// Prevent page-aligned allocation to be first and prevent first allocation being freed
+// Prevent page-aligned allocation from being first and prevent first allocation from being freed
 __attribute__((optnone)) void placeholder_alloc(void) {
   heap_alloc(8, 0);
 }
@@ -172,7 +172,6 @@ void free(void* address) {
     header = previous_header;
   }
   struct heap_header* next_header = (struct heap_header*) (footer + 1);
-  asm volatile("nop;nop;nop;nop");
   if ((uintptr_t) next_header < HEAP_START + heap_size) {
     if (next_header->magic != heap_magic) {
       panic("Invalid magic value");
