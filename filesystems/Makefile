@@ -11,3 +11,4 @@ $(DEVICES): $(DESTDIR)/sbin/dev-%: dev/%.o
 public.o: ../public.key
 	$(OBJCOPY) -O elf64-x86-64 -I binary $^ $@
 -include $(wildcard */*.d)
+.DELETE_ON_ERROR:

@@ -24,5 +24,5 @@ build-toolchain: $(LLVM).tar.gz
 	touch toolchain/lib/clang/12.0.0/share/cfi_blacklist.txt
 clean:
 	rm -rf toolchain/os-llvm-$(LLVM) *.tar.gz
-.DELETE_ON_ERROR:
 -include $(wildcard */*.d) monocypher.d
+.DELETE_ON_ERROR:

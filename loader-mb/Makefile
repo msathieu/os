@@ -12,3 +12,4 @@ $(DESTDIR)/boot/loader.bin: $(OFILES) $(LIBC)
 public.o: ../public.key
 	$(OBJCOPY) -O elf32-i386 -I binary $^ $@
 -include $(OFILES:.o=.d)
+.DELETE_ON_ERROR:

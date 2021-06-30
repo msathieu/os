@@ -6,3 +6,4 @@ install: $(LIBRARIES)
 $(LIBRARIES): $$(patsubst %.c, %.o, $$(wildcard $$(patsubst $(DESTDIR)/lib/lib%.a, %, $$@)/*.c))
 	$(AR) rcD $@ $^
 -include $(wildcard */*.d)
+.DELETE_ON_ERROR:

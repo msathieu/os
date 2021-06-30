@@ -12,3 +12,4 @@ $(DESTDIR)/boot/kernel.bin: $(OFILES) $(LIBC)
 public.o: ../public.key
 	$(OBJCOPY) -O elf64-x86-64 -I binary $^ $@
 -include $(OFILES:.o=.d)
+.DELETE_ON_ERROR:

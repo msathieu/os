@@ -13,3 +13,4 @@ install-headers:
 	cp -r include $(DESTDIR)
 	cp freestanding/include/*.h $(DESTDIR)/include/__/freestanding
 -include $(OFILES:.o=.d)
+.DELETE_ON_ERROR:

@@ -5,3 +5,4 @@ all: $(PROGRAMS)
 $(PROGRAMS): $$(patsubst %.c, %.o, $$(wildcard $$(notdir $$@)/*.c))
 	$(CC) -s -o $@ $^
 -include $(wildcard */*.d)
+.DELETE_ON_ERROR:
