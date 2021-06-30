@@ -4,6 +4,7 @@
 #include <panic.h>
 #include <sorted_list.h>
 #include <stdlib.h>
+#include <string.h>
 #include <struct.h>
 #define HEAP_START (PAGING_PHYSICAL_MAPPINGS_START + PAGING_PHYSICAL_MAPPINGS_SIZE)
 #define HEAP_INITIAL_SIZE 0x800000
@@ -152,6 +153,7 @@ void free(void* address) {
   if (header->magic != heap_magic) {
     panic("Invalid magic value");
   }
+  memset(address, 0, header->size);
   header->free = 1;
   struct heap_footer* footer = address + header->size;
   if (footer->magic != heap_magic) {

@@ -11,7 +11,7 @@
  *
  */
 
-#include "__/rpmalloc.h"
+#include "rpmalloc.h"
 
 ////////////
 ///
@@ -22,7 +22,6 @@
 #if defined(__clang__)
 #pragma clang diagnostic ignored "-Wunused-macros"
 #pragma clang diagnostic ignored "-Wunused-function"
-#pragma clang diagnostic ignored "-Wunused-parameter"
 #elif defined(__GNUC__)
 #pragma GCC diagnostic ignored "-Wunused-macros"
 #pragma GCC diagnostic ignored "-Wunused-function"
@@ -42,7 +41,7 @@
 #endif
 #ifndef ENABLE_VALIDATE_ARGS
 //! Enable validation of args to public entry points
-#define ENABLE_VALIDATE_ARGS 1
+#define ENABLE_VALIDATE_ARGS 0
 #endif
 #ifndef ENABLE_STATISTICS
 //! Enable statistics collection
@@ -62,7 +61,7 @@
 #endif
 #ifndef DISABLE_UNMAP
 //! Disable unmapping memory pages (also enables unlimited cache)
-#define DISABLE_UNMAP 1
+#define DISABLE_UNMAP 0
 #endif
 #ifndef ENABLE_UNLIMITED_CACHE
 //! Enable unlimited global cache (no unmapping until finalization)
@@ -74,11 +73,11 @@
 #endif
 #ifndef DEFAULT_SPAN_MAP_COUNT
 //! Default number of spans to map in call to map more virtual memory (default values yield 4MiB here)
-#define DEFAULT_SPAN_MAP_COUNT 1
+#define DEFAULT_SPAN_MAP_COUNT 64
 #endif
 #ifndef GLOBAL_CACHE_MULTIPLIER
 //! Multiplier for global cache
-#define GLOBAL_CACHE_MULTIPLIER 1
+#define GLOBAL_CACHE_MULTIPLIER 8
 #endif
 
 #if DISABLE_UNMAP && !ENABLE_GLOBAL_CACHE
@@ -2535,6 +2534,7 @@ _rpmalloc_deallocate_huge(span_t* span) {
 //! Deallocate the given block
 static void
 _rpmalloc_deallocate(void* p) {
+  memset(p, 0, rpmalloc_usable_size(p));
   _rpmalloc_stat_add64(&_deallocation_counter, 1);
   //Grab the span (always at start of span, using span alignment)
   span_t* span = (span_t*) ((uintptr_t) p & _memory_span_mask);
@@ -3010,7 +3010,7 @@ rpmalloc_config(void) {
 // Extern interface
 
 extern inline RPMALLOC_ALLOCATOR void*
-malloc(size_t size) {
+rpmalloc(size_t size) {
 #if ENABLE_VALIDATE_ARGS
   if (size >= MAX_ALLOC_SIZE) {
     errno = EINVAL;
@@ -3022,7 +3022,7 @@ malloc(size_t size) {
 }
 
 extern inline void
-free(void* ptr) {
+rpfree(void* ptr) {
   _rpmalloc_deallocate(ptr);
 }
 
@@ -3054,7 +3054,7 @@ rpcalloc(size_t num, size_t size) {
 }
 
 extern inline RPMALLOC_ALLOCATOR void*
-realloc(void* ptr, size_t size) {
+rprealloc(void* ptr, size_t size) {
 #if ENABLE_VALIDATE_ARGS
   if (size >= MAX_ALLOC_SIZE) {
     errno = EINVAL;
@@ -3079,7 +3079,7 @@ rpaligned_realloc(void* ptr, size_t alignment, size_t size, size_t oldsize,
 }
 
 extern RPMALLOC_ALLOCATOR void*
-aligned_alloc(size_t alignment, size_t size) {
+rpaligned_alloc(size_t alignment, size_t size) {
   heap_t* heap = get_thread_heap();
   return _rpmalloc_aligned_allocate(heap, alignment, size);
 }
@@ -3104,7 +3104,7 @@ rpaligned_calloc(size_t alignment, size_t num, size_t size) {
 #else
   total = num * size;
 #endif
-  void* block = aligned_alloc(alignment, total);
+  void* block = rpaligned_alloc(alignment, total);
   if (block)
     memset(block, 0, total);
   return block;
@@ -3112,13 +3112,13 @@ rpaligned_calloc(size_t alignment, size_t num, size_t size) {
 
 extern inline RPMALLOC_ALLOCATOR void*
 rpmemalign(size_t alignment, size_t size) {
-  return aligned_alloc(alignment, size);
+  return rpaligned_alloc(alignment, size);
 }
 
 extern inline int
 rpposix_memalign(void** memptr, size_t alignment, size_t size) {
   if (memptr)
-    *memptr = aligned_alloc(alignment, size);
+    *memptr = rpaligned_alloc(alignment, size);
   else
     return EINVAL;
   return *memptr ? 0 : ENOMEM;
@@ -3525,6 +3525,6 @@ rpmalloc_heap_thread_set_current(rpmalloc_heap_t* heap) {
 
 #if ENABLE_PRELOAD || ENABLE_OVERRIDE
 
-#include "malloc.c"
+#include "malloc.h"
 
 #endif

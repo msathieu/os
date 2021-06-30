@@ -8,6 +8,7 @@ install: $(DESTDIR)/lib/libc.a crt0.o
 	cp crt0.o $(DESTDIR)/lib
 $(DESTDIR)/lib/libc.a: $(OFILES)
 	$(AR) rcD $@ $(OFILES)
+	$(AR) d $@ calloc.o
 install-headers:
 	mkdir -p $(DESTDIR)/include/__/freestanding
 	cp -r include $(DESTDIR)
