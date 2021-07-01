@@ -54,7 +54,7 @@ int main(void) {
   setup_kbd();
   send_ipc_call("logd", IPC_LOGD_REGISTER, 0, 0, 0, 0, 0);
   drop_capability(CAP_NAMESPACE_SERVERS, CAP_LOGD_TTY);
-  setenv("PATH", "/sbin:/bin", 0);
+  setenv("PATH", "/bin", 0);
   spawn_process("/bin/sh");
   start_process();
   ipc_handlers[IPC_VFSD_FS_WRITE] = print_handler;
