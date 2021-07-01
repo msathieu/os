@@ -82,6 +82,7 @@ int main(int argc, char* argv[]) {
     }
     mprotect(mapped_address, pheader.memory_size + pheader.memory_address % 0x1000, permissions);
   }
+  fclose(file);
   asm volatile("jmp *%0"
                :
                : "r"(header.entry));
