@@ -125,6 +125,16 @@ static int64_t finish_mount_handler(uint64_t inode, uint64_t arg1, uint64_t arg2
   syslog(LOG_DEBUG, "Process doesn't handle mount");
   return -IPC_ERR_INSUFFICIENT_PRIVILEGE;
 }
+static void free_node(struct fs_node* node) {
+  struct fs_node* parent = node->parent;
+  if (!node->nfds && !node->children.first) {
+    remove_linked_list(&node->parent->children, &node->list_member);
+    free(node);
+  }
+  if (parent) {
+    free_node(parent);
+  }
+}
 static int64_t open_file_handler(uint64_t flags, uint64_t arg1, uint64_t arg2, uint64_t address, uint64_t size) {
   if (arg1 || arg2) {
     syslog(LOG_DEBUG, "Reserved argument is set");
@@ -174,10 +184,12 @@ static int64_t open_file_handler(uint64_t flags, uint64_t arg1, uint64_t arg2, u
   for (char* part = strtok(buffer + mount_size, "/"); part; part = next_part) {
     if (node->stat.type != VFS_TYPE_DIR) {
       free(buffer);
+      free_node(node);
       return -IPC_ERR_INVALID_ARGUMENTS;
     }
     if (strlen(part) >= 256) {
       free(buffer);
+      free_node(node);
       return -IPC_ERR_INVALID_ARGUMENTS;
     }
     bool found_child = 0;
@@ -203,6 +215,7 @@ static int64_t open_file_handler(uint64_t flags, uint64_t arg1, uint64_t arg2, u
     }
     if (inode < 0) {
       free(buffer);
+      free_node(node);
       return -IPC_ERR_PROGRAM_DEFINED;
     }
     struct fs_node* child = calloc(1, sizeof(struct fs_node));
@@ -252,16 +265,6 @@ static int64_t open_file_handler(uint64_t flags, uint64_t arg1, uint64_t arg2, u
   fd->node = node;
   fd->node->nfds++;
   return fd_i;
-}
-static void free_node(struct fs_node* node) {
-  struct fs_node* parent = node->parent;
-  if (!node->nfds && !node->children.first) {
-    remove_linked_list(&node->parent->children, &node->list_member);
-    free(node);
-  }
-  if (parent) {
-    free_node(parent);
-  }
 }
 static int64_t close_file_handler(uint64_t fd_num, uint64_t arg1, uint64_t arg2, uint64_t arg3, uint64_t arg4) {
   if (arg1 || arg2 || arg3 || arg4) {
