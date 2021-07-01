@@ -11,10 +11,13 @@
 #include <vfs.h>
 
 struct fs_node {
-  size_t mount_i;
+  struct linked_list_member list_member;
+  char name[256];
   size_t inode;
   size_t nfds;
   struct vfs_stat stat;
+  struct fs_node* parent;
+  struct linked_list children;
 };
 struct fd {
   bool exists;
@@ -85,7 +88,6 @@ static int64_t mount_handler(uint64_t arg0, uint64_t arg1, uint64_t arg2, uint64
     if (!mounts[i].path) {
       mounts[i].path = buffer;
       mounts[i].pid = pid;
-      mounts[i].node.mount_i = i;
       mounts[i].node.nfds = 1; // Prevent node from being freed
       return 0;
     }
@@ -167,24 +169,49 @@ static int64_t open_file_handler(uint64_t flags, uint64_t arg1, uint64_t arg2, u
     blocked_calls++;
     return -IPC_ERR_BLOCK;
   }
-  long inode = mounts[mount_i].node.inode;
+  struct fs_node* node = &mounts[mount_i].node;
   char* next_part;
   for (char* part = strtok(buffer + mount_size, "/"); part; part = next_part) {
-    next_part = strtok(0, "/");
-    if (next_part) {
-      inode = send_pid_ipc_call(mounts[mount_i].pid, IPC_VFSD_FS_OPEN, O_RDONLY, inode, 0, (uintptr_t) part, strlen(part) + 1);
-      struct vfs_stat stat = {0};
-      send_pid_ipc_call(mounts[mount_i].pid, IPC_VFSD_FS_STAT, inode, 0, 0, (uintptr_t) &stat, sizeof(struct vfs_stat));
-      if (stat.type != VFS_TYPE_DIR) {
-        free(buffer);
-        return -IPC_ERR_INVALID_ARGUMENTS;
+    if (node->stat.type != VFS_TYPE_DIR) {
+      free(buffer);
+      return -IPC_ERR_INVALID_ARGUMENTS;
+    }
+    if (strlen(part) >= 256) {
+      free(buffer);
+      return -IPC_ERR_INVALID_ARGUMENTS;
+    }
+    bool found_child = 0;
+    for (struct fs_node* child = (struct fs_node*) node->children.first; child; child = (struct fs_node*) child->list_member.next) {
+      if (!strcmp(child->name, part)) {
+        node = child;
+        found_child = 1;
+        break;
       }
+    }
+    next_part = strtok(0, "/");
+    if (found_child) {
+      if (!next_part) {
+        send_pid_ipc_call(mounts[mount_i].pid, IPC_VFSD_FS_OPEN, flags, node->inode, 0, (uintptr_t) part, strlen(part) + 1);
+      }
+      continue;
+    }
+    long inode;
+    if (next_part) {
+      inode = send_pid_ipc_call(mounts[mount_i].pid, IPC_VFSD_FS_OPEN, O_RDONLY, node->inode, 0, (uintptr_t) part, strlen(part) + 1);
     } else {
-      inode = send_pid_ipc_call(mounts[mount_i].pid, IPC_VFSD_FS_OPEN, flags, inode, 0, (uintptr_t) part, strlen(part) + 1);
+      inode = send_pid_ipc_call(mounts[mount_i].pid, IPC_VFSD_FS_OPEN, flags, node->inode, 0, (uintptr_t) part, strlen(part) + 1);
     }
     if (inode < 0) {
+      free(buffer);
       return -IPC_ERR_PROGRAM_DEFINED;
     }
+    struct fs_node* child = calloc(1, sizeof(struct fs_node));
+    child->parent = node;
+    insert_linked_list(&node->children, &child->list_member);
+    strcpy(child->name, part);
+    child->inode = inode;
+    send_pid_ipc_call(mounts[mount_i].pid, IPC_VFSD_FS_STAT, child->inode, 0, 0, (uintptr_t) &child->stat, sizeof(struct vfs_stat));
+    node = child;
   }
   free(buffer);
   pid_t caller_pid = get_ipc_caller_pid();
@@ -222,22 +249,27 @@ static int64_t open_file_handler(uint64_t flags, uint64_t arg1, uint64_t arg2, u
   }
   fd->exists = 1;
   fd->flags = flags;
-  if ((size_t) inode == mounts[mount_i].node.inode) {
-    fd->node = &mounts[mount_i].node;
-    fd->node->nfds++;
-  } else {
-    fd->node = calloc(1, sizeof(struct fs_node));
-    fd->node->nfds = 1;
-    fd->node->mount_i = mount_i;
-    fd->node->inode = inode;
-    send_pid_ipc_call(mounts[fd->node->mount_i].pid, IPC_VFSD_FS_STAT, fd->node->inode, 0, 0, (uintptr_t) fd->node + offsetof(struct fs_node, stat), sizeof(struct vfs_stat));
-  }
+  fd->node = node;
+  fd->node->nfds++;
   return fd_i;
+}
+static void free_node(struct fs_node* node) {
+  struct fs_node* parent = node->parent;
+  if (!node->nfds && !node->children.first) {
+    remove_linked_list(&node->parent->children, &node->list_member);
+    free(node);
+  }
+  if (parent) {
+    free_node(parent);
+  }
 }
 static int64_t close_file_handler(uint64_t fd_num, uint64_t arg1, uint64_t arg2, uint64_t arg3, uint64_t arg4) {
   if (arg1 || arg2 || arg3 || arg4) {
     syslog(LOG_DEBUG, "Reserved argument is set");
     return -IPC_ERR_INVALID_ARGUMENTS;
+  }
+  if (fd_num <= 2) {
+    return 0;
   }
   pid_t caller_pid = get_ipc_caller_pid();
   for (struct process* process = (struct process*) process_list.first; process; process = (struct process*) process->list_member.next) {
@@ -246,10 +278,9 @@ static int64_t close_file_handler(uint64_t fd_num, uint64_t arg1, uint64_t arg2,
         syslog(LOG_DEBUG, "File descriptor doesn't exist");
         return -IPC_ERR_INVALID_ARGUMENTS;
       }
-      process->fds[fd_num].node->nfds--;
-      if (!process->fds[fd_num].node->nfds) {
-        free(process->fds[fd_num].node);
-      }
+      struct fs_node* node = process->fds[fd_num].node;
+      node->nfds--;
+      free_node(node);
       memset(&process->fds[fd_num], 0, sizeof(struct fd));
       return 0;
     }
@@ -287,7 +318,18 @@ static int64_t handle_transfer(uint64_t fd_num, uint64_t arg1, uint64_t arg2, ui
       if (write) {
         call = IPC_VFSD_FS_WRITE;
       }
-      int64_t return_value = send_pid_ipc_call(mounts[process->fds[fd_num].node->mount_i].pid, call, process->fds[fd_num].node->inode, process->fds[fd_num].position, 0, address, size);
+      struct fs_node* parent = process->fds[fd_num].node;
+      while (parent->parent) {
+        parent = parent->parent;
+      }
+      pid_t pid;
+      for (size_t i = 0;; i++) {
+        if (&mounts[i].node == parent) {
+          pid = mounts[i].pid;
+          break;
+        }
+      }
+      int64_t return_value = send_pid_ipc_call(pid, call, process->fds[fd_num].node->inode, process->fds[fd_num].position, 0, address, size);
       if (return_value > 0) {
         process->fds[fd_num].position += return_value;
       }
