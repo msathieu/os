@@ -13,7 +13,8 @@ enum {
   CAP_GET_FB_INFO,
   CAP_PRIORITY,
   CAP_ACPI,
-  CAP_LOG
+  CAP_LOG,
+  CAP_LISTEN_EXITS
 };
 
 struct process {
@@ -40,6 +41,12 @@ struct process {
   bool has_arguments;
   bool has_environment_vars;
   uint64_t mappings_bitset[PAGING_PHYSICAL_MAPPINGS_SIZE / 0x1000 / 64];
+  struct linked_list exited_pids_list;
+  bool exit_listener;
+};
+struct exited_pid {
+  struct linked_list_member list_member;
+  size_t pid;
 };
 
 struct process* create_process(void);

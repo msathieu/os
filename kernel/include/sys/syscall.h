@@ -19,14 +19,17 @@ union syscall_args {
 
 extern struct process* ioports_process[0x10000];
 extern struct process* isa_irqs_process[16];
+extern struct process* exit_listener_processes[64];
 
 void syscall_change_memory_permissions(union syscall_args*);
 void syscall_change_priority(union syscall_args*);
 void syscall_drop_capabilities(union syscall_args*);
+void syscall_get_exited_pid(union syscall_args*);
 void syscall_get_pid(union syscall_args*);
 void syscall_get_uid(union syscall_args*);
 void syscall_grant_capabilities(union syscall_args*);
 void syscall_has_arguments(union syscall_args*);
+void syscall_listen_exits(union syscall_args*);
 void syscall_map_memory(union syscall_args*);
 void syscall_set_spawned_uid(union syscall_args*);
 void syscall_sleep(union syscall_args*);

@@ -36,7 +36,9 @@ enum {
   _SYSCALL_GET_ACPI_REVISION,
   _SYSCALL_GET_ACPI_TABLE,
   _SYSCALL_RESET,
-  _SYSCALL_LOG
+  _SYSCALL_LOG,
+  _SYSCALL_LISTEN_EXITS,
+  _SYSCALL_GET_EXITED_PID
 };
 
 int64_t _syscall(uint64_t syscall, uint64_t arg0, uint64_t arg1, uint64_t arg2, uint64_t arg3, uint64_t arg4);

@@ -49,6 +49,18 @@ void destroy_process(struct process* process) {
       }
     }
   }
+  struct exited_pid* next_exited_pid;
+  for (struct exited_pid* exited_pid = (struct exited_pid*) process->exited_pids_list.first; exited_pid; exited_pid = next_exited_pid) {
+    next_exited_pid = (struct exited_pid*) exited_pid->list_member.next;
+    free(exited_pid);
+  }
+  if (process->exit_listener) {
+    for (size_t i = 0; i < 64; i++) {
+      if (exit_listener_processes[i] == process) {
+        exit_listener_processes[i] = 0;
+      }
+    }
+  }
   destroy_pml4(process->address_space);
   struct process* next_child;
   for (struct process* child = process->first_child; child; child = next_child) {
@@ -56,6 +68,13 @@ void destroy_process(struct process* process) {
     child->parent = 0;
     if (child->exited) {
       remove_process(child);
+    }
+  }
+  for (size_t i = 0; i < 64; i++) {
+    if (exit_listener_processes[i]) {
+      struct exited_pid* exited_pid = calloc(1, sizeof(struct exited_pid));
+      exited_pid->pid = process->pid;
+      insert_linked_list(&exit_listener_processes[i]->exited_pids_list, &exited_pid->list_member);
     }
   }
   if (!process->parent) {
