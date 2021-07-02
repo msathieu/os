@@ -50,19 +50,13 @@ void destroy_process(struct process* process) {
     }
   }
   destroy_pml4(process->address_space);
-  struct process* delete_child = 0;
-  for (struct process* child = process->first_child; child; child = child->next_sibling) {
-    if (delete_child) {
-      remove_process(delete_child);
-      delete_child = 0;
-    }
+  struct process* next_child;
+  for (struct process* child = process->first_child; child; child = next_child) {
+    next_child = child->next_sibling;
     child->parent = 0;
     if (child->exited) {
-      delete_child = child;
+      remove_process(child);
     }
-  }
-  if (delete_child) {
-    remove_process(delete_child);
   }
   if (!process->parent) {
     remove_process(process);
