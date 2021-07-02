@@ -19,7 +19,7 @@ struct service {
 
 struct service services[] = {
   {"acpid", 1, 0, {[CAP_NAMESPACE_KERNEL] = 1 << CAP_KERNEL_IOPORT | 1 << CAP_KERNEL_MAP_MEMORY | 1 << CAP_KERNEL_ACPI, [CAP_NAMESPACE_DRIVERS] = 1 << CAP_PCID_ACCESS}, "acpid"},
-  {"argd", 1, 0, {}, "argd"},
+  {"argd", 1, 0, {[CAP_NAMESPACE_KERNEL] = 1 << CAP_KERNEL_LISTEN_EXITS}, "argd"},
   {"atad", 1, 0, {[CAP_NAMESPACE_FILESYSTEMS] = 1 << CAP_VFSD_MOUNT}, 0},
   {"ipcd", 1, 0, {}, 0},
   {"logd", 1, 0, {[CAP_NAMESPACE_KERNEL] = 1 << CAP_KERNEL_LOG, [CAP_NAMESPACE_SERVERS] = 1 << CAP_LOGD}, "logd"},
@@ -27,7 +27,7 @@ struct service services[] = {
   {"/sbin/devd", 0, 0, {[CAP_NAMESPACE_FILESYSTEMS] = 1 << CAP_DEVD}, "devd"},
   {"/sbin/dev-nulld", 0, 0, {}, 0},
   {"/sbin/dev-zerod", 0, 0, {}, 0},
-  {"/sbin/envd", 0, 0, {}, "envd"},
+  {"/sbin/envd", 0, 0, {[CAP_NAMESPACE_KERNEL] = 1 << CAP_KERNEL_LISTEN_EXITS}, "envd"},
   {"/sbin/fbd", 0, 0, {[CAP_NAMESPACE_KERNEL] = 1 << CAP_KERNEL_GET_FB_INFO}, "fbd"},
   {"/sbin/kbdd", 0, 0, {[CAP_NAMESPACE_SERVERS] = 1 << CAP_KBDD}, "kbdd"},
   {"/sbin/ps2d", 0, 0, {[CAP_NAMESPACE_SERVERS] = 1 << CAP_KBDD_SEND_KEYPRESS}, 0},

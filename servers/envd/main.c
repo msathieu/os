@@ -4,6 +4,7 @@
 #include <priority.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/wait.h>
 #include <syslog.h>
 
 struct environment_var {
@@ -105,6 +106,8 @@ static int64_t add_env_handler(uint64_t arg0, uint64_t arg1, uint64_t arg2, uint
 int main(void) {
   change_priority(PRIORITY_SYSTEM_HIGH);
   drop_capability(CAP_NAMESPACE_KERNEL, CAP_KERNEL_PRIORITY);
+  listen_exits();
+  drop_capability(CAP_NAMESPACE_KERNEL, CAP_KERNEL_LISTEN_EXITS);
   register_ipc(1);
   ipc_handlers[IPC_ENVD_GET_NUM] = get_num_envs_handler;
   ipc_handlers[IPC_ENVD_GET_SIZE] = get_env_size_handler;
@@ -112,5 +115,17 @@ int main(void) {
   ipc_handlers[IPC_ENVD_GET] = get_env_handler;
   while (1) {
     handle_ipc();
+    pid_t pid;
+    while ((pid = get_exited_pid())) {
+      struct environment_var* next_env;
+      for (struct environment_var* env = (struct environment_var*) envs_list.first; env; env = next_env) {
+        next_env = (struct environment_var*) env->list_member.next;
+        if (env->pid == pid) {
+          free(env->value);
+          remove_linked_list(&envs_list, &env->list_member);
+          free(env);
+        }
+      }
+    }
   }
 }

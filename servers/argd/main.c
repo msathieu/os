@@ -4,6 +4,7 @@
 #include <priority.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/wait.h>
 #include <syslog.h>
 
 struct argument {
@@ -106,6 +107,8 @@ static int64_t add_arg_handler(uint64_t arg0, uint64_t arg1, uint64_t arg2, uint
 int main(void) {
   change_priority(PRIORITY_SYSTEM_HIGH);
   drop_capability(CAP_NAMESPACE_KERNEL, CAP_KERNEL_PRIORITY);
+  listen_exits();
+  drop_capability(CAP_NAMESPACE_KERNEL, CAP_KERNEL_LISTEN_EXITS);
   register_ipc(1);
   ipc_handlers[IPC_ARGD_GET_NUM] = get_num_args_handler;
   ipc_handlers[IPC_ARGD_GET_SIZE] = get_arg_size_handler;
@@ -113,5 +116,17 @@ int main(void) {
   ipc_handlers[IPC_ARGD_GET] = get_arg_handler;
   while (1) {
     handle_ipc();
+    pid_t pid;
+    while ((pid = get_exited_pid())) {
+      struct argument* next_arg;
+      for (struct argument* arg = (struct argument*) args_list.first; arg; arg = next_arg) {
+        next_arg = (struct argument*) arg->list_member.next;
+        if (arg->pid == pid) {
+          free(arg->value);
+          remove_linked_list(&args_list, &arg->list_member);
+          free(arg);
+        }
+      }
+    }
   }
 }
