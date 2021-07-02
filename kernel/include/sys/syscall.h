@@ -17,7 +17,7 @@ union syscall_args {
   };
 };
 
-extern size_t ioports_pid[0x10000];
+extern struct process* ioports_process[0x10000];
 extern struct process* isa_irqs_process[16];
 
 void syscall_change_memory_permissions(union syscall_args*);

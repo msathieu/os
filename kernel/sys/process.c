@@ -32,8 +32,8 @@ void destroy_process(struct process* process) {
   }
   if (process->ioports_assigned) {
     for (size_t i = 0; i < 0x10000; i++) {
-      if (ioports_pid[i] == process->pid) {
-        ioports_pid[i] = 0;
+      if (ioports_process[i] == process) {
+        ioports_process[i] = 0;
       }
     }
   }

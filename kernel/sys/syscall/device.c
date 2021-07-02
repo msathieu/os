@@ -8,7 +8,7 @@
 #include <sys/scheduler.h>
 #include <sys/syscall.h>
 
-size_t ioports_pid[0x10000];
+struct process* ioports_process[0x10000];
 struct process* isa_irqs_process[16];
 static bool isa_irqs_fired[16];
 
@@ -33,12 +33,12 @@ void syscall_grant_ioport(union syscall_args* args) {
     terminate_current_task(&args->registers);
     return;
   }
-  if (ioports_pid[args->arg0]) {
+  if (ioports_process[args->arg0]) {
     puts("Requested port has already been granted");
     terminate_current_task(&args->registers);
     return;
   }
-  ioports_pid[args->arg0] = current_task->spawned_process->pid;
+  ioports_process[args->arg0] = current_task->spawned_process;
   current_task->spawned_process->ioports_assigned = 1;
 }
 void syscall_access_ioport(union syscall_args* args) {
@@ -52,7 +52,7 @@ void syscall_access_ioport(union syscall_args* args) {
     terminate_current_task(&args->registers);
     return;
   }
-  if (ioports_pid[args->arg0] != current_task->process->pid && !has_process_capability(current_task->process, CAP_IOPORT)) {
+  if (ioports_process[args->arg0] != current_task->process && !has_process_capability(current_task->process, CAP_IOPORT)) {
     puts("No permission to access port");
     terminate_current_task(&args->registers);
     return;
