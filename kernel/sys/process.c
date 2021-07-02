@@ -21,12 +21,16 @@ void destroy_process(struct process* process) {
     remove_linked_list(&syscall_processes, &process->list_member);
   }
   if (process->syscall_queue.first) {
-    for (struct task* task = (struct task*) process->syscall_queue.first; task; task = (struct task*) task->list_member.next) {
+    struct task* next_task;
+    for (struct task* task = (struct task*) process->syscall_queue.first; task; task = next_task) {
+      next_task = (struct task*) task->list_member.next;
       destroy_task(task);
     }
   }
   if (process->blocked_ipc_calls_queue.first) {
-    for (struct task* task = (struct task*) process->blocked_ipc_calls_queue.first; task; task = (struct task*) task->list_member.next) {
+    struct task* next_task;
+    for (struct task* task = (struct task*) process->blocked_ipc_calls_queue.first; task; task = next_task) {
+      next_task = (struct task*) task->list_member.next;
       destroy_task(task);
     }
   }
