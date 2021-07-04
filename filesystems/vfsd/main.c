@@ -406,6 +406,7 @@ int main(void) {
               free_node(process->fds[i].node);
             }
           }
+          remove_linked_list(&process_list, &process->list_member);
           free(process);
         }
       }
