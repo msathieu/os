@@ -32,7 +32,7 @@ struct service services[] = {
   {"/sbin/kbdd", 0, 0, {[CAP_NAMESPACE_SERVERS] = 1 << CAP_KBDD}, "kbdd"},
   {"/sbin/ps2d", 0, 0, {[CAP_NAMESPACE_SERVERS] = 1 << CAP_KBDD_SEND_KEYPRESS}, 0},
   {"/sbin/ttyd", 0, 0, {[CAP_NAMESPACE_DRIVERS] = 1 << CAP_FBD_DRAW, [CAP_NAMESPACE_SERVERS] = 1 << CAP_KBDD_RECEIVE_EVENTS | 1 << CAP_LOGD_TTY}, "ttyd"},
-  {"vfsd", 1, 0, {[CAP_NAMESPACE_FILESYSTEMS] = 1 << CAP_VFSD}, "vfsd"},
+  {"vfsd", 1, 0, {[CAP_NAMESPACE_KERNEL] = 1 << CAP_KERNEL_LISTEN_EXITS, [CAP_NAMESPACE_FILESYSTEMS] = 1 << CAP_VFSD}, "vfsd"},
 };
 
 static void spawn(const char* name) {

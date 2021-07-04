@@ -7,6 +7,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/wait.h>
 #include <syslog.h>
 #include <vfs.h>
 
@@ -382,6 +383,8 @@ static int64_t seek_file_handler(uint64_t fd_num, uint64_t mode, uint64_t arg_po
 int main(void) {
   drop_capability(CAP_NAMESPACE_KERNEL, CAP_KERNEL_PRIORITY);
   register_ipc(1);
+  listen_exits();
+  drop_capability(CAP_NAMESPACE_KERNEL, CAP_KERNEL_LISTEN_EXITS);
   ipc_handlers[IPC_VFSD_CLOSE] = close_file_handler;
   ipc_handlers[IPC_VFSD_SEEK] = seek_file_handler;
   ipc_handlers[IPC_VFSD_OPEN] = open_file_handler;
@@ -391,5 +394,21 @@ int main(void) {
   ipc_handlers[IPC_VFSD_READ] = read_file_handler;
   while (1) {
     handle_ipc();
+    pid_t pid;
+    while ((pid = get_exited_pid())) {
+      struct process* next_process;
+      for (struct process* process = (struct process*) process_list.first; process; process = next_process) {
+        next_process = (struct process*) process->list_member.next;
+        if (process->pid == pid) {
+          for (size_t i = 3; i < process->nfds; i++) {
+            if (process->fds[i].exists) {
+              process->fds[i].node->nfds--;
+              free_node(process->fds[i].node);
+            }
+          }
+          free(process);
+        }
+      }
+    }
   }
 }
