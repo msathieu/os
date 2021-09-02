@@ -1,6 +1,7 @@
 #include <capability.h>
 #include <ipccalls.h>
 #include <spawn.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <syslog.h>
 #include <tty/fb.h>
@@ -14,8 +15,7 @@ static int64_t print_handler(__attribute__((unused)) uint64_t offset, uint64_t a
   size_t fb = 0;
   if (has_ipc_caller_capability(CAP_NAMESPACE_SERVERS, CAP_LOGD)) {
     fb = 11;
-    // TODO: Remove CAP_VFSD
-  } else if (!has_ipc_caller_capability(CAP_NAMESPACE_FILESYSTEMS, CAP_VFSD) && !has_ipc_caller_capability(CAP_NAMESPACE_FILESYSTEMS, CAP_DEVD)) {
+  } else if (!has_ipc_caller_capability(CAP_NAMESPACE_FILESYSTEMS, CAP_DEVD)) {
     syslog(LOG_DEBUG, "Not allowed to access tty");
     return -IPC_ERR_INSUFFICIENT_PRIVILEGE;
   }
@@ -55,6 +55,8 @@ int main(void) {
   send_ipc_call("logd", IPC_LOGD_REGISTER, 0, 0, 0, 0, 0);
   drop_capability(CAP_NAMESPACE_SERVERS, CAP_LOGD_TTY);
   setenv("PATH", "/bin", 0);
+  fopen("/dev/tty", "w");
+  fopen("/dev/tty", "w");
   spawn_process("/bin/sh");
   start_process();
   ipc_handlers[IPC_VFSD_FS_WRITE] = print_handler;

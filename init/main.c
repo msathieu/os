@@ -35,6 +35,8 @@ struct service services[] = {
   {"vfsd", 1, 0, {[CAP_NAMESPACE_KERNEL] = 1 << CAP_KERNEL_LISTEN_EXITS, [CAP_NAMESPACE_FILESYSTEMS] = 1 << CAP_VFSD}, "vfsd"},
 };
 
+int _noclonefds;
+
 static void spawn(const char* name) {
   bool service_found = 0;
   for (size_t i = 0; i < sizeof(services) / sizeof(struct service); i++) {
@@ -94,9 +96,9 @@ int main(void) {
   spawn("ipcd");
   spawn("logd");
   spawn("argd");
-  spawn("pcid");
-  spawn("acpid");
   spawn("vfsd");
+  spawn("acpid");
+  spawn("pcid");
   spawn("atad");
   spawn("/sbin/devd");
   spawn("/sbin/dev-nulld");

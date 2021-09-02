@@ -4,6 +4,7 @@
 
 extern char** environ;
 static bool has_arguments;
+__attribute__((weak)) extern int _noclonefds;
 
 pid_t spawn_process_raw(const char* file) {
   has_arguments = 0;
@@ -18,6 +19,9 @@ void add_argument(const char* arg) {
 void start_process(void) {
   for (size_t i = 0; environ[i]; i++) {
     send_ipc_call("envd", IPC_ENVD_ADD, 0, 0, 0, (uintptr_t) environ[i], strlen(environ[i]) + 1);
+  }
+  if (!&_noclonefds) {
+    send_ipc_call("vfsd", IPC_VFSD_CLONE_FDS, 0, 0, 0, 0, 0);
   }
   _syscall(_SYSCALL_START, has_arguments, (bool) environ[0], 0, 0, 0);
 }

@@ -241,8 +241,6 @@ static int64_t open_file_handler(uint64_t flags, uint64_t arg1, uint64_t arg2, u
     process->pid = caller_pid;
     process->nfds = 128;
     process->fds[0].exists = 1;
-    process->fds[1].exists = 1;
-    process->fds[2].exists = 1;
     insert_linked_list(&process_list, &process->list_member);
   }
   struct fd* fd = 0;
@@ -272,7 +270,7 @@ static int64_t close_file_handler(uint64_t fd_num, uint64_t arg1, uint64_t arg2,
     syslog(LOG_DEBUG, "Reserved argument is set");
     return -IPC_ERR_INVALID_ARGUMENTS;
   }
-  if (fd_num <= 2) {
+  if (fd_num == 0) {
     return 0;
   }
   pid_t caller_pid = get_ipc_caller_pid();
@@ -296,9 +294,6 @@ static int64_t handle_transfer(uint64_t fd_num, uint64_t arg1, uint64_t arg2, ui
   if (arg1 || arg2) {
     syslog(LOG_DEBUG, "Reserved argument is set");
     return -IPC_ERR_INVALID_ARGUMENTS;
-  }
-  if (write && (fd_num == 1 || fd_num == 2)) {
-    return send_ipc_call("ttyd", IPC_VFSD_FS_WRITE, 0, 0, 0, address, size);
   }
   pid_t caller_pid = get_ipc_caller_pid();
   for (struct process* process = (struct process*) process_list.first; process; process = (struct process*) process->list_member.next) {
@@ -380,6 +375,51 @@ static int64_t seek_file_handler(uint64_t fd_num, uint64_t mode, uint64_t arg_po
   syslog(LOG_DEBUG, "File descriptor doesn't exist");
   return -IPC_ERR_INVALID_ARGUMENTS;
 }
+static int64_t clone_fds_handler(uint64_t arg0, uint64_t arg1, uint64_t arg2, uint64_t arg3, uint64_t arg4) {
+  if (arg0 | arg1 | arg2 | arg3 || arg4) {
+    syslog(LOG_DEBUG, "Reserved argument is set");
+    return -IPC_ERR_INVALID_ARGUMENTS;
+  }
+  pid_t spawned_pid = get_caller_spawned_pid();
+  if (!spawned_pid) {
+    syslog(LOG_DEBUG, "Not currently spawning a process");
+    return -IPC_ERR_PROGRAM_DEFINED;
+  }
+  pid_t pid = get_ipc_caller_pid();
+  struct process* cloned_process = 0;
+  for (struct process* process = (struct process*) process_list.first; process; process = (struct process*) process->list_member.next) {
+    if (process->pid == pid) {
+      cloned_process = process;
+      break;
+    }
+  }
+  if (!cloned_process) {
+    return 0;
+  }
+  struct process* spawned_process = 0;
+  for (struct process* process = (struct process*) process_list.first; process; process = (struct process*) process->list_member.next) {
+    if (process->pid == spawned_pid) {
+      spawned_process = process;
+      break;
+    }
+  }
+  if (spawned_process) {
+    syslog(LOG_DEBUG, "Process already exists");
+    return -IPC_ERR_PROGRAM_DEFINED;
+  }
+  spawned_process = calloc(1, sizeof(struct process) + 128 * sizeof(struct fd));
+  spawned_process->pid = spawned_pid;
+  spawned_process->nfds = 128;
+  insert_linked_list(&process_list, &spawned_process->list_member);
+  for (size_t i = 0; i <= 2; i++) {
+    memcpy(&spawned_process->fds[i], &cloned_process->fds[i], sizeof(struct fd));
+    // TODO: Also increase on first fd
+    if (spawned_process->fds[i].exists && i) {
+      spawned_process->fds[i].node->nfds++;
+    }
+  }
+  return 0;
+}
 int main(void) {
   drop_capability(CAP_NAMESPACE_KERNEL, CAP_KERNEL_PRIORITY);
   register_ipc(1);
@@ -387,6 +427,7 @@ int main(void) {
   drop_capability(CAP_NAMESPACE_KERNEL, CAP_KERNEL_LISTEN_EXITS);
   ipc_handlers[IPC_VFSD_CLOSE] = close_file_handler;
   ipc_handlers[IPC_VFSD_SEEK] = seek_file_handler;
+  ipc_handlers[IPC_VFSD_CLONE_FDS] = clone_fds_handler;
   ipc_handlers[IPC_VFSD_OPEN] = open_file_handler;
   ipc_handlers[IPC_VFSD_MOUNT] = mount_handler;
   ipc_handlers[IPC_VFSD_WRITE] = write_file_handler;
@@ -400,7 +441,8 @@ int main(void) {
       for (struct process* process = (struct process*) process_list.first; process; process = next_process) {
         next_process = (struct process*) process->list_member.next;
         if (process->pid == pid) {
-          for (size_t i = 3; i < process->nfds; i++) {
+          // TODO: Change to 0
+          for (size_t i = 1; i < process->nfds; i++) {
             if (process->fds[i].exists) {
               process->fds[i].node->nfds--;
               free_node(process->fds[i].node);
