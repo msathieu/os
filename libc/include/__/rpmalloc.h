@@ -1,5 +1,4 @@
-// Taken from https://github.com/mjansson/rpmalloc/blob/develop/rpmalloc/rpmalloc.h (1.4.2)
-
+// Taken from https://github.com/mjansson/rpmalloc/blob/develop/rpmalloc/rpmalloc.h (1.4.3)
 /* rpmalloc.h  -  Memory allocator  -  Public Domain  -  2016 Mattias Jansson
  *
  * This library provides a cross-platform lock free thread caching malloc implementation in C11.
@@ -158,6 +157,12 @@ typedef struct rpmalloc_config_t {
   //! Called when an assert fails, if asserts are enabled. Will use the standard assert()
   //  if this is not set.
   void (*error_callback)(const char* message);
+  //! Called when a call to map memory pages fails (out of memory). If this callback is
+  //  not set or returns zero the library will return a null pointer in the allocation
+  //  call. If this callback returns non-zero the map call will be retried. The argument
+  //  passed is the number of bytes that was requested in the map call. Only used if
+  //  the default system memory map function is used (memory_map callback is not set).
+  int (*map_fail_callback)(size_t size);
   //! Size of memory pages. The page size MUST be a power of two. All memory mapping
   //  requests to memory_map will be made with size set to a multiple of the page size.
   //  Used if RPMALLOC_CONFIGURABLE is defined to 1, otherwise system page size is used.
