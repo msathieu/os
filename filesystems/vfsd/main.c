@@ -240,7 +240,6 @@ static int64_t open_file_handler(uint64_t flags, uint64_t arg1, uint64_t arg2, u
     process = calloc(1, sizeof(struct process) + 128 * sizeof(struct fd));
     process->pid = caller_pid;
     process->nfds = 128;
-    process->fds[0].exists = 1;
     insert_linked_list(&process_list, &process->list_member);
   }
   struct fd* fd = 0;
@@ -269,9 +268,6 @@ static int64_t close_file_handler(uint64_t fd_num, uint64_t arg1, uint64_t arg2,
   if (arg1 || arg2 || arg3 || arg4) {
     syslog(LOG_DEBUG, "Reserved argument is set");
     return -IPC_ERR_INVALID_ARGUMENTS;
-  }
-  if (fd_num == 0) {
-    return 0;
   }
   pid_t caller_pid = get_ipc_caller_pid();
   for (struct process* process = (struct process*) process_list.first; process; process = (struct process*) process->list_member.next) {
@@ -413,8 +409,7 @@ static int64_t clone_fds_handler(uint64_t arg0, uint64_t arg1, uint64_t arg2, ui
   insert_linked_list(&process_list, &spawned_process->list_member);
   for (size_t i = 0; i <= 2; i++) {
     memcpy(&spawned_process->fds[i], &cloned_process->fds[i], sizeof(struct fd));
-    // TODO: Also increase on first fd
-    if (spawned_process->fds[i].exists && i) {
+    if (spawned_process->fds[i].exists) {
       spawned_process->fds[i].node->nfds++;
     }
   }
@@ -441,8 +436,7 @@ int main(void) {
       for (struct process* process = (struct process*) process_list.first; process; process = next_process) {
         next_process = (struct process*) process->list_member.next;
         if (process->pid == pid) {
-          // TODO: Change to 0
-          for (size_t i = 1; i < process->nfds; i++) {
+          for (size_t i = 0; i < process->nfds; i++) {
             if (process->fds[i].exists) {
               process->fds[i].node->nfds--;
               free_node(process->fds[i].node);
