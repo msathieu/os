@@ -17,6 +17,9 @@ struct process* create_process(void) {
   return process;
 }
 void destroy_process(struct process* process) {
+  if (process->pid == 1) {
+    panic("init exited");
+  }
   if (process->accepts_syscalls) {
     remove_linked_list(&syscall_processes, &process->list_member);
   }

@@ -7,6 +7,7 @@
 #include <stdbool.h>
 #include <string.h>
 #include <sys/wait.h>
+#include <time.h>
 #include <unistd.h>
 
 struct service {
@@ -108,9 +109,12 @@ int main(void) {
   spawn("/sbin/kbdd");
   spawn("/sbin/ttyd");
   spawn("/sbin/ps2d");
+  time_t last_restart_time = 0;
   while (1) {
     pid_t pid = wait(0);
-    sleep(5);
+    if (time(0) - last_restart_time < 30) {
+      sleep(10);
+    }
     for (size_t i = 0; i < sizeof(services) / sizeof(struct service); i++) {
       if (services[i].pid == pid) {
         if (!strcmp(services[i].name, "ipcd")) {
@@ -120,5 +124,6 @@ int main(void) {
         break;
       }
     }
+    last_restart_time = time(0);
   }
 }
