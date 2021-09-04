@@ -4,6 +4,7 @@
 #include <ipccalls.h>
 #include <irq.h>
 #include <spawn.h>
+#include <stdlib.h>
 #include <string.h>
 #include <syslog.h>
 
@@ -29,14 +30,27 @@ static void identify(int bus, int drive) {
   if (!inb(alternate_ports[bus])) {
     return;
   }
-  while (inb(alternate_ports[bus]) & ATA_STATUS_BSY)
-    ;
+  size_t tries = 0;
+  while (inb(alternate_ports[bus]) & ATA_STATUS_BSY) {
+    tries++;
+    if (tries == 100) {
+      syslog(LOG_ERR, "ATA retry limit exceeded");
+      exit(1);
+    }
+  }
   if (inb(base_ports[bus] + ATA_PORT_LBAMIDDLE) || inb(base_ports[bus] + ATA_PORT_LBAHIGH)) {
     is_atapi[bus * 2 + drive] = 1;
     outb(base_ports[bus] + ATA_PORT_COMMAND, ATAPI_CMD_IDENTIFY);
-    while (inb(alternate_ports[bus]) & ATA_STATUS_BSY)
-      ;
+    tries = 0;
+    while (inb(alternate_ports[bus]) & ATA_STATUS_BSY) {
+      tries++;
+      if (tries == 100) {
+        syslog(LOG_ERR, "ATA retry limit exceeded");
+        exit(1);
+      }
+    }
   }
+  tries = 0;
   while (1) {
     uint8_t status = inb(base_ports[bus] + ATA_PORT_COMMAND);
     if (status & ATA_STATUS_ERR) {
@@ -53,6 +67,11 @@ static void identify(int bus, int drive) {
       start_process();
       return;
     }
+    tries++;
+    if (tries == 100) {
+      syslog(LOG_ERR, "ATA retry limit exceeded");
+      exit(1);
+    }
   }
 }
 static void prepare_transfer(int bus, int drive, size_t lba) {
@@ -66,10 +85,22 @@ static void prepare_transfer(int bus, int drive, size_t lba) {
     outb(base_ports[bus] + ATA_PORT_LBAMIDDLE, (uint8_t) ATAPI_SECTOR);
     outb(base_ports[bus] + ATA_PORT_LBAHIGH, ATAPI_SECTOR >> 8);
     outb(base_ports[bus] + ATA_PORT_COMMAND, ATAPI_CMD_PACKET);
-    while (inb(alternate_ports[bus]) & ATA_STATUS_BSY)
-      ;
-    while (!(inb(alternate_ports[bus]) & ATA_STATUS_DRQ))
-      ;
+    size_t tries = 0;
+    while (inb(alternate_ports[bus]) & ATA_STATUS_BSY) {
+      tries++;
+      if (tries == 100) {
+        syslog(LOG_ERR, "ATA retry limit exceeded");
+        exit(1);
+      }
+    }
+    tries = 0;
+    while (!(inb(alternate_ports[bus]) & ATA_STATUS_DRQ)) {
+      tries++;
+      if (tries == 100) {
+        syslog(LOG_ERR, "ATA retry limit exceeded");
+        exit(1);
+      }
+    }
   } else {
     outb(base_ports[bus] + ATA_PORT_SECTOR_COUNT, 1);
     outb(base_ports[bus] + ATA_PORT_LBALOW, lba);
@@ -98,8 +129,14 @@ static void read(int bus, int drive, size_t lba, uint8_t* buffer) {
     buffer[i * 2 + 1] = value >> 8;
   }
   if (is_atapi[bus * 2 + drive]) {
-    while (inb(alternate_ports[bus]) & (ATA_STATUS_BSY | ATA_STATUS_DRQ))
-      ;
+    size_t tries = 0;
+    while (inb(alternate_ports[bus]) & (ATA_STATUS_BSY | ATA_STATUS_DRQ)) {
+      tries++;
+      if (tries == 100) {
+        syslog(LOG_ERR, "ATA retry limit exceeded");
+        exit(1);
+      }
+    }
   }
 }
 static void write(int bus, int drive, size_t lba, uint8_t* buffer) {
