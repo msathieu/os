@@ -184,3 +184,19 @@ void syscall_change_priority(union syscall_args* args) {
   current_task->priority = args->arg0;
   scheduler(&args->registers);
 }
+void syscall_set_fs(union syscall_args* args) {
+  if (args->arg1 || args->arg2 || args->arg3 || args->arg4) {
+    puts("Reserved argument is set");
+    terminate_current_task(&args->registers);
+    return;
+  }
+  if (args->arg0 >= PAGING_USER_PHYS_MAPPINGS_START) {
+    puts("Invalid FS value");
+    terminate_current_task(&args->registers);
+    return;
+  }
+  current_task->fs = args->arg0;
+  asm volatile("wrmsr"
+               :
+               : "c"(0xc0000100), "a"(current_task->fs), "d"(current_task->fs >> 32));
+}

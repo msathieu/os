@@ -34,7 +34,6 @@ isr_common:
   xor %rax, %rax
   mov %rax, %ds
   mov %rax, %es
-  mov %rax, %fs
   mov %rax, %gs
   call isr_handler_common
 

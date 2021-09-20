@@ -31,7 +31,6 @@ syscall:
   xor %rax, %rax
   mov %rax, %ds
   mov %rax, %es
-  mov %rax, %fs
   mov %rax, %gs
   call syscall_common
 

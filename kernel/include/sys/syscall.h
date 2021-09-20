@@ -31,6 +31,7 @@ void syscall_grant_capabilities(union syscall_args*);
 void syscall_has_arguments(union syscall_args*);
 void syscall_listen_exits(union syscall_args*);
 void syscall_map_memory(union syscall_args*);
+void syscall_set_fs(union syscall_args*);
 void syscall_set_spawned_uid(union syscall_args*);
 void syscall_sleep(union syscall_args*);
 void syscall_spawn_process(union syscall_args*);

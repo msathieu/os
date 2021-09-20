@@ -23,6 +23,9 @@ void switch_task(struct task* task, struct isr_registers* isr_registers) {
   asm volatile("fxrstor (%0)"
                :
                : "r"(task->fxsave_region));
+  asm volatile("wrmsr"
+               :
+               : "c"(0xc0000100), "a"(task->fs), "d"(task->fs >> 32));
   current_task = task;
   bool set_timer = 0;
   for (size_t i = 0; i <= (size_t) current_task->priority; i++) {
