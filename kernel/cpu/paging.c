@@ -313,6 +313,10 @@ static void fault_handler(struct isr_registers* registers) {
     printf("execute");
   }
   printf("\n");
+  uintptr_t address;
+  asm volatile("mov %%cr2, %0"
+               : "=r"(address));
+  printf("Accessed address: 0x%lx\n", address);
   if (registers->cs == 0x23) {
     terminate_current_task(registers);
   } else {
