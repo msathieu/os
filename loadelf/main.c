@@ -25,6 +25,7 @@ struct elf_header {
   uint16_t num_pheaders;
 };
 #define ELF_SEGMENT_LOAD 1
+#define ELF_SEGMENT_TLS 7
 #define ELF_FLAGS_EXEC 1
 #define ELF_FLAGS_WRITE 2
 struct program_header {
@@ -59,31 +60,43 @@ int main(int argc, char* argv[]) {
   if (header.architecture != ELF_ARCH_X86_64) {
     return 1;
   }
+  uintptr_t tls = 0;
+  size_t tls_size = 0;
   for (size_t i = 0; i < header.num_pheaders; i++) {
     fseek(file, header.pheader_offset + i * header.pheader_size, SEEK_SET);
     struct program_header pheader;
     fread(&pheader, sizeof(struct program_header), 1, file);
-    if (pheader.type != ELF_SEGMENT_LOAD) {
+    if (pheader.type != ELF_SEGMENT_LOAD && pheader.type != ELF_SEGMENT_TLS) {
       continue;
     }
-    void* mapped_address = mmap((void*) (pheader.memory_address / 0x1000 * 0x1000), pheader.memory_size + pheader.memory_address % 0x1000, PROT_WRITE, MAP_ANONYMOUS, 0, 0);
-    if ((uintptr_t) mapped_address != pheader.memory_address / 0x1000 * 0x1000) {
-      return 1;
+    void* mapped_address;
+    if (pheader.type == ELF_SEGMENT_LOAD) {
+      mapped_address = mmap((void*) (pheader.memory_address / 0x1000 * 0x1000), pheader.memory_size + pheader.memory_address % 0x1000, PROT_WRITE, MAP_ANONYMOUS, 0, 0);
+      if ((uintptr_t) mapped_address != pheader.memory_address / 0x1000 * 0x1000) {
+        return 1;
+      }
+    } else {
+      mapped_address = mmap(0, pheader.memory_size, PROT_WRITE, MAP_ANONYMOUS, 0, 0);
+      tls = (uintptr_t) mapped_address;
+      tls_size = pheader.memory_size;
+      pheader.memory_address = tls;
     }
     memset((void*) pheader.memory_address, 0, pheader.memory_size);
     fseek(file, pheader.file_offset, SEEK_SET);
     fread((void*) pheader.memory_address, 1, pheader.file_size, file);
     int permissions = 0;
-    if (pheader.flags & ELF_FLAGS_WRITE) {
-      permissions |= PROT_WRITE;
-    }
-    if (pheader.flags & ELF_FLAGS_EXEC) {
-      permissions |= PROT_EXEC;
+    if (pheader.type == ELF_SEGMENT_LOAD) {
+      if (pheader.flags & ELF_FLAGS_WRITE) {
+        permissions |= PROT_WRITE;
+      }
+      if (pheader.flags & ELF_FLAGS_EXEC) {
+        permissions |= PROT_EXEC;
+      }
     }
     mprotect(mapped_address, pheader.memory_size + pheader.memory_address % 0x1000, permissions);
   }
   fclose(file);
-  asm volatile("jmp *%0"
+  asm volatile("mov %0, %%rdi; mov %1, %%rsi; jmp *%2"
                :
-               : "r"(header.entry));
+               : "r"(tls), "r"(tls_size), "r"(header.entry));
 }

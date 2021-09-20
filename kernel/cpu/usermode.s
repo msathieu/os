@@ -5,13 +5,12 @@ jmp_user:
   pushf
   btsq $9, (%rsp)
   push $0x23
-  push %rdi
+  push %rdx
 
   xor %rax, %rax
   xor %rbx, %rbx
   xor %rcx, %rcx
   xor %rdx, %rdx
-  xor %rsi, %rsi
   xor %rbp, %rbp
   xor %r8, %r8
   xor %r9, %r9

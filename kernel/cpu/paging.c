@@ -248,7 +248,7 @@ void switch_pml4(struct paging_table* pml4) {
                : "r"(convert_to_physical((uintptr_t) pml4, current_pml4)));
   current_pml4 = pml4;
 }
-uintptr_t get_free_range(size_t size, bool write, bool exec, uintptr_t requested_start) {
+uintptr_t get_free_range(size_t size, bool user, bool write, bool exec, uintptr_t requested_start) {
   size = (size + 0xfff) / 0x1000 * 0x1000;
   uintptr_t start = 0;
   for (uintptr_t i = requested_start; i < PAGING_USER_PHYS_MAPPINGS_START; i += 0x1000) {
@@ -265,7 +265,7 @@ uintptr_t get_free_range(size_t size, bool write, bool exec, uintptr_t requested
       }
     }
     if (i + 0x1000 - start == size) {
-      map_range(start, size, 1, write, exec);
+      map_range(start, size, user, write, exec);
       return start;
     }
   }

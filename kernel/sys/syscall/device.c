@@ -298,13 +298,12 @@ void syscall_get_acpi_table(union syscall_args* args) {
     args->return_value = 0;
     return;
   }
-  args->return_value = get_free_range(table->size, 0, 0, 0x1000);
+  args->return_value = get_free_range(table->size, 0, 1, 0, 0x1000);
   if (!args->return_value) {
     puts("Not enough space for requested table");
     terminate_current_task(&args->registers);
     return;
   }
-  set_paging_flags(args->return_value, table->size, 0, 1, 0);
   memcpy((void*) args->return_value, table, table->size);
   set_paging_flags(args->return_value, table->size, 1, 0, 0);
 }

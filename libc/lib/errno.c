@@ -1,1 +1,1 @@
-int errno;
+_Thread_local int errno;

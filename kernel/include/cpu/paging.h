@@ -15,7 +15,7 @@ void destroy_pml4(struct paging_table*);
 void free_page(uintptr_t);
 void unmap_page(uintptr_t);
 uintptr_t get_free_ipc_range(size_t);
-uintptr_t get_free_range(size_t, bool, bool, uintptr_t);
+uintptr_t get_free_range(size_t, bool, bool, bool, uintptr_t);
 bool is_page_mapped(uintptr_t, bool);
 void* map_physical(uintptr_t, size_t, bool, bool);
 void map_range(uintptr_t, size_t, bool, bool, bool);

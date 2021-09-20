@@ -29,7 +29,7 @@ void syscall_map_memory(union syscall_args* args) {
     terminate_current_task(&args->registers);
     return;
   }
-  uintptr_t address = get_free_range(args->arg0, args->arg1, args->arg2, args->arg3);
+  uintptr_t address = get_free_range(args->arg0, 1, args->arg1, args->arg2, args->arg3);
   if (!address) {
     puts("Not enough space for requested mapping");
     terminate_current_task(&args->registers);

@@ -786,7 +786,7 @@ static pthread_key_t _memory_thread_heap;
 #define _Thread_local __thread
 #endif
 #endif
-static heap_t* _memory_thread_heap;
+static _Thread_local heap_t* _memory_thread_heap TLS_MODEL;
 #endif
 
 static inline heap_t*
@@ -831,7 +831,10 @@ get_thread_id(void) {
           :
           :);
 #else
-  tid = 0;
+  __asm__("movq %%fs:0, %0"
+          : "=r"(tid)
+          :
+          :);
 #endif
 #elif defined(__arm__)
   __asm__ volatile("mrc p15, 0, %0, c13, c0, 3"
