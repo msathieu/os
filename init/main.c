@@ -61,7 +61,9 @@ static void spawn(const char* name) {
     return;
   }
   grant_capability(CAP_NAMESPACE_KERNEL, CAP_KERNEL_PRIORITY);
-  if (!strcmp(name, "atad")) {
+  if (!strcmp(name, "acpid")) {
+    register_irq(253);
+  } else if (!strcmp(name, "atad")) {
     for (size_t i = 0; i < 8; i++) {
       grant_ioport(0x1f0 + i);
       grant_ioport(0x170 + i);

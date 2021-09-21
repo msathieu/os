@@ -72,7 +72,7 @@ static void mask_gsi(int gsi) {
   union ioapic_redirection redirection = {.masked = 1};
   write_redirection(gsi, redirection);
 }
-static void map_gsi(int gsi, int vector, bool polarity, bool trigger_mode) {
+void map_gsi(int gsi, int vector, bool polarity, bool trigger_mode) {
   union ioapic_redirection redirection = {.vector = vector, .polarity = polarity, .trigger_mode = trigger_mode, .destination = madt_bsp_lapic_id};
   write_redirection(gsi, redirection);
 }

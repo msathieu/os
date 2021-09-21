@@ -1,5 +1,9 @@
 #include <__/syscall.h>
 
 void register_irq(int irq) {
-  _syscall(_SYSCALL_REGISTER_IRQ, 0, irq, 0, 0, 0);
+  int type = 0;
+  if (irq == 253) {
+    type = 1;
+  }
+  _syscall(_SYSCALL_REGISTER_IRQ, type, irq, 0, 0, 0);
 }

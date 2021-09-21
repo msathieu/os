@@ -51,6 +51,10 @@ void destroy_process(struct process* process) {
         unregister_isa_irq(i);
       }
     }
+    if (sci_process == process) {
+      sci_process = 0;
+      isr_handlers[253] = 0;
+    }
   }
   struct exited_pid* next_exited_pid;
   for (struct exited_pid* exited_pid = (struct exited_pid*) process->exited_pids_list.first; exited_pid; exited_pid = next_exited_pid) {

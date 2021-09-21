@@ -4,12 +4,16 @@
 #include <string.h>
 #include <struct.h>
 #include <sys/hpet.h>
+#include <sys/ioapic.h>
 #include <sys/madt.h>
 
 struct fadt {
   struct acpi_header header;
   uint32_t firmware_ctrl;
   uint32_t dsdt;
+  uint8_t reserved;
+  uint8_t power_profile;
+  uint16_t sci_int;
 };
 
 static size_t nheaders;
@@ -77,4 +81,5 @@ void parse_acpi(void) {
   fadt = (struct fadt*) acpi_find_table("FACP", 1, 0);
   parse_madt(acpi_find_table("APIC", 1, 0));
   setup_hpet(acpi_find_table("HPET", 1, 0));
+  map_gsi(fadt->sci_int, 253, 1, 1);
 }

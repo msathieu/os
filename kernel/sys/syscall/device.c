@@ -11,6 +11,8 @@
 struct process* ioports_process[0x10000];
 struct process* isa_irqs_process[16];
 static bool isa_irqs_fired[16];
+struct process* sci_process;
+static bool sci_fired;
 
 void syscall_grant_ioport(union syscall_args* args) {
   if (args->arg1 || args->arg2 || args->arg3 || args->arg4) {
@@ -97,14 +99,25 @@ void syscall_access_ioport(union syscall_args* args) {
 }
 static void usermode_irq_handler(struct isr_registers* registers) {
   size_t isr = registers->isr;
-  struct task* handler = isa_irqs_process[isr - 48]->irq_handler;
-  if (handler) {
-    handler->blocked = 0;
-    handler->registers.rax = isr - 48;
-    schedule_task(handler, registers);
-    isa_irqs_process[isr - 48]->irq_handler = 0;
+  if (isr == 253) {
+    struct task* handler = sci_process->irq_handler;
+    if (handler) {
+      handler->blocked = 0;
+      schedule_task(handler, registers);
+      sci_process->irq_handler = 0;
+    } else {
+      sci_fired = 1;
+    }
   } else {
-    isa_irqs_fired[isr - 48] = 1;
+    struct task* handler = isa_irqs_process[isr - 48]->irq_handler;
+    if (handler) {
+      handler->blocked = 0;
+      handler->registers.rax = isr - 48;
+      schedule_task(handler, registers);
+      isa_irqs_process[isr - 48]->irq_handler = 0;
+    } else {
+      isa_irqs_fired[isr - 48] = 1;
+    }
   }
 }
 void syscall_register_irq(union syscall_args* args) {
@@ -123,24 +136,42 @@ void syscall_register_irq(union syscall_args* args) {
     terminate_current_task(&args->registers);
     return;
   }
-  if (args->arg0) {
+  switch (args->arg0) {
+  case 0:
+    if (args->arg1 >= 16) {
+      puts("Invalid IRQ");
+      terminate_current_task(&args->registers);
+      return;
+    }
+    if (isr_handlers[48 + args->arg1]) {
+      puts("Requested IRQ has already been registered");
+      terminate_current_task(&args->registers);
+      return;
+    }
+    isa_irqs_process[args->arg1] = current_task->spawned_process;
+    register_isa_irq(args->arg1, usermode_irq_handler);
+    current_task->spawned_process->irqs_assigned = 1;
+    break;
+  case 1:
+    if (!has_process_capability(current_task->process, CAP_ACPI)) {
+      puts("Not allowed to register IRQ");
+      terminate_current_task(&args->registers);
+      return;
+    }
+    if (isr_handlers[253]) {
+      puts("Requested IRQ has already been registered");
+      terminate_current_task(&args->registers);
+      return;
+    }
+    sci_process = current_task->spawned_process;
+    isr_handlers[253] = usermode_irq_handler;
+    current_task->spawned_process->irqs_assigned = 1;
+    break;
+  default:
     puts("Argument out of range");
     terminate_current_task(&args->registers);
     return;
   }
-  if (args->arg1 >= 16) {
-    puts("Invalid IRQ");
-    terminate_current_task(&args->registers);
-    return;
-  }
-  if (isr_handlers[48 + args->arg1]) {
-    puts("Requested IRQ has already been registered");
-    terminate_current_task(&args->registers);
-    return;
-  }
-  isa_irqs_process[args->arg1] = current_task->spawned_process;
-  register_isa_irq(args->arg1, usermode_irq_handler);
-  current_task->spawned_process->irqs_assigned = 1;
 }
 void syscall_clear_irqs(union syscall_args* args) {
   if (args->arg0 || args->arg1 || args->arg2 || args->arg3 || args->arg4) {
@@ -157,6 +188,9 @@ void syscall_clear_irqs(union syscall_args* args) {
     if (isa_irqs_process[i] == current_task->process) {
       isa_irqs_fired[i] = 0;
     }
+  }
+  if (sci_process == current_task->process) {
+    sci_fired = 0;
   }
 }
 void syscall_wait_irq(union syscall_args* args) {
@@ -176,6 +210,10 @@ void syscall_wait_irq(union syscall_args* args) {
       args->return_value = i;
       return;
     }
+  }
+  if (sci_process == current_task->process && sci_fired) {
+    sci_fired = 0;
+    return;
   }
   current_task->process->irq_handler = current_task;
   block_current_task(&args->registers);
