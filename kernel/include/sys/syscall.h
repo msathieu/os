@@ -35,6 +35,7 @@ void syscall_set_fs(union syscall_args*);
 void syscall_set_spawned_uid(union syscall_args*);
 void syscall_sleep(union syscall_args*);
 void syscall_spawn_process(union syscall_args*);
+void syscall_spawn_thread(union syscall_args*);
 void syscall_start_process(union syscall_args*);
 void syscall_wait(union syscall_args*);
 

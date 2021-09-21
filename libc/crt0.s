@@ -14,6 +14,12 @@ _start:
   call main
   mov %rax, %rdi
   call exit
+.global _thread_entry
+_thread_entry:
+  mov %rsi, %rsp
+  call _thread_trampoline
+  mov %rax, %rdi
+  call thrd_exit
 .section .bss
 .align 16
 .skip 0x8000

@@ -6,6 +6,8 @@
 #include <sys/scheduler.h>
 #include <sys/syscall.h>
 
+extern void jmp_user(uintptr_t, uintptr_t, uintptr_t);
+
 void syscall_spawn_process(union syscall_args* args) {
   if (current_task->spawned_process) {
     puts("Already spawning process");
@@ -199,4 +201,22 @@ void syscall_set_fs(union syscall_args* args) {
   asm volatile("wrmsr"
                :
                : "c"(0xc0000100), "a"(current_task->fs), "d"(current_task->fs >> 32));
+}
+void syscall_spawn_thread(union syscall_args* args) {
+  if (args->arg3 || args->arg4) {
+    puts("Reserved argument is set");
+    terminate_current_task(&args->registers);
+    return;
+  }
+  if (args->arg0 >= PAGING_USER_PHYS_MAPPINGS_START) {
+    puts("Invalid thread start");
+    terminate_current_task(&args->registers);
+    return;
+  }
+  struct task* task = create_task(current_task->process);
+  uintptr_t arg0 = args->arg0;
+  uintptr_t arg1 = args->arg1;
+  uintptr_t arg2 = args->arg2;
+  switch_task(task, &args->registers);
+  jmp_user(arg1, arg2, arg0);
 }

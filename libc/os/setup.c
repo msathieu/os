@@ -4,30 +4,29 @@
 #include <stdlib.h>
 #include <string.h>
 #include <sys/mman.h>
+#include <threads.h>
 
 size_t _argc;
 char** _argv;
 char** environ;
 static void* tls_master;
-static size_t tls_size;
+size_t _tls_size;
 __attribute__((weak)) extern int _noremove_args;
 __attribute__((weak)) extern int _noenvironment_vars;
 extern void (*__init_array_start[])(void);
 extern void (*__init_array_end[])(void);
 
-void _setup_thread_libc(void) {
-  if (tls_master) {
-    void* tls = mmap(0, tls_size + 8, PROT_WRITE, MAP_ANONYMOUS, 0, 0);
-    ((uintptr_t*) (tls + tls_size))[0] = (uintptr_t) tls + tls_size;
-    memcpy(tls, tls_master, tls_size);
-    _syscall(_SYSCALL_SET_FS, (uintptr_t) tls + tls_size, 0, 0, 0, 0);
-  }
+static void setup_thread_libc(void* tls) {
+  ((uintptr_t*) (tls + _tls_size))[0] = (uintptr_t) tls + _tls_size;
+  memcpy(tls, tls_master, _tls_size);
+  _syscall(_SYSCALL_SET_FS, (uintptr_t) tls + _tls_size, 0, 0, 0, 0);
   rpmalloc_initialize();
 }
-void _setup_libc(uintptr_t _tls_master, size_t _tls_size) {
+void _setup_libc(uintptr_t _tls_master, size_t tls_size) {
   tls_master = (void*) _tls_master;
-  tls_size = _tls_size;
-  _setup_thread_libc();
+  _tls_size = tls_size;
+  void* initial_tls = mmap(0, tls_size + sizeof(struct _thread), PROT_WRITE, MAP_ANONYMOUS, 0, 0);
+  setup_thread_libc(initial_tls);
   if (_syscall(_SYSCALL_HAS_ARGUMENTS, 0, 0, 0, 0, 0)) {
     _argc = send_ipc_call("argd", IPC_ARGD_GET_NUM, 0, 0, 0, 0, 0);
     _argv = malloc((_argc + 1) * sizeof(char*));
@@ -59,4 +58,8 @@ void _setup_libc(uintptr_t _tls_master, size_t _tls_size) {
   for (size_t i = 0; i < (size_t) (__init_array_end - __init_array_start); i++) {
     __init_array_start[i]();
   }
+}
+int _thread_trampoline(thrd_t thread) {
+  setup_thread_libc((void*) thread - _tls_size);
+  return thread->func(thread->arg);
 }
