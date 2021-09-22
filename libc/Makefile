@@ -1,6 +1,6 @@
 CFLAGS+=-ffreestanding
 
-CFILES:=$(wildcard freestanding/*/*.c) $(wildcard */*.c)
+CFILES:=$(wildcard freestanding/*/*.c) $(wildcard */*.c) $(wildcard freestanding/arch/x86_64/*.c)
 SFILES:=$(wildcard freestanding/arch/x86_64/*.s) $(wildcard */*.s)
 OFILES:=$(patsubst %.c, %.o, $(CFILES)) $(patsubst %.s, %.o, $(SFILES))
 

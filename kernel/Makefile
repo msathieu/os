@@ -1,7 +1,7 @@
 CFLAGS+=--target=x86_64-elf -ffreestanding --sysroot=/dev/null -fstack-protector-strong -mretpoline -mcmodel=kernel -mno-red-zone -mno-mmx -mno-sse -mno-sse2 -flto -fvisibility=hidden -fsanitize=cfi -fbuiltin -Ilibc/include
 ASFLAGS+=--target=x86_64-elf
 
-LIBC:=$(patsubst %.c, %.o, $(wildcard libc/*/*.c)) $(patsubst %.s, %.o, $(wildcard libc/arch/x86_64/*.s))
+LIBC:=$(patsubst %.c, %.o, $(filter-out $(wildcard libc/math/*.c), $(wildcard libc/*/*.c))) $(patsubst %.s, %.o, $(wildcard libc/arch/x86_64/*.s))
 SFILES:=$(wildcard cpu/*.s)
 CFILES:=main.c $(wildcard */*.c) $(wildcard sys/syscall/*.c)
 OFILES:=$(patsubst %.c, %.o, $(CFILES)) $(patsubst %.s, %.o, $(SFILES)) public.o
