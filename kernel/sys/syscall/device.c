@@ -153,6 +153,11 @@ void syscall_register_irq(union syscall_args* args) {
     current_task->spawned_process->irqs_assigned = 1;
     break;
   case 1:
+    if (args->arg1 != 253) {
+      puts("Invalid IRQ");
+      terminate_current_task(&args->registers);
+      return;
+    }
     if (!has_process_capability(current_task->process, CAP_ACPI)) {
       puts("Not allowed to register IRQ");
       terminate_current_task(&args->registers);

@@ -4,7 +4,9 @@
 
 int fclose(FILE* file) {
   int return_value = close(file->fd);
-  free(file);
+  if (file != stdin && file != stdout && file != stderr) {
+    free(file);
+  }
   if (return_value) {
     return EOF;
   } else {

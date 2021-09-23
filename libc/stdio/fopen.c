@@ -12,7 +12,16 @@ FILE* fopen(const char* restrict path, const char* restrict arg_mode) {
   }
   int fd = open(path, flags);
   if (fd != -1) {
-    FILE* file = calloc(1, sizeof(FILE));
+    FILE* file;
+    if (!fd) {
+      file = stdin;
+    } else if (fd == 1) {
+      file = stdout;
+    } else if (fd == 2) {
+      file = stderr;
+    } else {
+      file = calloc(1, sizeof(FILE));
+    }
     file->fd = fd;
     return file;
   } else {
