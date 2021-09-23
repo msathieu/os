@@ -371,9 +371,13 @@ static int64_t seek_file_handler(uint64_t fd_num, uint64_t mode, uint64_t arg_po
   syslog(LOG_DEBUG, "File descriptor doesn't exist");
   return -IPC_ERR_INVALID_ARGUMENTS;
 }
-static int64_t clone_fds_handler(uint64_t arg0, uint64_t arg1, uint64_t arg2, uint64_t arg3, uint64_t arg4) {
-  if (arg0 | arg1 | arg2 | arg3 || arg4) {
+static int64_t clone_fds_handler(uint64_t fork, uint64_t arg1, uint64_t arg2, uint64_t arg3, uint64_t arg4) {
+  if (arg1 | arg2 | arg3 || arg4) {
     syslog(LOG_DEBUG, "Reserved argument is set");
+    return -IPC_ERR_INVALID_ARGUMENTS;
+  }
+  if (fork >= 2) {
+    syslog(LOG_DEBUG, "Argument out of range");
     return -IPC_ERR_INVALID_ARGUMENTS;
   }
   pid_t spawned_pid = get_caller_spawned_pid();
@@ -403,11 +407,19 @@ static int64_t clone_fds_handler(uint64_t arg0, uint64_t arg1, uint64_t arg2, ui
     syslog(LOG_DEBUG, "Process already exists");
     return -IPC_ERR_PROGRAM_DEFINED;
   }
-  spawned_process = calloc(1, sizeof(struct process) + 128 * sizeof(struct fd));
+  size_t nfds = 128;
+  if (fork) {
+    nfds = cloned_process->nfds;
+  }
+  spawned_process = calloc(1, sizeof(struct process) + nfds * sizeof(struct fd));
   spawned_process->pid = spawned_pid;
-  spawned_process->nfds = 128;
+  spawned_process->nfds = nfds;
   insert_linked_list(&process_list, &spawned_process->list_member);
-  for (size_t i = 0; i <= 2; i++) {
+  size_t clone_until = 3;
+  if (fork) {
+    clone_until = nfds;
+  }
+  for (size_t i = 0; i < clone_until; i++) {
     memcpy(&spawned_process->fds[i], &cloned_process->fds[i], sizeof(struct fd));
     if (spawned_process->fds[i].exists) {
       spawned_process->fds[i].node->nfds++;
