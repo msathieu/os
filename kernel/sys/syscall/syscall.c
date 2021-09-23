@@ -111,7 +111,9 @@ static syscall_handler syscall_handlers[256] = {
   syscall_listen_exits,
   syscall_get_exited_pid,
   syscall_set_fs,
-  syscall_spawn_thread};
+  syscall_spawn_thread,
+  syscall_fork,
+  syscall_start_fork};
 
 void syscall_common(union syscall_args* args) {
   if (args->syscall & 0xffffffffffffff00) {

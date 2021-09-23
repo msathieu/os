@@ -216,3 +216,38 @@ void syscall_spawn_thread(union syscall_args* args) {
   switch_task(task, &args->registers);
   jmp_user(arg1, arg2, arg0);
 }
+void syscall_fork(union syscall_args* args) {
+  if (args->arg0 || args->arg1 || args->arg2 || args->arg3 || args->arg4) {
+    puts("Reserved argument is set");
+    terminate_current_task(&args->registers);
+    return;
+  }
+  if (current_task->spawned_process) {
+    puts("Already spawning process");
+    terminate_current_task(&args->registers);
+    return;
+  }
+  spawn_child(1);
+}
+void syscall_start_fork(union syscall_args* args) {
+  if (args->arg0 || args->arg1 || args->arg2 || args->arg3 || args->arg4) {
+    puts("Reserved argument is set");
+    terminate_current_task(&args->registers);
+    return;
+  }
+  if (!current_task->spawned_process) {
+    puts("No process ready to start");
+    terminate_current_task(&args->registers);
+    return;
+  }
+  args->return_value = current_task->spawned_process->pid;
+  struct task* task = create_task(current_task->spawned_process);
+  current_task->spawned_process = 0;
+  memcpy(&task->registers, &args->registers, sizeof(struct isr_registers));
+  asm volatile("fxsave (%0)"
+               :
+               : "r"(task->fxsave_region));
+  task->registers.rax = 0;
+  task->fs = current_task->fs;
+  schedule_task(task, &args->registers);
+}

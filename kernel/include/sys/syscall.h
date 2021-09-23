@@ -25,6 +25,7 @@ extern struct process* exit_listener_processes[64];
 void syscall_change_memory_permissions(union syscall_args*);
 void syscall_change_priority(union syscall_args*);
 void syscall_drop_capabilities(union syscall_args*);
+void syscall_fork(union syscall_args*);
 void syscall_get_exited_pid(union syscall_args*);
 void syscall_get_pid(union syscall_args*);
 void syscall_get_uid(union syscall_args*);
@@ -37,6 +38,7 @@ void syscall_set_spawned_uid(union syscall_args*);
 void syscall_sleep(union syscall_args*);
 void syscall_spawn_process(union syscall_args*);
 void syscall_spawn_thread(union syscall_args*);
+void syscall_start_fork(union syscall_args*);
 void syscall_start_process(union syscall_args*);
 void syscall_wait(union syscall_args*);
 

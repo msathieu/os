@@ -40,7 +40,9 @@ enum {
   _SYSCALL_LISTEN_EXITS,
   _SYSCALL_GET_EXITED_PID,
   _SYSCALL_SET_FS,
-  _SYSCALL_SPAWN_THREAD
+  _SYSCALL_SPAWN_THREAD,
+  _SYSCALL_FORK,
+  _SYSCALL_START_FORK
 };
 
 int64_t _syscall(uint64_t syscall, uint64_t arg0, uint64_t arg1, uint64_t arg2, uint64_t arg3, uint64_t arg4);
