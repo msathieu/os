@@ -49,7 +49,8 @@ struct exited_pid {
   size_t pid;
 };
 
-struct process* create_process(void);
+struct process* create_process(bool);
 void destroy_process(struct process*);
 bool has_process_capability(struct process*, int);
 void remove_process(struct process*);
+struct process* spawn_child(bool);

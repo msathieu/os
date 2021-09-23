@@ -8,6 +8,7 @@
 
 struct paging_table;
 
+struct paging_table* clone_pml4(void);
 uintptr_t convert_to_physical(uintptr_t, struct paging_table*);
 void create_mapping(uintptr_t, uintptr_t, bool, bool, bool, bool);
 struct paging_table* create_pml4(void);

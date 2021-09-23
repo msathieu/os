@@ -93,7 +93,7 @@ static _Noreturn void idle(void) {
   }
 }
 _Noreturn void setup_multitasking(void) {
-  struct task* idle_task = create_task(create_process());
+  struct task* idle_task = create_task(create_process(0));
   idle_task->priority = PRIORITY_IDLE;
   idle_task->registers.cs = 8;
   idle_task->registers.rsp = (uintptr_t) malloc(0x2000) + 0x2000;
@@ -101,7 +101,7 @@ _Noreturn void setup_multitasking(void) {
   asm volatile("pushf; mov (%%rsp), %0; popf"
                : "=r"(idle_task->registers.rflags));
   asm volatile("cli");
-  current_task = create_task(create_process());
+  current_task = create_task(create_process(0));
   switch_pml4(current_task->process->address_space);
   current_task->process->capabilities[0] = 1 << CAP_MANAGE;
   current_task->priority = PRIORITY_SYSTEM_NORMAL;

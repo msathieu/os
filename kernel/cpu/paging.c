@@ -298,6 +298,42 @@ uintptr_t get_free_ipc_range(size_t size) {
   }
   return 0;
 }
+struct paging_table* clone_pml4(void) {
+  struct paging_table* pml4 = current_pml4;
+  struct paging_table* clone_pml4 = create_pml4();
+  switch_pml4(clone_pml4);
+  //TODO: Clone last entry partially up to PAGING_USER_PHYS_MAPPINGS_START
+  for (size_t i = 0; i < 255; i++) {
+    struct paging_table* pdpt = pml4->entries[i];
+    if (pdpt) {
+      for (size_t j = 0; j < 512; j++) {
+        struct paging_table* page_directory = pdpt->entries[j];
+        if (page_directory) {
+          for (size_t k = 0; k < 512; k++) {
+            struct paging_table* page_table = page_directory->entries[k];
+            if (page_table) {
+              for (size_t l = 0; l < 512; l++) {
+                struct paging_entry* page = &page_table->phys_entries[l];
+                if (page->present) {
+                  uintptr_t address = (l + (k + (j + i * 512) * 512) * 512) * 0x1000;
+                  map_address(address, 1, page->write, !page->noexec);
+                  void* src = map_physical(page->address * 0x1000, 0x1000, 0, 0);
+                  void* dest = map_physical(clone_pml4->entries[i]->entries[j]->entries[k]->phys_entries[l].address * 0x1000, 0x1000, 1, 0);
+                  memcpy(dest, src, 0x1000);
+                  unmap_page((uintptr_t) src);
+                  unmap_page((uintptr_t) dest);
+                  physical_mappings_addr -= 0x2000;
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+  switch_pml4(pml4);
+  return clone_pml4;
+}
 static void fault_handler(struct isr_registers* registers) {
   printf("Page fault at 0x%lx: ", registers->rip);
   if (!(registers->error & 1)) {

@@ -36,12 +36,8 @@ void syscall_spawn_process(union syscall_args* args) {
     terminate_current_task(&args->registers);
     return;
   }
-  current_task->spawned_process = create_process();
-  current_task->spawned_process->parent = current_task->process;
-  current_task->spawned_process->next_sibling = current_task->process->first_child;
-  current_task->process->first_child = current_task->spawned_process;
+  spawn_child(0);
   current_task->spawned_process->file_i = file_i;
-  current_task->spawned_process->uid = current_task->process->uid;
   args->return_value = current_task->spawned_process->pid;
 }
 void syscall_start_process(union syscall_args* args) {

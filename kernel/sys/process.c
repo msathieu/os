@@ -7,14 +7,26 @@
 
 static size_t next_pid;
 
-struct process* create_process(void) {
+struct process* create_process(bool clone) {
   if (next_pid > 0xffffffffffffff) {
     panic("Out of available pids");
   }
   struct process* process = calloc(1, sizeof(struct process));
   process->pid = next_pid++;
-  process->address_space = create_pml4();
+  if (clone) {
+    process->address_space = clone_pml4();
+  } else {
+    process->address_space = create_pml4();
+  }
   return process;
+}
+struct process* spawn_child(bool clone) {
+  current_task->spawned_process = create_process(clone);
+  current_task->spawned_process->parent = current_task->process;
+  current_task->spawned_process->next_sibling = current_task->process->first_child;
+  current_task->process->first_child = current_task->spawned_process;
+  current_task->spawned_process->uid = current_task->process->uid;
+  return current_task->spawned_process;
 }
 void destroy_process(struct process* process) {
   if (process->pid == 1) {
