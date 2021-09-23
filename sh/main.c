@@ -4,6 +4,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <sys/wait.h>
+#include <unistd.h>
 
 extern char** environ;
 
@@ -92,11 +93,17 @@ static char* expand_path(const char* program) {
   free(path_env);
   return path;
 }
+//TODO: Support stdout redirection for builtin commands
 static void execute_line(char** args) {
   if (!args[0]) {
     return;
   }
   if (match_builtin(args)) {
+    return;
+  }
+  pid_t fork_pid = fork();
+  if (fork_pid) {
+    wait(0);
     return;
   }
   if (strchr(args[0], '/')) {
@@ -118,11 +125,26 @@ static void execute_line(char** args) {
       return;
     }
   }
+  char* stdout_path = 0;
   for (size_t i = 1; args[i]; i++) {
-    add_argument(args[i]);
+    if (!strcmp(args[i], ">")) {
+      if (!args[i + 1]) {
+        puts("Missing stdout path");
+        exit(1);
+      }
+      stdout_path = args[i + 1];
+      break;
+    } else {
+      add_argument(args[i]);
+    }
+  }
+  if (stdout_path) {
+    fclose(stdout);
+    fopen(stdout_path, "w");
   }
   start_process();
   wait(0);
+  exit(0);
 }
 int main(void) {
   while (1) {
