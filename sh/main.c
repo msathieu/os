@@ -1,12 +1,23 @@
+#include <builtins.h>
 #include <spawn.h>
 #include <stdbool.h>
-#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <sys/wait.h>
 #include <unistd.h>
 
-extern char** environ;
+enum {
+  TYPE_NOP,
+  TYPE_BUILTIN,
+  TYPE_PROGRAM
+};
+struct parsed_line {
+  int type;
+  builtin_t builtin;
+  char* file;
+  char* args[64];
+  char* stdout;
+};
 
 static char* read_line(void) {
   char* buffer = malloc(512);
@@ -25,50 +36,16 @@ static char* read_line(void) {
     }
   }
 }
-char** parse_line(char* buffer) {
-  char** args = calloc(1, sizeof(char*));
+static char** split_line(char* buffer) {
+  char** tokens = calloc(1, sizeof(char*));
   size_t i = 0;
-  for (char* arg = strtok(buffer, " "); arg; arg = strtok(0, " ")) {
+  for (char* token = strtok(buffer, " "); token; token = strtok(0, " ")) {
     i++;
-    args = realloc(args, (i + 1) * sizeof(char*));
-    args[i - 1] = strdup(arg);
-    args[i] = 0;
+    tokens = realloc(tokens, (i + 1) * sizeof(char*));
+    tokens[i - 1] = strdup(token);
+    tokens[i] = 0;
   }
-  return args;
-}
-static void builtin_exit(char* return_value) {
-  if (return_value) {
-    exit(atoi(return_value));
-  } else {
-    exit(0);
-  }
-}
-static void builtin_export(char* variable) {
-  if (!variable) {
-    return;
-  }
-  if (!strcmp(variable, "-p")) {
-    for (size_t i = 0; environ[i]; i++) {
-      printf("export %s\n", environ[i]);
-    }
-  } else {
-    char* value = strchr(variable, '=');
-    if (!value) {
-      return;
-    }
-    value[0] = 0;
-    setenv(variable, value + 1, 1);
-  }
-}
-static bool match_builtin(char** args) {
-  if (!strcmp(args[0], "exit")) {
-    builtin_exit(args[1]);
-    return 1;
-  } else if (!strcmp(args[0], "export")) {
-    builtin_export(args[1]);
-    return 1;
-  }
-  return 0;
+  return tokens;
 }
 static char* expand_path(const char* program) {
   const char* const_path = getenv("PATH");
@@ -93,69 +70,123 @@ static char* expand_path(const char* program) {
   free(path_env);
   return path;
 }
-//TODO: Support stdout redirection for builtin commands
-static void execute_line(char** args) {
-  if (!args[0]) {
-    return;
+static struct parsed_line* parse_line(char** tokens) {
+  struct parsed_line* parsed_line = calloc(1, sizeof(struct parsed_line));
+  if (!tokens[0]) {
+    parsed_line->type = TYPE_NOP;
+    return parsed_line;
   }
-  if (match_builtin(args)) {
-    return;
-  }
-  pid_t fork_pid = fork();
-  if (fork_pid) {
-    wait(0);
-    return;
-  }
-  if (strchr(args[0], '/')) {
-    FILE* file = fopen(args[0], "r");
-    if (file) {
-      fclose(file);
-      spawn_process(args[0]);
-    } else {
-      printf("Command not found: %s\n", args[0]);
-      return;
-    }
+  parsed_line->type = TYPE_BUILTIN;
+  if (!strcmp(tokens[0], "exit")) {
+    parsed_line->builtin = builtin_exit;
+  } else if (!strcmp(tokens[0], "export")) {
+    parsed_line->builtin = builtin_export;
   } else {
-    char* path = expand_path(args[0]);
-    if (path) {
-      spawn_process(path);
-      free(path);
+    parsed_line->type = TYPE_PROGRAM;
+    if (strchr(tokens[0], '/')) {
+      FILE* file = fopen(tokens[0], "r");
+      if (file) {
+        fclose(file);
+        parsed_line->file = strdup(tokens[0]);
+      } else {
+        printf("Command not found: %s\n", tokens[0]);
+        parsed_line->type = TYPE_NOP;
+        return parsed_line;
+      }
     } else {
-      printf("Command not found: %s\n", args[0]);
-      return;
+      char* path = expand_path(tokens[0]);
+      if (path) {
+        parsed_line->file = path;
+      } else {
+        printf("Command not found: %s\n", tokens[0]);
+        parsed_line->type = TYPE_NOP;
+        return parsed_line;
+      }
     }
   }
-  char* stdout_path = 0;
-  for (size_t i = 1; args[i]; i++) {
-    if (!strcmp(args[i], ">")) {
-      if (!args[i + 1]) {
+  size_t arg_i = 0;
+  for (size_t i = 1; tokens[i]; i++) {
+    if (!strcmp(tokens[i], ">")) {
+      if (!tokens[i + 1]) {
         puts("Missing stdout path");
-        exit(1);
+        parsed_line->type = TYPE_NOP;
+        return parsed_line;
       }
-      stdout_path = args[i + 1];
+      parsed_line->stdout = strdup(tokens[i + 1]);
       break;
     } else {
-      add_argument(args[i]);
+      if (arg_i > 63) {
+        puts("Too many arguments");
+        parsed_line->type = TYPE_NOP;
+        return parsed_line;
+      }
+      parsed_line->args[arg_i] = strdup(tokens[i]);
     }
   }
-  if (stdout_path) {
-    fclose(stdout);
-    fopen(stdout_path, "w");
+  return parsed_line;
+}
+static void execute_line(struct parsed_line* parsed_line) {
+  if (parsed_line->type == TYPE_BUILTIN) {
+    FILE* _stdout = stdout;
+    if (parsed_line->stdout) {
+      _stdout = fopen(parsed_line->stdout, "w");
+      if (!_stdout) {
+        puts("Invalid stdout path");
+        return;
+      }
+    }
+    parsed_line->builtin(parsed_line->args[0], _stdout);
+    if (parsed_line->stdout) {
+      fclose(_stdout);
+    }
+  } else {
+    if (parsed_line->stdout) {
+      pid_t fork_pid = fork();
+      if (fork_pid) {
+        wait(0);
+        return;
+      }
+      fclose(stdout);
+      fopen(parsed_line->stdout, "w");
+    }
+    spawn_process(parsed_line->file);
+    for (size_t i = 0; i < 63; i++) {
+      if (parsed_line->args[i]) {
+        add_argument(parsed_line->args[i]);
+      }
+    }
+    start_process();
+    wait(0);
+    if (parsed_line->stdout) {
+      exit(0);
+    }
   }
-  start_process();
-  wait(0);
-  exit(0);
 }
 int main(void) {
   while (1) {
     printf("$ ");
     char* buffer = read_line();
-    char** args = parse_line(buffer);
+    char** tokens = split_line(buffer);
     free(buffer);
-    execute_line(args);
-    for (size_t i = 0; args[i]; i++) {
-      free(args[i]);
+    struct parsed_line* parsed_line = parse_line(tokens);
+    for (size_t i = 0; tokens[i]; i++) {
+      free(tokens[i]);
     }
-    free(args);
+    free(tokens);
+    if (parsed_line->type != TYPE_NOP) {
+      execute_line(parsed_line);
+    }
+    if (parsed_line->file) {
+      free(parsed_line->file);
+    }
+    if (parsed_line->stdout) {
+      free(parsed_line->stdout);
+    }
+    for (size_t i = 0; i < 64; i++) {
+      if (parsed_line->args[i]) {
+        free(parsed_line->args[i]);
+      }
+    }
+    free(parsed_line);
   }
 }
