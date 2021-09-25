@@ -2,6 +2,7 @@
 #include <ipccalls.h>
 #include <kbd/layout.h>
 #include <keyboard.h>
+#include <string.h>
 #include <syslog.h>
 
 static const struct layout* layouts[] = {&be_layout};
@@ -70,12 +71,29 @@ static int64_t registration_handler(uint64_t arg0, uint64_t arg1, uint64_t arg2,
   event_receiver = get_ipc_caller_pid();
   return 0;
 }
+static int64_t change_layout_handler(uint64_t country0, uint64_t country1, uint64_t arg2, uint64_t arg3, uint64_t arg4) {
+  if (arg2 || arg3 || arg4) {
+    return -IPC_ERR_INVALID_ARGUMENTS;
+  }
+  if (get_ipc_caller_uid()) {
+    return -IPC_ERR_INSUFFICIENT_PRIVILEGE;
+  }
+  char country[] = {country0, country1, 0};
+  for (size_t i = 0; i < sizeof(layouts) / sizeof(uintptr_t); i++) {
+    if (!strcmp(layouts[i]->country, country)) {
+      layout = layouts[i];
+      return 0;
+    }
+  }
+  return -IPC_ERR_INVALID_ARGUMENTS;
+}
 int main(void) {
   drop_capability(CAP_NAMESPACE_KERNEL, CAP_KERNEL_PRIORITY);
   register_ipc(0);
   layout = layouts[0];
   ipc_handlers[IPC_KBDD_KEYPRESS] = keypress_handler;
   ipc_handlers[IPC_KBDD_REGISTER] = registration_handler;
+  ipc_handlers[IPC_KBDD_CHANGE_LAYOUT] = change_layout_handler;
   while (1) {
     handle_ipc();
   }
