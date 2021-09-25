@@ -5,6 +5,7 @@
 #include <sys/hpet.h>
 #include <sys/madt.h>
 #include <sys/scheduler.h>
+#define LAPIC_REGISTER_ID 2
 #define LAPIC_REGISTER_EOI 0xb
 #define LAPIC_REGISTER_SPURIOUS_INT 0xf
 #define LAPIC_REGISTER_INTERRUPT_COMMAND 0x30
@@ -42,6 +43,9 @@ extern void ap_trampoline(void);
 
 static uint32_t read_register(size_t register_i) {
   return registers[register_i * 4];
+}
+size_t get_current_lapic_id(void) {
+  return read_register(LAPIC_REGISTER_ID) >> 24;
 }
 static void write_register(size_t register_i, uint32_t value) {
   registers[register_i * 4] = value;

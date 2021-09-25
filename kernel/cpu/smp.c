@@ -8,6 +8,8 @@
 volatile bool ap_startup;
 size_t ap_nlapic;
 bool smp_lock;
+volatile bool aps_jmp_user;
+
 extern void syscall(void);
 
 void set_cpu_flags(void) {
@@ -75,7 +77,6 @@ void set_cpu_flags(void) {
                  : "rax");
   }
 }
-
 void ap_entry(void) {
   setup_gdt(1);
   load_idt();
@@ -83,6 +84,9 @@ void ap_entry(void) {
   setup_lapic(ap_nlapic);
   setup_lapic_timer(1);
   ap_startup = 1;
+  while (!aps_jmp_user) {
+    asm volatile("pause");
+  }
   while (1) {
     asm volatile("hlt");
   }

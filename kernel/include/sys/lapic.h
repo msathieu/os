@@ -4,6 +4,7 @@
 
 extern size_t madt_bsp_lapic_id;
 
+size_t get_current_lapic_id(void);
 void lapic_eoi(void);
 void set_lapic_timer(size_t);
 void setup_lapic(size_t);

@@ -1,5 +1,6 @@
 #include <bitset.h>
 #include <cpu/paging.h>
+#include <cpu/smp.h>
 #include <elf.h>
 #include <panic.h>
 #include <stdlib.h>
@@ -7,12 +8,13 @@
 #include <struct.h>
 #include <sys/lapic.h>
 #include <sys/lock.h>
+#include <sys/madt.h>
 #include <sys/scheduler.h>
 
-static struct task* _current_task;
+static struct task* current_tasks[256];
 
 struct task* current_task(void) {
-  return _current_task;
+  return current_tasks[get_current_lapic_id()];
 }
 void switch_task(struct task* task, struct isr_registers* isr_registers) {
   switch_pml4(task->process->address_space);
@@ -30,16 +32,8 @@ void switch_task(struct task* task, struct isr_registers* isr_registers) {
   asm volatile("wrmsr"
                :
                : "c"(0xc0000100), "a"(task->fs), "d"(task->fs >> 32));
-  _current_task = task;
-  bool set_timer = 0;
-  for (size_t i = 0; i <= (size_t) current_task()->priority; i++) {
-    if (scheduler_list[i].first) {
-      set_timer = 1;
-    }
-  }
-  if (set_timer) {
-    set_lapic_timer(10);
-  }
+  current_tasks[get_current_lapic_id()] = task;
+  set_lapic_timer(10);
 }
 struct task* create_task(struct process* process) {
   struct task* task = calloc(1, sizeof(struct task));
@@ -102,18 +96,21 @@ _Noreturn void setup_multitasking(void) {
                : "=r"(rflags));
   asm volatile("cli");
   struct process* idle_process = create_process(0);
-  _current_task = create_task(create_process(0));
+  current_tasks[0] = create_task(create_process(0));
   switch_pml4(current_task()->process->address_space);
   current_task()->process->capabilities[0] = 1 << CAP_MANAGE;
   current_task()->priority = PRIORITY_SYSTEM_NORMAL;
-  struct task* idle_task = create_task(idle_process);
-  idle_task->priority = PRIORITY_IDLE;
-  idle_task->registers.cs = 8;
-  idle_task->registers.rsp = (uintptr_t) malloc(0x2000) + 0x2000;
-  idle_task->registers.rip = (uintptr_t) idle;
-  idle_task->registers.rflags = rflags;
-  schedule_task(idle_task, 0);
+  for (size_t i = 0; i < madt_num_lapics; i++) {
+    struct task* idle_task = create_task(idle_process);
+    idle_task->priority = PRIORITY_IDLE;
+    idle_task->registers.cs = 8;
+    idle_task->registers.rsp = (uintptr_t) malloc(0x2000) + 0x2000;
+    idle_task->registers.rip = (uintptr_t) idle;
+    idle_task->registers.rflags = rflags;
+    schedule_task(idle_task, 0);
+  }
   acquire_lock();
+  aps_jmp_user = 1;
   for (size_t i = 0; i < 64; i++) {
     if (!strcmp((char*) loader_struct.files[i].name, "init")) {
       load_elf(i);
