@@ -16,11 +16,13 @@ struct layout {
 };
 enum {
   KBD_MODIFIER_SHIFT,
-  KB_MODIFIER_PLACEHOLDER
+  KBD_MODIFIER_PLACEHOLDER,
+  KBD_MODIFIER_ALTGR
 };
 enum {
   KBD_TOGGLE_CAPS_LOCK,
-  KBD_TOGGLE_NUM_LOCK
+  KBD_TOGGLE_NUM_LOCK,
+  KBD_TOGGLE_PLACEHOLDER
 };
 
 extern const struct layout be_layout;
