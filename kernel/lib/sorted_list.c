@@ -21,3 +21,6 @@ void insert_sorted_list(struct sorted_list* list, struct linked_list_member* new
     list->first = new_member;
   }
 }
+void remove_sorted_list(struct sorted_list* list, struct linked_list_member* remove_member) {
+  remove_linked_list((struct linked_list*) list, remove_member);
+}

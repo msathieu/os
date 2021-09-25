@@ -55,7 +55,7 @@ static void send_command(int cmd, int arg, size_t cmd_tries) {
     }
   }
 }
-static inline void change_leds(int new_leds) {
+static void change_leds(int new_leds) {
   if (leds == new_leds || new_leds < 0) {
     return;
   }

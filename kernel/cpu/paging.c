@@ -58,7 +58,7 @@ static size_t find_free_frame(void) {
   }
   panic("Out of free memory");
 }
-static inline void invlpg(uintptr_t address) {
+static void invlpg(uintptr_t address) {
   asm volatile("invlpg (%0)"
                :
                : "r"(address));
