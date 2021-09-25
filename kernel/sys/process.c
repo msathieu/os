@@ -21,12 +21,12 @@ struct process* create_process(bool clone) {
   return process;
 }
 struct process* spawn_child(bool clone) {
-  current_task->spawned_process = create_process(clone);
-  current_task->spawned_process->parent = current_task->process;
-  current_task->spawned_process->next_sibling = current_task->process->first_child;
-  current_task->process->first_child = current_task->spawned_process;
-  current_task->spawned_process->uid = current_task->process->uid;
-  return current_task->spawned_process;
+  current_task()->spawned_process = create_process(clone);
+  current_task()->spawned_process->parent = current_task()->process;
+  current_task()->spawned_process->next_sibling = current_task()->process->first_child;
+  current_task()->process->first_child = current_task()->spawned_process;
+  current_task()->spawned_process->uid = current_task()->process->uid;
+  return current_task()->spawned_process;
 }
 void destroy_process(struct process* process) {
   if (process->pid == 1) {

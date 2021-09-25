@@ -5,8 +5,8 @@
 struct linked_list scheduler_list[PRIORITY_IDLE + 1];
 
 void scheduler(struct isr_registers* registers) {
-  size_t max_priority = current_task->priority;
-  if (current_task->blocked) {
+  size_t max_priority = current_task()->priority;
+  if (current_task()->blocked) {
     max_priority = PRIORITY_IDLE;
   }
 loop:
@@ -24,9 +24,9 @@ loop:
   }
 }
 void schedule_task(struct task* new_task, struct isr_registers* registers) {
-  if (new_task->priority == current_task->priority || (!registers && new_task->priority < current_task->priority)) {
+  if (new_task->priority == current_task()->priority || (!registers && new_task->priority < current_task()->priority)) {
     bool set_timer = 1;
-    for (size_t i = 0; i <= (size_t) current_task->priority; i++) {
+    for (size_t i = 0; i <= (size_t) current_task()->priority; i++) {
       if (scheduler_list[i].first) {
         set_timer = 0;
       }
@@ -36,7 +36,7 @@ void schedule_task(struct task* new_task, struct isr_registers* registers) {
     }
   }
   insert_linked_list(&scheduler_list[new_task->priority], &new_task->list_member);
-  if (registers && new_task->priority < current_task->priority) {
+  if (registers && new_task->priority < current_task()->priority) {
     scheduler(registers);
   }
 }

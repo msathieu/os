@@ -29,10 +29,9 @@ struct task {
   uintptr_t fs;
 };
 
-extern struct task* current_task;
-
 void block_current_task(struct isr_registers*);
 struct task* create_task(struct process*);
+struct task* current_task(void);
 void destroy_task(struct task*);
 _Noreturn void setup_multitasking(void);
 void switch_task(struct task*, struct isr_registers*);

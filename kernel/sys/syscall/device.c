@@ -20,12 +20,12 @@ void syscall_grant_ioport(union syscall_args* args) {
     terminate_current_task(&args->registers);
     return;
   }
-  if (!has_process_capability(current_task->process, CAP_IOPORT)) {
+  if (!has_process_capability(current_task()->process, CAP_IOPORT)) {
     puts("Not allowed to register port access");
     terminate_current_task(&args->registers);
     return;
   }
-  if (!current_task->spawned_process) {
+  if (!current_task()->spawned_process) {
     puts("No process is currently being spawned");
     terminate_current_task(&args->registers);
     return;
@@ -40,8 +40,8 @@ void syscall_grant_ioport(union syscall_args* args) {
     terminate_current_task(&args->registers);
     return;
   }
-  ioports_process[args->arg0] = current_task->spawned_process;
-  current_task->spawned_process->ioports_assigned = 1;
+  ioports_process[args->arg0] = current_task()->spawned_process;
+  current_task()->spawned_process->ioports_assigned = 1;
 }
 void syscall_access_ioport(union syscall_args* args) {
   if (args->arg4) {
@@ -54,7 +54,7 @@ void syscall_access_ioport(union syscall_args* args) {
     terminate_current_task(&args->registers);
     return;
   }
-  if (ioports_process[args->arg0] != current_task->process && !has_process_capability(current_task->process, CAP_IOPORT)) {
+  if (ioports_process[args->arg0] != current_task()->process && !has_process_capability(current_task()->process, CAP_IOPORT)) {
     puts("No permission to access port");
     terminate_current_task(&args->registers);
     return;
@@ -126,12 +126,12 @@ void syscall_register_irq(union syscall_args* args) {
     terminate_current_task(&args->registers);
     return;
   }
-  if (!has_process_capability(current_task->process, CAP_IRQ)) {
+  if (!has_process_capability(current_task()->process, CAP_IRQ)) {
     puts("Not allowed to register IRQ");
     terminate_current_task(&args->registers);
     return;
   }
-  if (!current_task->spawned_process) {
+  if (!current_task()->spawned_process) {
     puts("No process is currently being spawned");
     terminate_current_task(&args->registers);
     return;
@@ -148,9 +148,9 @@ void syscall_register_irq(union syscall_args* args) {
       terminate_current_task(&args->registers);
       return;
     }
-    isa_irqs_process[args->arg1] = current_task->spawned_process;
+    isa_irqs_process[args->arg1] = current_task()->spawned_process;
     register_isa_irq(args->arg1, usermode_irq_handler);
-    current_task->spawned_process->irqs_assigned = 1;
+    current_task()->spawned_process->irqs_assigned = 1;
     break;
   case 1:
     if (args->arg1 != 253) {
@@ -158,7 +158,7 @@ void syscall_register_irq(union syscall_args* args) {
       terminate_current_task(&args->registers);
       return;
     }
-    if (!has_process_capability(current_task->process, CAP_ACPI)) {
+    if (!has_process_capability(current_task()->process, CAP_ACPI)) {
       puts("Not allowed to register IRQ");
       terminate_current_task(&args->registers);
       return;
@@ -168,9 +168,9 @@ void syscall_register_irq(union syscall_args* args) {
       terminate_current_task(&args->registers);
       return;
     }
-    sci_process = current_task->spawned_process;
+    sci_process = current_task()->spawned_process;
     isr_handlers[253] = usermode_irq_handler;
-    current_task->spawned_process->irqs_assigned = 1;
+    current_task()->spawned_process->irqs_assigned = 1;
     break;
   default:
     puts("Argument out of range");
@@ -184,17 +184,17 @@ void syscall_clear_irqs(union syscall_args* args) {
     terminate_current_task(&args->registers);
     return;
   }
-  if (!current_task->process->irqs_assigned) {
+  if (!current_task()->process->irqs_assigned) {
     puts("No permission to handle IRQs");
     terminate_current_task(&args->registers);
     return;
   }
   for (size_t i = 0; i < 16; i++) {
-    if (isa_irqs_process[i] == current_task->process) {
+    if (isa_irqs_process[i] == current_task()->process) {
       isa_irqs_fired[i] = 0;
     }
   }
-  if (sci_process == current_task->process) {
+  if (sci_process == current_task()->process) {
     sci_fired = 0;
   }
 }
@@ -204,23 +204,23 @@ void syscall_wait_irq(union syscall_args* args) {
     terminate_current_task(&args->registers);
     return;
   }
-  if (!current_task->process->irqs_assigned) {
+  if (!current_task()->process->irqs_assigned) {
     puts("No permission to handle IRQs");
     terminate_current_task(&args->registers);
     return;
   }
   for (size_t i = 0; i < 16; i++) {
-    if (isa_irqs_process[i] == current_task->process && isa_irqs_fired[i]) {
+    if (isa_irqs_process[i] == current_task()->process && isa_irqs_fired[i]) {
       isa_irqs_fired[i] = 0;
       args->return_value = i;
       return;
     }
   }
-  if (sci_process == current_task->process && sci_fired) {
+  if (sci_process == current_task()->process && sci_fired) {
     sci_fired = 0;
     return;
   }
-  current_task->process->irq_handler = current_task;
+  current_task()->process->irq_handler = current_task();
   block_current_task(&args->registers);
 }
 void syscall_map_phys_memory(union syscall_args* args) {
@@ -229,7 +229,7 @@ void syscall_map_phys_memory(union syscall_args* args) {
     terminate_current_task(&args->registers);
     return;
   }
-  if (!has_process_capability(current_task->process, CAP_MAP_MEMORY)) {
+  if (!has_process_capability(current_task()->process, CAP_MAP_MEMORY)) {
     puts("No permission to map memory");
     terminate_current_task(&args->registers);
     return;
@@ -244,15 +244,15 @@ void syscall_map_phys_memory(union syscall_args* args) {
     terminate_current_task(&args->registers);
     return;
   }
-  if (args->arg2 && !current_task->spawned_process) {
+  if (args->arg2 && !current_task()->spawned_process) {
     puts("No process is currently being spawned");
     terminate_current_task(&args->registers);
     return;
   }
   if (args->arg2) {
-    physical_mappings_process = current_task->spawned_process;
+    physical_mappings_process = current_task()->spawned_process;
   } else {
-    physical_mappings_process = current_task->process;
+    physical_mappings_process = current_task()->process;
   }
   args->return_value = get_free_ipc_range(args->arg1);
   physical_mappings_process = 0;
@@ -262,13 +262,13 @@ void syscall_map_phys_memory(union syscall_args* args) {
     return;
   }
   if (args->arg2) {
-    switch_pml4(current_task->spawned_process->address_space);
+    switch_pml4(current_task()->spawned_process->address_space);
   }
   for (size_t i = 0; i < args->arg1; i += 0x1000) {
     create_mapping(args->return_value + i, args->arg0 + i, 1, 1, 0, 1);
   }
   if (args->arg2) {
-    switch_pml4(current_task->process->address_space);
+    switch_pml4(current_task()->process->address_space);
   }
 }
 void syscall_get_fb_info(union syscall_args* args) {
@@ -277,7 +277,7 @@ void syscall_get_fb_info(union syscall_args* args) {
     terminate_current_task(&args->registers);
     return;
   }
-  if (!has_process_capability(current_task->process, CAP_GET_FB_INFO)) {
+  if (!has_process_capability(current_task()->process, CAP_GET_FB_INFO)) {
     puts("No permission to get framebuffer info");
     terminate_current_task(&args->registers);
     return;
@@ -318,7 +318,7 @@ void syscall_get_acpi_revision(union syscall_args* args) {
     terminate_current_task(&args->registers);
     return;
   }
-  if (!has_process_capability(current_task->process, CAP_ACPI)) {
+  if (!has_process_capability(current_task()->process, CAP_ACPI)) {
     puts("No permission to get ACPI revision");
     terminate_current_task(&args->registers);
     return;
@@ -326,7 +326,7 @@ void syscall_get_acpi_revision(union syscall_args* args) {
   args->return_value = acpi_revision;
 }
 void syscall_get_acpi_table(union syscall_args* args) {
-  if (!has_process_capability(current_task->process, CAP_ACPI)) {
+  if (!has_process_capability(current_task()->process, CAP_ACPI)) {
     puts("No permission to get ACPI table");
     terminate_current_task(&args->registers);
     return;

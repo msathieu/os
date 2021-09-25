@@ -18,17 +18,17 @@ void syscall_register_ipc(union syscall_args* args) {
     terminate_current_task(&args->registers);
     return;
   }
-  if (current_task->process->accepts_syscalls == (int) args->arg0) {
+  if (current_task()->process->accepts_syscalls == (int) args->arg0) {
     puts("Desired registration status is already set");
     terminate_current_task(&args->registers);
     return;
   }
-  current_task->process->accepts_syscalls = args->arg0;
+  current_task()->process->accepts_syscalls = args->arg0;
   if (args->arg0) {
-    insert_linked_list(&syscall_processes, &current_task->process->list_member);
-    current_task->process->accepts_shared_memory = args->arg1;
+    insert_linked_list(&syscall_processes, &current_task()->process->list_member);
+    current_task()->process->accepts_shared_memory = args->arg1;
   } else {
-    remove_linked_list(&syscall_processes, &current_task->process->list_member);
+    remove_linked_list(&syscall_processes, &current_task()->process->list_member);
   }
 }
 void syscall_get_ipc_caller_capabilities(union syscall_args* args) {
@@ -47,7 +47,7 @@ void syscall_get_ipc_caller_capabilities(union syscall_args* args) {
     terminate_current_task(&args->registers);
     return;
   }
-  struct task* requester = current_task->servicing_syscall_requester;
+  struct task* requester = current_task()->servicing_syscall_requester;
   if (!requester) {
     puts("Not currently handling IPC call");
     terminate_current_task(&args->registers);
@@ -75,10 +75,10 @@ void syscall_is_caller_child(union syscall_args* args) {
     terminate_current_task(&args->registers);
     return;
   }
-  if (!current_task->servicing_syscall_requester) {
+  if (!current_task()->servicing_syscall_requester) {
     puts("Not currently handling IPC call");
     terminate_current_task(&args->registers);
     return;
   }
-  args->return_value = has_child_with_pid(current_task->servicing_syscall_requester->process->pid, current_task->process);
+  args->return_value = has_child_with_pid(current_task()->servicing_syscall_requester->process->pid, current_task()->process);
 }

@@ -35,7 +35,7 @@ static void syscall_exit(union syscall_args* args) {
     return;
   }
   if (args->arg1) {
-    current_task->process->should_exit = 1;
+    current_task()->process->should_exit = 1;
   }
   terminate_current_task(&args->registers);
 }
@@ -53,7 +53,7 @@ static void syscall_reset(union syscall_args* args) {
     terminate_current_task(&args->registers);
     return;
   }
-  if (!has_process_capability(current_task->process, CAP_ACPI)) {
+  if (!has_process_capability(current_task()->process, CAP_ACPI)) {
     puts("No permission to reset system");
     terminate_current_task(&args->registers);
     return;
@@ -69,7 +69,7 @@ static void syscall_log(union syscall_args* args) {
     terminate_current_task(&args->registers);
     return;
   }
-  if (!has_process_capability(current_task->process, CAP_LOG)) {
+  if (!has_process_capability(current_task()->process, CAP_LOG)) {
     puts("No permission to log to console");
     terminate_current_task(&args->registers);
     return;
@@ -126,7 +126,7 @@ static syscall_handler syscall_handlers[256] = {
 
 void syscall_common(union syscall_args* args) {
   acquire_lock();
-  if (current_task->process->should_exit) {
+  if (current_task()->process->should_exit) {
     terminate_current_task(&args->registers);
     return release_lock();
   }
