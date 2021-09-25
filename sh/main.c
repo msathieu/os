@@ -39,7 +39,7 @@ static char* read_line(void) {
 static char** split_line(char* buffer) {
   char** tokens = calloc(1, sizeof(char*));
   size_t i = 0;
-  for (char* token = strtok(buffer, " "); token; token = strtok(0, " ")) {
+  for (char* token = strtok(buffer, " \t"); token; token = strtok(0, " \t")) {
     i++;
     tokens = realloc(tokens, (i + 1) * sizeof(char*));
     tokens[i - 1] = strdup(token);
