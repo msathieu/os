@@ -4,6 +4,7 @@
 #include <panic.h>
 #include <string.h>
 #include <struct.h>
+#include <sys/lock.h>
 
 #define ELF_MAGIC 0x7f
 #define ELF_TYPE_EXEC 2
@@ -103,5 +104,6 @@ void load_elf(size_t file_i) {
     while (1)
       ;
   }
+  release_lock();
   jmp_user(tls, tls_size, header->entry);
 }

@@ -2,6 +2,7 @@
 #include <panic.h>
 #include <stdio.h>
 #include <sys/lapic.h>
+#include <sys/lock.h>
 #include <sys/scheduler.h>
 
 static const char* exceptions[] = {
@@ -47,19 +48,23 @@ void isr_handler_common(struct isr_registers* registers) {
   if (registers->isr == 255) {
     return; // Spurious interrupt
   }
+  acquire_lock();
   if (48 <= registers->isr && registers->isr <= 254) {
     lapic_eoi();
   }
   if (isr_handlers[registers->isr]) {
-    return isr_handlers[registers->isr](registers);
+    isr_handlers[registers->isr](registers);
+    return release_lock();
   }
   if (registers->isr < 32) {
     if (registers->cs == 0x23 && registers->isr != 2 && registers->isr != 8) {
       printf("Exception (%s) occurred at 0x%lx in user mode, terminating task\n", exceptions[registers->isr], registers->rip);
-      return terminate_current_task(registers);
+      terminate_current_task(registers);
+      return release_lock();
     }
     printf("RIP: 0x%lx\n", registers->rip);
     panic(exceptions[registers->isr]);
   }
   printf("Unhandled interrupt %d\n", (int) registers->isr);
+  release_lock();
 }

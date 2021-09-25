@@ -3,6 +3,7 @@
 #include <string.h>
 #include <struct.h>
 #include <sys/hpet.h>
+#include <sys/lock.h>
 #include <sys/scheduler.h>
 #include <sys/syscall.h>
 
@@ -214,6 +215,7 @@ void syscall_spawn_thread(union syscall_args* args) {
   uintptr_t arg1 = args->arg1;
   uintptr_t arg2 = args->arg2;
   switch_task(task, &args->registers);
+  release_lock();
   jmp_user(arg1, arg2, arg0);
 }
 void syscall_fork(union syscall_args* args) {

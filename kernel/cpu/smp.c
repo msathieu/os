@@ -7,6 +7,7 @@
 
 volatile bool ap_startup;
 size_t ap_nlapic;
+bool smp_lock;
 extern void syscall(void);
 
 void set_cpu_flags(void) {

@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <sys/hpet.h>
 #include <sys/ipc.h>
+#include <sys/lock.h>
 #include <sys/scheduler.h>
 
 typedef void (*syscall_handler)(union syscall_args*);
@@ -124,16 +125,20 @@ static syscall_handler syscall_handlers[256] = {
   syscall_start_fork};
 
 void syscall_common(union syscall_args* args) {
+  acquire_lock();
   if (current_task->process->should_exit) {
-    return terminate_current_task(&args->registers);
+    terminate_current_task(&args->registers);
+    return release_lock();
   }
   if (args->syscall & 0xffffffffffffff00) {
     syscall_handle_ipc(args);
   } else {
     if (!syscall_handlers[args->syscall]) {
       printf("Invalid syscall %ld\n", args->syscall);
-      return terminate_current_task(&args->registers);
+      terminate_current_task(&args->registers);
+      return release_lock();
     }
     syscall_handlers[args->syscall](args);
   }
+  release_lock();
 }
