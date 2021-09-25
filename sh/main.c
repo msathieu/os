@@ -120,7 +120,7 @@ static struct parsed_line* parse_line(char** tokens) {
         parsed_line->type = TYPE_NOP;
         return parsed_line;
       }
-      parsed_line->args[arg_i] = strdup(tokens[i]);
+      parsed_line->args[arg_i++] = strdup(tokens[i]);
     }
   }
   return parsed_line;
