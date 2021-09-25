@@ -103,8 +103,8 @@ static void usermode_irq_handler(struct isr_registers* registers) {
     struct task* handler = sci_process->irq_handler;
     if (handler) {
       handler->blocked = 0;
-      schedule_task(handler, registers);
       sci_process->irq_handler = 0;
+      schedule_task(handler, registers);
     } else {
       sci_fired = 1;
     }
@@ -113,8 +113,8 @@ static void usermode_irq_handler(struct isr_registers* registers) {
     if (handler) {
       handler->blocked = 0;
       handler->registers.rax = isr - 48;
-      schedule_task(handler, registers);
       isa_irqs_process[isr - 48]->irq_handler = 0;
+      schedule_task(handler, registers);
     } else {
       isa_irqs_fired[isr - 48] = 1;
     }

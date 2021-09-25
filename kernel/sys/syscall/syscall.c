@@ -124,6 +124,9 @@ static syscall_handler syscall_handlers[256] = {
   syscall_start_fork};
 
 void syscall_common(union syscall_args* args) {
+  if (current_task->process->should_exit) {
+    return terminate_current_task(&args->registers);
+  }
   if (args->syscall & 0xffffffffffffff00) {
     syscall_handle_ipc(args);
   } else {
