@@ -43,6 +43,7 @@ struct process {
   uint64_t mappings_bitset[PAGING_PHYSICAL_MAPPINGS_SIZE / 0x1000 / 64];
   struct linked_list exited_pids_list;
   bool exit_listener;
+  bool should_exit;
 };
 struct exited_pid {
   struct linked_list_member list_member;

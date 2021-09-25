@@ -23,10 +23,18 @@ static void syscall_yield(union syscall_args* args) {
   scheduler(&args->registers);
 }
 static void syscall_exit(union syscall_args* args) {
-  if (args->arg1 || args->arg2 || args->arg3 || args->arg4) {
+  if (args->arg2 || args->arg3 || args->arg4) {
     puts("Reserved argument is set");
     terminate_current_task(&args->registers);
     return;
+  }
+  if (args->arg1 >= 2) {
+    puts("Argument out of range");
+    terminate_current_task(&args->registers);
+    return;
+  }
+  if (args->arg1) {
+    current_task->process->should_exit = 1;
   }
   terminate_current_task(&args->registers);
 }
