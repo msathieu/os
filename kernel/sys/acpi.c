@@ -39,7 +39,7 @@ struct acpi_header* acpi_find_table(const char* signature, bool panic, size_t in
   } else {
     for (size_t i = 0; i < nheaders; i++) {
       if (!memcmp(headers[i]->signature, signature, 4) && !index--) {
-        struct acpi_header* header = map_physical(convert_to_physical((uintptr_t) headers[i], current_pml4), headers[i]->size, 0, 0);
+        struct acpi_header* header = map_physical(convert_to_physical((uintptr_t) headers[i], current_pml4()), headers[i]->size, 0, 0);
         check_checksum(header);
         return header;
       }

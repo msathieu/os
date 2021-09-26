@@ -7,6 +7,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <struct.h>
+#include <sys/lapic.h>
 #include <sys/scheduler.h>
 
 struct paging_entry {
@@ -29,7 +30,7 @@ struct paging_table {
   struct paging_table* entries[512];
 };
 
-struct paging_table* current_pml4;
+struct paging_table* current_pml4s[256];
 static bool paging_enabled;
 static uint64_t* frames;
 static size_t nframes;
@@ -45,6 +46,9 @@ extern int data_end[];
 extern int bss_start[];
 extern int bss_end[];
 
+struct paging_table* current_pml4(void) {
+  return current_pml4s[get_current_lapic_id()];
+}
 static size_t find_free_frame(void) {
   for (size_t i = 0; i < nframes / 64; i++) {
     if (frames[i] == 0xffffffffffffffff) {
@@ -107,10 +111,10 @@ static void gen_entry(struct paging_table* table, size_t i) {
   table->phys_entries[i].present = 1;
   table->phys_entries[i].user = 1;
   table->phys_entries[i].write = 1;
-  table->phys_entries[i].address = convert_to_physical((uintptr_t) table->entries[i], current_pml4) / 0x1000;
+  table->phys_entries[i].address = convert_to_physical((uintptr_t) table->entries[i], current_pml4()) / 0x1000;
 }
 bool is_page_mapped(uintptr_t address, bool write) {
-  struct paging_entry* page = get_page(address, current_pml4);
+  struct paging_entry* page = get_page(address, current_pml4());
   if (page && (page->write || !write)) {
     return 1;
   } else {
@@ -119,7 +123,7 @@ bool is_page_mapped(uintptr_t address, bool write) {
 }
 // Doesn't free frame
 void unmap_page(uintptr_t address) {
-  struct paging_entry* page = get_page(address, current_pml4);
+  struct paging_entry* page = get_page(address, current_pml4());
   if (page) {
     page->present = 0;
     invlpg(address);
@@ -128,7 +132,7 @@ void unmap_page(uintptr_t address) {
   }
 }
 void free_page(uintptr_t address) {
-  struct paging_entry* page = get_page(address, current_pml4);
+  struct paging_entry* page = get_page(address, current_pml4());
   if (page) {
     page->present = 0;
     invlpg(address);
@@ -146,8 +150,8 @@ void create_mapping(uintptr_t virt, uintptr_t phys, bool user, bool write, bool 
   size_t page_directory_i = virt / 512 % 512;
   size_t pdpt_i = virt / 512 / 512 % 512;
   size_t pml4_i = virt / 512 / 512 / 512 % 512;
-  gen_entry(current_pml4, pml4_i);
-  struct paging_table* pdpt = current_pml4->entries[pml4_i];
+  gen_entry(current_pml4(), pml4_i);
+  struct paging_table* pdpt = current_pml4()->entries[pml4_i];
   gen_entry(pdpt, pdpt_i);
   struct paging_table* page_directory = pdpt->entries[pdpt_i];
   gen_entry(page_directory, page_directory_i);
@@ -181,7 +185,7 @@ void set_paging_flags(uintptr_t address, size_t size, bool user, bool write, boo
   address = address / 0x1000 * 0x1000;
   end = (end + 0xfff) / 0x1000 * 0x1000;
   for (size_t virtual_address = address; virtual_address < end; virtual_address += 0x1000) {
-    uintptr_t physical_address = convert_to_physical(virtual_address, current_pml4);
+    uintptr_t physical_address = convert_to_physical(virtual_address, current_pml4());
     create_mapping(virtual_address, physical_address, user, write, exec, 0);
     invlpg(virtual_address);
   }
@@ -205,8 +209,8 @@ struct paging_table* create_pml4(void) {
   struct paging_table* pml4 = valloc(sizeof(struct paging_table));
   memset(pml4, 0, sizeof(struct paging_table));
   for (size_t i = 256; i < 512; i++) {
-    pml4->entries[i] = current_pml4->entries[i];
-    pml4->phys_entries[i] = current_pml4->phys_entries[i];
+    pml4->entries[i] = current_pml4()->entries[i];
+    pml4->phys_entries[i] = current_pml4()->phys_entries[i];
   }
   return pml4;
 }
@@ -245,21 +249,21 @@ void destroy_pml4(struct paging_table* pml4) {
 void switch_pml4(struct paging_table* pml4) {
   asm volatile("mov %0, %%cr3"
                :
-               : "r"(convert_to_physical((uintptr_t) pml4, current_pml4)));
-  current_pml4 = pml4;
+               : "r"(convert_to_physical((uintptr_t) pml4, current_pml4())));
+  current_pml4s[get_current_lapic_id()] = pml4;
 }
 uintptr_t get_free_range(size_t size, bool user, bool write, bool exec, uintptr_t requested_start) {
   size = (size + 0xfff) / 0x1000 * 0x1000;
   uintptr_t start = 0;
   for (uintptr_t i = requested_start; i < PAGING_USER_PHYS_MAPPINGS_START; i += 0x1000) {
     if (!start) {
-      if (!get_page(i, current_pml4)) {
+      if (!get_page(i, current_pml4())) {
         start = i;
       } else {
         continue;
       }
     } else {
-      if (get_page(i, current_pml4)) {
+      if (get_page(i, current_pml4())) {
         start = 0;
         continue;
       }
@@ -299,7 +303,7 @@ uintptr_t get_free_ipc_range(size_t size) {
   return 0;
 }
 struct paging_table* clone_pml4(void) {
-  struct paging_table* pml4 = current_pml4;
+  struct paging_table* pml4 = current_pml4();
   struct paging_table* clone_pml4 = create_pml4();
   switch_pml4(clone_pml4);
   //TODO: Clone last entry partially up to PAGING_USER_PHYS_MAPPINGS_START
@@ -377,7 +381,7 @@ void setup_paging(void) {
     panic("Second page is already mapped");
   }
   bitset_set(frames, 1);
-  current_pml4 = valloc(sizeof(struct paging_table));
+  current_pml4s[0] = valloc(sizeof(struct paging_table));
   for (uintptr_t virtual_addr = (uintptr_t) text_start; virtual_addr < (uintptr_t) text_end; virtual_addr += 0x1000) {
     create_mapping(virtual_addr, virtual_addr - KERNEL_VIRTUAL_ADDRESS + loader_struct.kernel_physical_addr, 0, 0, 1, 0);
   }
@@ -394,17 +398,17 @@ void setup_paging(void) {
     loader_struct.files[i].address = (uintptr_t) map_physical(loader_struct.files[i].address, loader_struct.files[i].size, 0, 0);
   }
   for (size_t i = 256; i < 512; i++) {
-    gen_entry(current_pml4, i);
-    current_pml4->phys_entries[i].user = 0;
+    gen_entry(current_pml4(), i);
+    current_pml4()->phys_entries[i].user = 0;
     if (i != 511) {
-      current_pml4->phys_entries[i].noexec = 1;
+      current_pml4()->phys_entries[i].noexec = 1;
     }
   }
   asm volatile("rdmsr; bts $11, %%rax; wrmsr" // Execute disable
                :
                : "c"(0xc0000080)
                : "rax", "rdx");
-  switch_pml4(current_pml4);
+  switch_pml4(current_pml4());
   paging_enabled = 1;
   isr_handlers[14] = fault_handler;
 }

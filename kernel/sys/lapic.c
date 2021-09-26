@@ -45,7 +45,11 @@ static uint32_t read_register(size_t register_i) {
   return registers[register_i * 4];
 }
 size_t get_current_lapic_id(void) {
-  return read_register(LAPIC_REGISTER_ID) >> 24;
+  if (registers) {
+    return read_register(LAPIC_REGISTER_ID) >> 24;
+  } else {
+    return 0;
+  }
 }
 static void write_register(size_t register_i, uint32_t value) {
   registers[register_i * 4] = value;
@@ -91,8 +95,9 @@ void setup_lapic_timer(bool ap) {
 void start_aps(void) {
   create_mapping(0x1000, 0x1000, 0, 1, 0, 0);
   memcpy((void*) 0x1000, &ap_trampoline, 0x1000);
-  ((uint64_t*) 0x1000)[3] = convert_to_physical((uintptr_t) current_pml4, current_pml4);
+  ((uint64_t*) 0x1000)[3] = convert_to_physical((uintptr_t) current_pml4s[0], current_pml4());
   for (size_t i = 1; i < madt_num_lapics; i++) {
+    current_pml4s[i] = current_pml4();
     ap_nlapic = i;
     ((uint64_t*) 0x1000)[2] = (uintptr_t) malloc(0x2000) + 0x2000;
     write_register(LAPIC_REGISTER_INTERRUPT_COMMAND + 1, madt_lapics[i]->lapic_id << 24);

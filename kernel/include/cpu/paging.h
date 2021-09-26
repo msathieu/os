@@ -12,6 +12,7 @@ struct paging_table* clone_pml4(void);
 uintptr_t convert_to_physical(uintptr_t, struct paging_table*);
 void create_mapping(uintptr_t, uintptr_t, bool, bool, bool, bool);
 struct paging_table* create_pml4(void);
+struct paging_table* current_pml4(void);
 void destroy_pml4(struct paging_table*);
 void free_page(uintptr_t);
 void unmap_page(uintptr_t);
@@ -26,4 +27,4 @@ void switch_pml4(struct paging_table*);
 
 extern struct process* physical_mappings_process;
 extern struct task* physical_mappings_task;
-extern struct paging_table* current_pml4;
+extern struct paging_table* current_pml4s[256];
