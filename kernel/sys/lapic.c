@@ -1,5 +1,6 @@
 #include <cpu/paging.h>
 #include <cpu/smp.h>
+#include <panic.h>
 #include <stdlib.h>
 #include <string.h>
 #include <sys/hpet.h>
@@ -20,13 +21,6 @@
 #define LAPIC_DELIVERY_INIT 0x500
 #define LAPIC_DELIVERY_STARTUP 0x600
 
-struct acpi_madt_lapic {
-  uint8_t type;
-  uint8_t size;
-  uint8_t processor_id;
-  uint8_t lapic_id;
-  uint32_t flags;
-} __attribute__((packed));
 struct acpi_madt_nmi {
   uint8_t type;
   uint8_t size;
@@ -61,6 +55,10 @@ void setup_lapic(size_t nlapic) {
   if (!nlapic) {
     registers = map_physical(madt_lapic_address, 0x400, 1, 1);
     madt_bsp_lapic_id = madt_lapics[0]->lapic_id;
+    if (madt_bsp_lapic_id) {
+      //TODO: Allow BSP to have different ID
+      panic("BSP has unexpected LAPIC ID");
+    }
   }
   write_register(LAPIC_REGISTER_SPURIOUS_INT, 0x1ff);
   for (size_t i = 0; i < madt_num_nmis; i++) {
@@ -101,13 +99,11 @@ void start_aps(void) {
     ap_nlapic = i;
     ((uint64_t*) 0x1000)[2] = (uintptr_t) malloc(0x2000) + 0x2000;
     write_register(LAPIC_REGISTER_INTERRUPT_COMMAND + 1, madt_lapics[i]->lapic_id << 24);
-    uint32_t icr = LAPIC_DELIVERY_INIT;
-    write_register(LAPIC_REGISTER_INTERRUPT_COMMAND, icr);
+    write_register(LAPIC_REGISTER_INTERRUPT_COMMAND, LAPIC_DELIVERY_INIT);
     sleep(10 * TIME_MILLISECOND);
     write_register(LAPIC_REGISTER_INTERRUPT_COMMAND + 1, madt_lapics[i]->lapic_id << 24);
-    icr = LAPIC_DELIVERY_STARTUP | 1;
     set_paging_flags(0x1000, 0x1000, 0, 0, 1);
-    write_register(LAPIC_REGISTER_INTERRUPT_COMMAND, icr);
+    write_register(LAPIC_REGISTER_INTERRUPT_COMMAND, LAPIC_DELIVERY_STARTUP | 1);
     while (!ap_startup) {
       asm volatile("pause");
     }

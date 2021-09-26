@@ -177,7 +177,7 @@ void syscall_return_ipc(union syscall_args* args) {
   }
   struct task* requester = current_task()->servicing_syscall_requester;
   if (!requester) {
-    puts("No syscall to return from");
+    puts("No IPC call to return from");
     terminate_current_task(&args->registers);
     return;
   }

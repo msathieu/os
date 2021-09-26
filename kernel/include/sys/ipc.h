@@ -6,8 +6,7 @@
 
 enum {
   IPC_ERR_PLACEHOLDER,
-  IPC_ERR_INVALID_PID,
-  IPC_ERR_RETRY
+  IPC_ERR_INVALID_PID
 };
 
 extern struct linked_list syscall_processes;

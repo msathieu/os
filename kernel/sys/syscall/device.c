@@ -209,6 +209,11 @@ void syscall_wait_irq(union syscall_args* args) {
     terminate_current_task(&args->registers);
     return;
   }
+  if (current_task()->process->irq_handler) {
+    puts("Already waiting for IRQ");
+    terminate_current_task(&args->registers);
+    return;
+  }
   for (size_t i = 0; i < 16; i++) {
     if (isa_irqs_process[i] == current_task()->process && isa_irqs_fired[i]) {
       isa_irqs_fired[i] = 0;

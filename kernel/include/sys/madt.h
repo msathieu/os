@@ -2,6 +2,14 @@
 #include <stddef.h>
 #include <sys/acpi.h>
 
+struct acpi_madt_lapic {
+  uint8_t type;
+  uint8_t size;
+  uint8_t processor_id;
+  uint8_t lapic_id;
+  uint32_t flags;
+} __attribute__((packed));
+
 void parse_madt(struct acpi_header*);
 
 extern uintptr_t madt_lapic_address;

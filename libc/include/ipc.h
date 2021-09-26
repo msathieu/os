@@ -11,7 +11,6 @@ typedef int64_t (*ipc_handler)(uint64_t, uint64_t, uint64_t, uint64_t, uint64_t)
 enum {
   IPC_ERR_PLACEHOLDER,
   IPC_ERR_INVALID_PID,
-  IPC_ERR_RETRY,
   IPC_ERR_BLOCK,
   IPC_ERR_INVALID_SYSCALL,
   IPC_ERR_INVALID_ARGUMENTS,

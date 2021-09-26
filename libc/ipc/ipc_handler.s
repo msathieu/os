@@ -12,7 +12,7 @@ handle_ipc:
   xor %rcx, %rcx
   xor %r8, %r8
   xor %r9, %r9
-  mov $-3, %rdi
+  mov $-2, %rdi
   cmp %rax, %rdi
   je block_call
   mov $9, %rdi

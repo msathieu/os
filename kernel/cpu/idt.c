@@ -289,8 +289,7 @@ void setup_idt(void) {
   ISR(249)
   ISR(250)
   ISR(251)
-  ISR(252)
-  ISR(253)
-  ISR(254)
-  ISR(255)
+  ISR(253) // SCI
+  ISR(254) // Scheduler
+  ISR(255) // Spurious interrupt
 }

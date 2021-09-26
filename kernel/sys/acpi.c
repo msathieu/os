@@ -14,7 +14,7 @@ struct fadt {
   uint8_t reserved;
   uint8_t power_profile;
   uint16_t sci_int;
-};
+} __attribute__((packed));
 
 static size_t nheaders;
 static struct acpi_header** headers;
