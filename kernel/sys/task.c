@@ -6,6 +6,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <struct.h>
+#include <sys/hpet.h>
 #include <sys/lapic.h>
 #include <sys/lock.h>
 #include <sys/madt.h>
@@ -17,6 +18,7 @@ struct task* current_task(void) {
   return current_tasks[get_current_lapic_id()];
 }
 void switch_task(struct task* task, struct isr_registers* isr_registers) {
+  current_task()->time_used += get_time() - current_task()->start_time;
   switch_pml4(task->process->address_space);
   memcpy(&current_task()->registers, isr_registers, sizeof(struct isr_registers));
   memcpy(isr_registers, &task->registers, sizeof(struct isr_registers));
@@ -33,6 +35,7 @@ void switch_task(struct task* task, struct isr_registers* isr_registers) {
                :
                : "c"(0xc0000100), "a"(task->fs), "d"(task->fs >> 32));
   current_tasks[get_current_lapic_id()] = task;
+  current_task()->start_time = get_time();
   set_lapic_timer(10);
 }
 struct task* create_task(struct process* process) {
@@ -96,7 +99,7 @@ _Noreturn void setup_multitasking(void) {
                : "=r"(rflags));
   asm volatile("cli");
   struct process* idle_process = create_process(0);
-  current_tasks[0] = create_task(create_process(0));
+  current_tasks[get_current_lapic_id()] = create_task(create_process(0));
   switch_pml4(current_task()->process->address_space);
   current_task()->process->capabilities[0] = 1 << CAP_MANAGE;
   current_task()->priority = PRIORITY_SYSTEM_NORMAL;
@@ -113,6 +116,8 @@ _Noreturn void setup_multitasking(void) {
   aps_jmp_user = 1;
   for (size_t i = 0; i < 64; i++) {
     if (!strcmp((char*) loader_struct.files[i].name, "init")) {
+      current_task()->start_time = get_time();
+      set_lapic_timer(10);
       load_elf(i);
     }
   }

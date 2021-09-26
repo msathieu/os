@@ -381,7 +381,7 @@ void setup_paging(void) {
     panic("Second page is already mapped");
   }
   bitset_set(frames, 1);
-  current_pml4s[0] = valloc(sizeof(struct paging_table));
+  current_pml4s[get_current_lapic_id()] = valloc(sizeof(struct paging_table));
   for (uintptr_t virtual_addr = (uintptr_t) text_start; virtual_addr < (uintptr_t) text_end; virtual_addr += 0x1000) {
     create_mapping(virtual_addr, virtual_addr - KERNEL_VIRTUAL_ADDRESS + loader_struct.kernel_physical_addr, 0, 0, 1, 0);
   }
