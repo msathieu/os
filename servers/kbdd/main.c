@@ -90,6 +90,7 @@ static int64_t change_layout_handler(uint64_t country0, uint64_t country1, uint6
 int main(void) {
   drop_capability(CAP_NAMESPACE_KERNEL, CAP_KERNEL_PRIORITY);
   register_ipc(0);
+  ipc_set_started();
   layout = layouts[0];
   ipc_handlers[IPC_KBDD_KEYPRESS] = keypress_handler;
   ipc_handlers[IPC_KBDD_REGISTER] = registration_handler;

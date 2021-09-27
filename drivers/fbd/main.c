@@ -74,6 +74,7 @@ static int64_t copy_handler(uint64_t offset, uint64_t arg1, uint64_t arg2, uint6
 int main(void) {
   drop_capability(CAP_NAMESPACE_KERNEL, CAP_KERNEL_PRIORITY);
   register_ipc(1);
+  ipc_set_started();
   width = _syscall(_SYSCALL_GET_FB_INFO, 1, 0, 0, 0, 0);
   height = _syscall(_SYSCALL_GET_FB_INFO, 2, 0, 0, 0, 0);
   pitch = _syscall(_SYSCALL_GET_FB_INFO, 3, 0, 0, 0, 0);

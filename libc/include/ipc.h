@@ -23,6 +23,7 @@ pid_t get_ipc_caller_pid(void);
 uid_t get_ipc_caller_uid(void);
 void handle_ipc(void);
 bool has_ipc_caller_capability(int namespace, int capability);
+void ipc_set_started(void);
 void ipc_unblock(pid_t pid);
 bool is_caller_child(void);
 void register_ipc(bool);

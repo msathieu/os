@@ -81,6 +81,7 @@ static void load_device(__attribute__((unused)) uint8_t bus, __attribute__((unus
 }
 int main(void) {
   register_ipc(0);
+  ipc_set_started();
   for (size_t bus = 0; bus < 256; bus++) {
     for (size_t device = 0; device < 32; device++) {
       size_t nfunctions = 1;

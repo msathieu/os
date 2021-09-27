@@ -51,6 +51,7 @@ static int sci_handler(__attribute__((unused)) void* arg) {
 int main(void) {
   drop_capability(CAP_NAMESPACE_KERNEL, CAP_KERNEL_PRIORITY);
   register_ipc(0);
+  ipc_set_started();
   int revision = _syscall(_SYSCALL_GET_ACPI_REVISION, 0, 0, 0, 0, 0);
   lai_set_acpi_revision(revision);
   lai_create_namespace();

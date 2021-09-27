@@ -110,6 +110,7 @@ int main(void) {
   listen_exits();
   drop_capability(CAP_NAMESPACE_KERNEL, CAP_KERNEL_LISTEN_EXITS);
   register_ipc(1);
+  ipc_set_started();
   ipc_handlers[IPC_ARGD_GET_NUM] = get_num_args_handler;
   ipc_handlers[IPC_ARGD_GET_SIZE] = get_arg_size_handler;
   ipc_handlers[IPC_ARGD_ADD] = add_arg_handler;

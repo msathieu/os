@@ -430,6 +430,7 @@ static int64_t clone_fds_handler(uint64_t fork, uint64_t arg1, uint64_t arg2, ui
 int main(void) {
   drop_capability(CAP_NAMESPACE_KERNEL, CAP_KERNEL_PRIORITY);
   register_ipc(1);
+  ipc_set_started();
   listen_exits();
   drop_capability(CAP_NAMESPACE_KERNEL, CAP_KERNEL_LISTEN_EXITS);
   ipc_handlers[IPC_VFSD_CLOSE] = close_file_handler;

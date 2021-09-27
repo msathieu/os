@@ -109,6 +109,7 @@ int main(void) {
   listen_exits();
   drop_capability(CAP_NAMESPACE_KERNEL, CAP_KERNEL_LISTEN_EXITS);
   register_ipc(1);
+  ipc_set_started();
   ipc_handlers[IPC_ENVD_GET_NUM] = get_num_envs_handler;
   ipc_handlers[IPC_ENVD_GET_SIZE] = get_env_size_handler;
   ipc_handlers[IPC_ENVD_ADD] = add_env_handler;
