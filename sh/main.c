@@ -164,7 +164,11 @@ static void execute_line(struct parsed_line* parsed_line) {
 }
 int main(void) {
   while (1) {
-    printf("$ ");
+    if (getuid()) {
+      printf("$ ");
+    } else {
+      printf("# ");
+    }
     char* buffer = read_line();
     char** tokens = split_line(buffer);
     free(buffer);
