@@ -29,6 +29,7 @@ struct task {
   uintptr_t fs;
   size_t time_used;
   size_t start_time;
+  size_t cpu;
 };
 
 void block_current_task(struct isr_registers*);

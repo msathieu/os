@@ -77,7 +77,7 @@ void set_cpu_flags(void) {
                  : "rax");
   }
 }
-void ap_entry(void) {
+_Noreturn void ap_entry(void) {
   setup_gdt(1);
   load_idt();
   set_cpu_flags();

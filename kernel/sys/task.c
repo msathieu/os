@@ -110,6 +110,7 @@ _Noreturn void setup_multitasking(void) {
     idle_task->registers.rsp = (uintptr_t) malloc(0x2000) + 0x2000;
     idle_task->registers.rip = (uintptr_t) idle;
     idle_task->registers.rflags = rflags;
+    idle_task->cpu = madt_lapics[i]->lapic_id;
     schedule_task(idle_task, 0);
   }
   acquire_lock();

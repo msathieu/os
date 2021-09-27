@@ -53,10 +53,10 @@ void isr_handler_common(struct isr_registers* registers) {
   if (registers->isr == 255) {
     return; // Spurious interrupt
   }
-  acquire_lock();
   if (48 <= registers->isr && registers->isr <= 254) {
     lapic_eoi();
   }
+  acquire_lock();
   if (isr_handlers[registers->isr]) {
     isr_handlers[registers->isr](registers);
     return release_lock();
