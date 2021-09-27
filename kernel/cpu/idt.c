@@ -289,6 +289,7 @@ void setup_idt(void) {
   ISR(249)
   ISR(250)
   ISR(251)
+  ISR(252) // Invalidate page cache
   ISR(253) // SCI
   ISR(254) // Scheduler
   ISR(255) // Spurious interrupt

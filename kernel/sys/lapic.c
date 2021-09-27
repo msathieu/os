@@ -53,6 +53,16 @@ static void write_register(size_t register_i, uint32_t value) {
 void lapic_eoi(void) {
   write_register(LAPIC_REGISTER_EOI, 0);
 }
+void smp_invalidate_page_cache(void) {
+  if (aps_jmp_user) {
+    for (size_t i = 0; i < madt_num_lapics; i++) {
+      if (madt_lapics[i]->lapic_id != get_current_lapic_id() && current_pml4() == current_pml4s[madt_lapics[i]->lapic_id]) {
+        write_register(LAPIC_REGISTER_INTERRUPT_COMMAND + 1, madt_lapics[i]->lapic_id << 24);
+        write_register(LAPIC_REGISTER_INTERRUPT_COMMAND, 252);
+      }
+    }
+  }
+}
 void smp_broadcast_nmi(void) {
   broadcasted_nmi = 1;
   if (aps_jmp_user) {

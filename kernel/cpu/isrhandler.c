@@ -56,6 +56,13 @@ void isr_handler_common(struct isr_registers* registers) {
   if (48 <= registers->isr && registers->isr <= 254) {
     lapic_eoi();
   }
+  if (registers->isr == 252) {
+    asm volatile("mov %%cr3, %%rax; mov %%rax, %%cr3"
+                 :
+                 :
+                 : "rax");
+    return;
+  }
   acquire_lock();
   if (isr_handlers[registers->isr]) {
     isr_handlers[registers->isr](registers);

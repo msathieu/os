@@ -23,6 +23,7 @@ void* map_physical(uintptr_t, size_t, bool, bool);
 void map_range(uintptr_t, size_t, bool, bool, bool);
 void setup_paging(void);
 void set_paging_flags(uintptr_t, size_t, bool, bool, bool);
+void smp_invalidate_page_cache(void);
 void switch_pml4(struct paging_table*);
 
 extern struct process* physical_mappings_process;

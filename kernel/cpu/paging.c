@@ -66,6 +66,7 @@ static void invlpg(uintptr_t address) {
   asm volatile("invlpg (%0)"
                :
                : "r"(address));
+  smp_invalidate_page_cache();
 }
 static struct paging_entry* get_page(uintptr_t address, struct paging_table* pml4) {
   address /= 0x1000;
@@ -251,6 +252,7 @@ void switch_pml4(struct paging_table* pml4) {
                :
                : "r"(convert_to_physical((uintptr_t) pml4, current_pml4())));
   current_pml4s[get_current_lapic_id()] = pml4;
+  smp_invalidate_page_cache();
 }
 uintptr_t get_free_range(size_t size, bool user, bool write, bool exec, uintptr_t requested_start) {
   size = (size + 0xfff) / 0x1000 * 0x1000;
