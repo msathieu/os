@@ -13,6 +13,7 @@
 #include <sys/scheduler.h>
 
 static struct task* current_tasks[256];
+bool is_core_idle[256];
 
 struct task* current_task(void) {
   return current_tasks[get_current_lapic_id()];
@@ -36,7 +37,12 @@ void switch_task(struct task* task, struct isr_registers* isr_registers) {
                : "c"(0xc0000100), "a"(task->fs), "d"(task->fs >> 32));
   current_tasks[get_current_lapic_id()] = task;
   current_task()->start_time = get_time();
-  set_lapic_timer(10);
+  if (task->priority == PRIORITY_IDLE) {
+    is_core_idle[get_current_lapic_id()] = 1;
+  } else {
+    is_core_idle[get_current_lapic_id()] = 0;
+    set_lapic_timer(10);
+  }
 }
 struct task* create_task(struct process* process) {
   struct task* task = calloc(1, sizeof(struct task));

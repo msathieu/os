@@ -32,6 +32,8 @@ struct task {
   size_t cpu;
 };
 
+extern bool is_core_idle[256];
+
 void block_current_task(struct isr_registers*);
 struct task* create_task(struct process*);
 struct task* current_task(void);

@@ -29,7 +29,9 @@ loop:
       return;
     }
   }
-  set_lapic_timer(10);
+  if (!is_core_idle[get_current_lapic_id()]) {
+    set_lapic_timer(10);
+  }
 }
 void schedule_task(struct task* new_task, struct isr_registers* registers) {
   insert_linked_list(&scheduler_list[new_task->priority], &new_task->list_member);
