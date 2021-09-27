@@ -223,6 +223,7 @@ void syscall_wait_irq(union syscall_args* args) {
   }
   if (sci_process == current_task()->process && sci_fired) {
     sci_fired = 0;
+    args->return_value = 253;
     return;
   }
   current_task()->process->irq_handler = current_task();

@@ -42,6 +42,11 @@ static const char* exceptions[] = {
 isr_handler isr_handlers[256];
 
 void isr_handler_common(struct isr_registers* registers) {
+  if (broadcasted_nmi) {
+    while (1) {
+      asm volatile("hlt");
+    }
+  }
   if (32 <= registers->isr && registers->isr <= 47) {
     return; // PIC interrupt
   }

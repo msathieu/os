@@ -18,6 +18,7 @@
 #define LAPIC_REGISTER_TIMER_DIVIDE 0x3e
 #define LAPIC_LVT_DELIVERY_NMI 0x400
 #define LAPIC_LVT_POLARITY_LOW 0x2000
+#define LAPIC_DELIVERY_NMI 0x400
 #define LAPIC_DELIVERY_INIT 0x500
 #define LAPIC_DELIVERY_STARTUP 0x600
 
@@ -32,6 +33,7 @@ struct acpi_madt_nmi {
 static volatile uint32_t* registers;
 static size_t ticks_per_10ms;
 size_t madt_bsp_lapic_id;
+bool broadcasted_nmi;
 
 extern void ap_trampoline(void);
 
@@ -50,6 +52,18 @@ static void write_register(size_t register_i, uint32_t value) {
 }
 void lapic_eoi(void) {
   write_register(LAPIC_REGISTER_EOI, 0);
+}
+void smp_broadcast_nmi(void) {
+  broadcasted_nmi = 1;
+  if (aps_jmp_user) {
+    for (size_t i = 0; i < madt_num_lapics; i++) {
+      if (madt_lapics[i]->lapic_id == get_current_lapic_id()) {
+        continue;
+      }
+      write_register(LAPIC_REGISTER_INTERRUPT_COMMAND + 1, madt_lapics[i]->lapic_id << 24);
+      write_register(LAPIC_REGISTER_INTERRUPT_COMMAND, LAPIC_DELIVERY_NMI);
+    }
+  }
 }
 void setup_lapic(size_t nlapic) {
   if (!nlapic) {
