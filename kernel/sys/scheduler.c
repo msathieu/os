@@ -38,4 +38,14 @@ void schedule_task(struct task* new_task, struct isr_registers* registers) {
   if (registers && new_task->priority < current_task()->priority) {
     scheduler(registers);
   }
+  for (size_t i = 0; i < PRIORITY_IDLE; i++) {
+    if (scheduler_list[i].first) {
+      for (size_t j = 0; j < 256; j++) {
+        if (is_core_idle[j]) {
+          smp_wakeup_core(j);
+        }
+      }
+      return;
+    }
+  }
 }

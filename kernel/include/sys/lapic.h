@@ -11,4 +11,5 @@ void set_lapic_timer(size_t);
 void setup_lapic(size_t);
 void setup_lapic_timer(bool);
 void smp_broadcast_nmi(void);
+void smp_wakeup_core(size_t);
 void start_aps(void);
