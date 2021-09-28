@@ -71,45 +71,54 @@ void syscall_start_process(union syscall_args* args) {
 }
 void syscall_get_pid(union syscall_args* args) {
   if (args->arg1 || args->arg2 || args->arg3 || args->arg4) {
+    acquire_lock();
     puts("Reserved argument is set");
     terminate_current_task(&args->registers);
-    return;
+    return release_lock();
   }
   switch (args->arg0) {
   case 0:
     args->return_value = current_task()->process->pid;
     break;
-  case 1:;
+  case 1:
+    acquire_lock();
     struct task* requester = current_task()->servicing_syscall_requester;
     if (!requester) {
       puts("Not currently handling IPC call");
       terminate_current_task(&args->registers);
-      return;
+      return release_lock();
     }
     args->return_value = requester->process->pid;
+    release_lock();
     break;
   case 2:
+    acquire_lock();
     if (current_task()->process->parent) {
       args->return_value = current_task()->process->parent->pid;
     } else {
       args->return_value = 0;
     }
+    release_lock();
     break;
   case 3:
+    acquire_lock();
     if (!current_task()->servicing_syscall_requester) {
       puts("Not currently handling IPC call");
       terminate_current_task(&args->registers);
-      return;
+      return release_lock();
     }
     if (current_task()->servicing_syscall_requester->spawned_process) {
       args->return_value = current_task()->servicing_syscall_requester->spawned_process->pid;
     } else {
       args->return_value = 0;
     }
+    release_lock();
     break;
   default:
+    acquire_lock();
     puts("Argument out of range");
     terminate_current_task(&args->registers);
+    release_lock();
   }
 }
 void syscall_wait(union syscall_args* args) {
@@ -135,9 +144,10 @@ void syscall_wait(union syscall_args* args) {
 }
 void syscall_has_arguments(union syscall_args* args) {
   if (args->arg1 || args->arg2 || args->arg3 || args->arg4) {
+    acquire_lock();
     puts("Reserved argument is set");
     terminate_current_task(&args->registers);
-    return;
+    return release_lock();
   }
   switch (args->arg0) {
   case 0:
@@ -147,8 +157,10 @@ void syscall_has_arguments(union syscall_args* args) {
     args->return_value = current_task()->process->has_environment_vars;
     break;
   default:
+    acquire_lock();
     puts("Argument out of range");
     terminate_current_task(&args->registers);
+    release_lock();
   }
 }
 void syscall_sleep(union syscall_args* args) {
@@ -185,14 +197,16 @@ void syscall_change_priority(union syscall_args* args) {
 }
 void syscall_set_fs(union syscall_args* args) {
   if (args->arg1 || args->arg2 || args->arg3 || args->arg4) {
+    acquire_lock();
     puts("Reserved argument is set");
     terminate_current_task(&args->registers);
-    return;
+    return release_lock();
   }
   if (args->arg0 >= PAGING_USER_PHYS_MAPPINGS_START) {
+    acquire_lock();
     puts("Invalid FS value");
     terminate_current_task(&args->registers);
-    return;
+    return release_lock();
   }
   current_task()->fs = args->arg0;
   asm volatile("wrmsr"

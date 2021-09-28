@@ -1,29 +1,35 @@
 #include <stdio.h>
+#include <sys/lock.h>
 #include <sys/syscall.h>
 #include <sys/task.h>
 
 void syscall_get_uid(union syscall_args* args) {
   if (args->arg1 || args->arg2 || args->arg3 || args->arg4) {
+    acquire_lock();
     puts("Reserved argument is set");
     terminate_current_task(&args->registers);
-    return;
+    return release_lock();
   }
   switch (args->arg0) {
   case 0:
-    args->return_value = current_task()->process->uid;
+    args->return_value = __atomic_load_n(&current_task()->process->uid, __ATOMIC_SEQ_CST);
     break;
-  case 1:;
+  case 1:
+    acquire_lock();
     struct task* requester = current_task()->servicing_syscall_requester;
     if (!requester) {
       puts("Not currently handling IPC call");
       terminate_current_task(&args->registers);
-      return;
+      return release_lock();
     }
     args->return_value = requester->process->uid;
+    release_lock();
     break;
   default:
+    acquire_lock();
     puts("Argument out of range");
     terminate_current_task(&args->registers);
+    release_lock();
   }
 }
 void syscall_set_spawned_uid(union syscall_args* args) {

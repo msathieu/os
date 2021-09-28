@@ -14,9 +14,10 @@ struct syscall {
 
 static void syscall_version(union syscall_args* args) {
   if (args->arg0 || args->arg1 || args->arg2 || args->arg3 || args->arg4) {
+    acquire_lock();
     puts("Reserved argument is set");
     terminate_current_task(&args->registers);
-    return;
+    return release_lock();
   }
   args->return_value = 0;
 }
@@ -46,9 +47,10 @@ static void syscall_exit(union syscall_args* args) {
 }
 static void syscall_get_time(union syscall_args* args) {
   if (args->arg0 || args->arg1 || args->arg2 || args->arg3 || args->arg4) {
+    acquire_lock();
     puts("Reserved argument is set");
     terminate_current_task(&args->registers);
-    return;
+    return release_lock();
   }
   args->return_value = get_time();
 }
@@ -87,13 +89,13 @@ static void syscall_log(union syscall_args* args) {
   putchar(args->arg0);
 }
 static struct syscall syscall_handlers[256] = {
-  {syscall_version, 1},
+  {syscall_version, 0},
   {syscall_yield, 1},
   {syscall_exit, 1},
   {syscall_spawn_process, 1},
   {syscall_start_process, 1},
-  {syscall_get_pid, 1},
-  {syscall_get_uid, 1},
+  {syscall_get_pid, 0},
+  {syscall_get_uid, 0},
   {syscall_register_ipc, 1},
   {syscall_wait_ipc, 1},
   {syscall_return_ipc, 1},
@@ -111,20 +113,20 @@ static struct syscall syscall_handlers[256] = {
   {syscall_wait, 1},
   {syscall_block_ipc_call, 1},
   {syscall_unblock_ipc_call, 1},
-  {syscall_has_arguments, 1},
+  {syscall_has_arguments, 0},
   {syscall_is_caller_child, 1},
   {syscall_map_memory, 1},
-  {syscall_get_time, 1},
+  {syscall_get_time, 0},
   {syscall_change_memory_permissions, 1},
   {syscall_sleep, 1},
   {syscall_change_priority, 1},
-  {syscall_get_acpi_revision, 1},
+  {syscall_get_acpi_revision, 0},
   {syscall_get_acpi_table, 1},
   {syscall_reset, 1},
   {syscall_log, 1},
   {syscall_listen_exits, 1},
   {syscall_get_exited_pid, 1},
-  {syscall_set_fs, 1},
+  {syscall_set_fs, 0},
   {syscall_spawn_thread, 1},
   {syscall_fork, 1},
   {syscall_start_fork, 1}};

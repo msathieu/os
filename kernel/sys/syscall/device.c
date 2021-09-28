@@ -49,22 +49,19 @@ void syscall_access_ioport(union syscall_args* args) {
     acquire_lock();
     puts("Reserved argument is set");
     terminate_current_task(&args->registers);
-    release_lock();
-    return;
+    return release_lock();
   }
   if (args->arg0 >= 0x10000) {
     acquire_lock();
     puts("Invalid port");
     terminate_current_task(&args->registers);
-    release_lock();
-    return;
+    return release_lock();
   }
   if (__atomic_load_n(&ioports_process[args->arg0], __ATOMIC_SEQ_CST) != current_task()->process && !has_process_capability(current_task()->process, CAP_IOPORT)) {
     acquire_lock();
     puts("No permission to access port");
     terminate_current_task(&args->registers);
-    release_lock();
-    return;
+    return release_lock();
   }
   switch (args->arg1) {
   case 0:
@@ -333,14 +330,16 @@ void syscall_get_fb_info(union syscall_args* args) {
 }
 void syscall_get_acpi_revision(union syscall_args* args) {
   if (args->arg0 || args->arg1 || args->arg2 || args->arg3 || args->arg4) {
+    acquire_lock();
     puts("Reserved argument is set");
     terminate_current_task(&args->registers);
-    return;
+    return release_lock();
   }
   if (!has_process_capability(current_task()->process, CAP_ACPI)) {
+    acquire_lock();
     puts("No permission to get ACPI revision");
     terminate_current_task(&args->registers);
-    return;
+    return release_lock();
   }
   args->return_value = acpi_revision;
 }
