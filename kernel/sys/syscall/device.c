@@ -5,6 +5,7 @@
 #include <struct.h>
 #include <sys/acpi.h>
 #include <sys/ioapic.h>
+#include <sys/lock.h>
 #include <sys/scheduler.h>
 #include <sys/syscall.h>
 
@@ -40,23 +41,29 @@ void syscall_grant_ioport(union syscall_args* args) {
     terminate_current_task(&args->registers);
     return;
   }
-  ioports_process[args->arg0] = current_task()->spawned_process;
+  __atomic_store_n(&ioports_process[args->arg0], current_task()->spawned_process, __ATOMIC_SEQ_CST);
   current_task()->spawned_process->ioports_assigned = 1;
 }
 void syscall_access_ioport(union syscall_args* args) {
   if (args->arg4) {
+    acquire_lock();
     puts("Reserved argument is set");
     terminate_current_task(&args->registers);
+    release_lock();
     return;
   }
   if (args->arg0 >= 0x10000) {
+    acquire_lock();
     puts("Invalid port");
     terminate_current_task(&args->registers);
+    release_lock();
     return;
   }
-  if (ioports_process[args->arg0] != current_task()->process && !has_process_capability(current_task()->process, CAP_IOPORT)) {
+  if (__atomic_load_n(&ioports_process[args->arg0], __ATOMIC_SEQ_CST) != current_task()->process && !has_process_capability(current_task()->process, CAP_IOPORT)) {
+    acquire_lock();
     puts("No permission to access port");
     terminate_current_task(&args->registers);
+    release_lock();
     return;
   }
   switch (args->arg1) {
@@ -72,8 +79,10 @@ void syscall_access_ioport(union syscall_args* args) {
       args->return_value = inl(args->arg0);
       break;
     default:
+      acquire_lock();
       puts("Argument out of range");
       terminate_current_task(&args->registers);
+      release_lock();
     }
     break;
   case 1:
@@ -88,13 +97,17 @@ void syscall_access_ioport(union syscall_args* args) {
       outl(args->arg0, args->arg3);
       break;
     default:
+      acquire_lock();
       puts("Argument out of range");
       terminate_current_task(&args->registers);
+      release_lock();
     }
     break;
   default:
+    acquire_lock();
     puts("Argument out of range");
     terminate_current_task(&args->registers);
+    release_lock();
   }
 }
 static void usermode_irq_handler(struct isr_registers* registers) {

@@ -78,5 +78,5 @@ void syscall_drop_capabilities(union syscall_args* args) {
     terminate_current_task(&args->registers);
     return;
   }
-  current_task()->process->capabilities[args->arg0] &= ~args->arg1;
+  __atomic_and_fetch(&current_task()->process->capabilities[args->arg0], ~args->arg1, __ATOMIC_SEQ_CST);
 }

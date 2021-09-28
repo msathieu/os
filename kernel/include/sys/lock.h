@@ -4,12 +4,14 @@
 extern bool smp_lock;
 
 static inline void acquire_lock(void) {
-  while (!__sync_bool_compare_and_swap(&smp_lock, 0, 1)) {
+  bool expected = 0;
+  while (!__atomic_compare_exchange_n(&smp_lock, &expected, 1, 0, __ATOMIC_SEQ_CST, __ATOMIC_RELAXED)) {
+    expected = 0;
     asm volatile("pause");
   }
-  __sync_synchronize();
+  __atomic_thread_fence(__ATOMIC_SEQ_CST);
 }
 static inline void release_lock(void) {
-  __sync_synchronize();
+  __atomic_thread_fence(__ATOMIC_SEQ_CST);
   smp_lock = 0;
 }

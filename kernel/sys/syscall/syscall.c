@@ -7,6 +7,11 @@
 
 typedef void (*syscall_handler)(union syscall_args*);
 
+struct syscall {
+  syscall_handler handler;
+  bool lock;
+};
+
 static void syscall_version(union syscall_args* args) {
   if (args->arg0 || args->arg1 || args->arg2 || args->arg3 || args->arg4) {
     puts("Reserved argument is set");
@@ -35,7 +40,7 @@ static void syscall_exit(union syscall_args* args) {
     return;
   }
   if (args->arg1) {
-    current_task()->process->should_exit = 1;
+    __atomic_store_n(&current_task()->process->should_exit, 1, __ATOMIC_SEQ_CST);
   }
   terminate_current_task(&args->registers);
 }
@@ -81,64 +86,73 @@ static void syscall_log(union syscall_args* args) {
   }
   putchar(args->arg0);
 }
-static syscall_handler syscall_handlers[256] = {
-  syscall_version,
-  syscall_yield,
-  syscall_exit,
-  syscall_spawn_process,
-  syscall_start_process,
-  syscall_get_pid,
-  syscall_get_uid,
-  syscall_register_ipc,
-  syscall_wait_ipc,
-  syscall_return_ipc,
-  syscall_set_spawned_uid,
-  syscall_grant_ioport,
-  syscall_access_ioport,
-  syscall_register_irq,
-  syscall_clear_irqs,
-  syscall_wait_irq,
-  syscall_get_ipc_caller_capabilities,
-  syscall_grant_capabilities,
-  syscall_drop_capabilities,
-  syscall_map_phys_memory,
-  syscall_get_fb_info,
-  syscall_wait,
-  syscall_block_ipc_call,
-  syscall_unblock_ipc_call,
-  syscall_has_arguments,
-  syscall_is_caller_child,
-  syscall_map_memory,
-  syscall_get_time,
-  syscall_change_memory_permissions,
-  syscall_sleep,
-  syscall_change_priority,
-  syscall_get_acpi_revision,
-  syscall_get_acpi_table,
-  syscall_reset,
-  syscall_log,
-  syscall_listen_exits,
-  syscall_get_exited_pid,
-  syscall_set_fs,
-  syscall_spawn_thread,
-  syscall_fork,
-  syscall_start_fork};
+static struct syscall syscall_handlers[256] = {
+  {syscall_version, 1},
+  {syscall_yield, 1},
+  {syscall_exit, 1},
+  {syscall_spawn_process, 1},
+  {syscall_start_process, 1},
+  {syscall_get_pid, 1},
+  {syscall_get_uid, 1},
+  {syscall_register_ipc, 1},
+  {syscall_wait_ipc, 1},
+  {syscall_return_ipc, 1},
+  {syscall_set_spawned_uid, 1},
+  {syscall_grant_ioport, 1},
+  {syscall_access_ioport, 0},
+  {syscall_register_irq, 1},
+  {syscall_clear_irqs, 1},
+  {syscall_wait_irq, 1},
+  {syscall_get_ipc_caller_capabilities, 1},
+  {syscall_grant_capabilities, 1},
+  {syscall_drop_capabilities, 1},
+  {syscall_map_phys_memory, 1},
+  {syscall_get_fb_info, 1},
+  {syscall_wait, 1},
+  {syscall_block_ipc_call, 1},
+  {syscall_unblock_ipc_call, 1},
+  {syscall_has_arguments, 1},
+  {syscall_is_caller_child, 1},
+  {syscall_map_memory, 1},
+  {syscall_get_time, 1},
+  {syscall_change_memory_permissions, 1},
+  {syscall_sleep, 1},
+  {syscall_change_priority, 1},
+  {syscall_get_acpi_revision, 1},
+  {syscall_get_acpi_table, 1},
+  {syscall_reset, 1},
+  {syscall_log, 1},
+  {syscall_listen_exits, 1},
+  {syscall_get_exited_pid, 1},
+  {syscall_set_fs, 1},
+  {syscall_spawn_thread, 1},
+  {syscall_fork, 1},
+  {syscall_start_fork, 1}};
 
 void syscall_common(union syscall_args* args) {
-  acquire_lock();
-  if (current_task()->process->should_exit) {
+  if (__atomic_load_n(&current_task()->process->should_exit, __ATOMIC_SEQ_CST)) {
+    acquire_lock();
     terminate_current_task(&args->registers);
     return release_lock();
   }
   if (args->syscall & 0xffffffffffffff00) {
+    acquire_lock();
     syscall_handle_ipc(args);
+    release_lock();
   } else {
-    if (!syscall_handlers[args->syscall]) {
+    if (!syscall_handlers[args->syscall].handler) {
+      acquire_lock();
       printf("Invalid syscall %ld\n", args->syscall);
       terminate_current_task(&args->registers);
       return release_lock();
     }
-    syscall_handlers[args->syscall](args);
+    bool lock = syscall_handlers[args->syscall].lock;
+    if (lock) {
+      acquire_lock();
+    }
+    syscall_handlers[args->syscall].handler(args);
+    if (lock) {
+      release_lock();
+    }
   }
-  release_lock();
 }
