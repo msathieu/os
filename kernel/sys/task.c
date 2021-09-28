@@ -130,3 +130,25 @@ _Noreturn void setup_multitasking(void) {
   }
   panic("No init loaded");
 }
+_Noreturn void ap_jump_idle(void) {
+  asm volatile("mov %%cr3, %%rax; mov %%rax, %%cr3"
+               :
+               :
+               : "rax");
+  acquire_lock();
+  is_core_idle[get_current_lapic_id()] = 1;
+get_idle:
+  current_tasks[get_current_lapic_id()] = (struct task*) scheduler_list[PRIORITY_IDLE].first;
+  scheduler_list[PRIORITY_IDLE].first = current_task()->list_member.next;
+  if (current_task()->cpu != get_current_lapic_id()) {
+    insert_linked_list(&scheduler_list[PRIORITY_IDLE], &current_task()->list_member);
+    goto get_idle;
+  }
+  release_lock();
+  current_task()->start_time = get_time();
+  set_lapic_timer(10);
+  asm volatile("mov %0, %%rsp; sti; jmp idle"
+               :
+               : "r"(current_task()->registers.rsp));
+  __builtin_unreachable();
+}

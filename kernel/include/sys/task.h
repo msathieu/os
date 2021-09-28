@@ -34,6 +34,7 @@ struct task {
 
 extern bool is_core_idle[256];
 
+_Noreturn void ap_jump_idle(void);
 void block_current_task(struct isr_registers*);
 struct task* create_task(struct process*);
 struct task* current_task(void);

@@ -51,9 +51,9 @@ build: private.key
 	$(MAKE) -Csh
 	$(MAKE) -Ccoreutils
 run-grub: build-grub
-	qemu-system-x86_64 -drive file=os.iso,format=raw -cpu max -serial stdio -m 512
+	qemu-system-x86_64 -drive file=os.iso,format=raw -cpu max -serial stdio -m 512 -smp 2
 run-grub-nographic: build-grub
-	qemu-system-x86_64 -drive file=os.iso,format=raw -cpu max -nographic -m 512
+	qemu-system-x86_64 -drive file=os.iso,format=raw -cpu max -nographic -m 512 -smp 2
 toolchain:
 	$(MAKE) install-headers -Clibc
 	$(MAKE) build-toolchain -Ctools

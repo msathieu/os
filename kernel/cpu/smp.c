@@ -4,6 +4,7 @@
 #include <panic.h>
 #include <stdint.h>
 #include <sys/lapic.h>
+#include <sys/task.h>
 
 volatile bool ap_startup;
 size_t ap_nlapic;
@@ -87,7 +88,5 @@ _Noreturn void ap_entry(void) {
   while (!aps_jmp_user) {
     asm volatile("pause");
   }
-  while (1) {
-    asm volatile("hlt");
-  }
+  ap_jump_idle();
 }
