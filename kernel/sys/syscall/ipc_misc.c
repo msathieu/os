@@ -3,11 +3,6 @@
 #include <sys/task.h>
 
 void syscall_register_ipc(union syscall_args* args) {
-  if (args->arg2 || args->arg3 || args->arg4) {
-    puts("Reserved argument is set");
-    terminate_current_task(&args->registers);
-    return;
-  }
   if (args->arg0 > 1) {
     puts("Argument is out of range");
     terminate_current_task(&args->registers);
@@ -32,11 +27,6 @@ void syscall_register_ipc(union syscall_args* args) {
   }
 }
 void syscall_get_ipc_caller_capabilities(union syscall_args* args) {
-  if (args->arg1 || args->arg2 || args->arg3 || args->arg4) {
-    puts("Reserved argument is set");
-    terminate_current_task(&args->registers);
-    return;
-  }
   if (!args->arg0) {
     puts("Not allowed to access kernel capabilities");
     terminate_current_task(&args->registers);
@@ -70,11 +60,6 @@ static bool has_child_with_pid(size_t pid, struct process* process) {
   return 0;
 }
 void syscall_is_caller_child(union syscall_args* args) {
-  if (args->arg0 || args->arg1 || args->arg2 || args->arg3 || args->arg4) {
-    puts("Reserved argument is set");
-    terminate_current_task(&args->registers);
-    return;
-  }
   if (!current_task()->servicing_syscall_requester) {
     puts("Not currently handling IPC call");
     terminate_current_task(&args->registers);

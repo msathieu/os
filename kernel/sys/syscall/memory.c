@@ -4,11 +4,6 @@
 #include <sys/task.h>
 
 void syscall_map_memory(union syscall_args* args) {
-  if (args->arg4) {
-    puts("Reserved argument is set");
-    terminate_current_task(&args->registers);
-    return;
-  }
   if (args->arg1 >= 2) {
     puts("Argument out of range");
     terminate_current_task(&args->registers);
@@ -38,11 +33,6 @@ void syscall_map_memory(union syscall_args* args) {
   args->return_value = address;
 }
 void syscall_change_memory_permissions(union syscall_args* args) {
-  if (args->arg4) {
-    puts("Reserved argument is set");
-    terminate_current_task(&args->registers);
-    return;
-  }
   if (args->arg2 >= 2) {
     puts("Argument out of range");
     terminate_current_task(&args->registers);

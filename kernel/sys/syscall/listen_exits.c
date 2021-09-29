@@ -7,11 +7,6 @@
 struct process* exit_listener_processes[64];
 
 void syscall_listen_exits(union syscall_args* args) {
-  if (args->arg0 || args->arg1 || args->arg2 || args->arg3 || args->arg4) {
-    puts("Reserved argument is set");
-    terminate_current_task(&args->registers);
-    return;
-  }
   if (!has_process_capability(current_task()->process, CAP_LISTEN_EXITS)) {
     puts("Not allowed to listen for process exits");
     terminate_current_task(&args->registers);
@@ -33,11 +28,6 @@ void syscall_listen_exits(union syscall_args* args) {
   terminate_current_task(&args->registers);
 }
 void syscall_get_exited_pid(union syscall_args* args) {
-  if (args->arg0 || args->arg1 || args->arg2 || args->arg3 || args->arg4) {
-    puts("Reserved argument is set");
-    terminate_current_task(&args->registers);
-    return;
-  }
   if (!current_task()->process->exit_listener) {
     puts("Not listening to process exits");
     terminate_current_task(&args->registers);

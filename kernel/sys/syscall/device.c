@@ -16,11 +16,6 @@ struct process* sci_process;
 static bool sci_fired;
 
 void syscall_grant_ioport(union syscall_args* args) {
-  if (args->arg1 || args->arg2 || args->arg3 || args->arg4) {
-    puts("Reserved argument is set");
-    terminate_current_task(&args->registers);
-    return;
-  }
   if (!has_process_capability(current_task()->process, CAP_IOPORT)) {
     puts("Not allowed to register port access");
     terminate_current_task(&args->registers);
@@ -45,12 +40,6 @@ void syscall_grant_ioport(union syscall_args* args) {
   current_task()->spawned_process->ioports_assigned = 1;
 }
 void syscall_access_ioport(union syscall_args* args) {
-  if (args->arg4) {
-    acquire_lock();
-    puts("Reserved argument is set");
-    terminate_current_task(&args->registers);
-    return release_lock();
-  }
   if (args->arg0 >= 0x10000) {
     acquire_lock();
     puts("Invalid port");
@@ -131,11 +120,6 @@ static void usermode_irq_handler(struct isr_registers* registers) {
   }
 }
 void syscall_register_irq(union syscall_args* args) {
-  if (args->arg2 || args->arg3 || args->arg4) {
-    puts("Reserved argument is set");
-    terminate_current_task(&args->registers);
-    return;
-  }
   if (!has_process_capability(current_task()->process, CAP_IRQ)) {
     puts("Not allowed to register IRQ");
     terminate_current_task(&args->registers);
@@ -189,11 +173,6 @@ void syscall_register_irq(union syscall_args* args) {
   }
 }
 void syscall_clear_irqs(union syscall_args* args) {
-  if (args->arg0 || args->arg1 || args->arg2 || args->arg3 || args->arg4) {
-    puts("Reserved argument is set");
-    terminate_current_task(&args->registers);
-    return;
-  }
   if (!current_task()->process->irqs_assigned) {
     puts("No permission to handle IRQs");
     terminate_current_task(&args->registers);
@@ -209,11 +188,6 @@ void syscall_clear_irqs(union syscall_args* args) {
   }
 }
 void syscall_wait_irq(union syscall_args* args) {
-  if (args->arg0 || args->arg1 || args->arg2 || args->arg3 || args->arg4) {
-    puts("Reserved argument is set");
-    terminate_current_task(&args->registers);
-    return;
-  }
   if (!current_task()->process->irqs_assigned) {
     puts("No permission to handle IRQs");
     terminate_current_task(&args->registers);
@@ -240,11 +214,6 @@ void syscall_wait_irq(union syscall_args* args) {
   block_current_task(&args->registers);
 }
 void syscall_map_phys_memory(union syscall_args* args) {
-  if (args->arg3 || args->arg4) {
-    puts("Reserved argument is set");
-    terminate_current_task(&args->registers);
-    return;
-  }
   if (!has_process_capability(current_task()->process, CAP_MAP_MEMORY)) {
     puts("No permission to map memory");
     terminate_current_task(&args->registers);
@@ -288,15 +257,11 @@ void syscall_map_phys_memory(union syscall_args* args) {
   }
 }
 void syscall_get_fb_info(union syscall_args* args) {
-  if (args->arg1 || args->arg2 || args->arg3 || args->arg4) {
-    puts("Reserved argument is set");
-    terminate_current_task(&args->registers);
-    return;
-  }
   if (!has_process_capability(current_task()->process, CAP_GET_FB_INFO)) {
+    acquire_lock();
     puts("No permission to get framebuffer info");
     terminate_current_task(&args->registers);
-    return;
+    return release_lock();
   }
   switch (args->arg0) {
   case 0:
@@ -324,17 +289,13 @@ void syscall_get_fb_info(union syscall_args* args) {
     args->return_value = loader_struct.fb_blue_index;
     break;
   default:
+    acquire_lock();
     puts("Argument out of range");
     terminate_current_task(&args->registers);
+    release_lock();
   }
 }
 void syscall_get_acpi_revision(union syscall_args* args) {
-  if (args->arg0 || args->arg1 || args->arg2 || args->arg3 || args->arg4) {
-    acquire_lock();
-    puts("Reserved argument is set");
-    terminate_current_task(&args->registers);
-    return release_lock();
-  }
   if (!has_process_capability(current_task()->process, CAP_ACPI)) {
     acquire_lock();
     puts("No permission to get ACPI revision");

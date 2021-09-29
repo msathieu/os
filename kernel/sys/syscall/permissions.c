@@ -4,12 +4,6 @@
 #include <sys/task.h>
 
 void syscall_get_uid(union syscall_args* args) {
-  if (args->arg1 || args->arg2 || args->arg3 || args->arg4) {
-    acquire_lock();
-    puts("Reserved argument is set");
-    terminate_current_task(&args->registers);
-    return release_lock();
-  }
   switch (args->arg0) {
   case 0:
     args->return_value = __atomic_load_n(&current_task()->process->uid, __ATOMIC_SEQ_CST);
@@ -33,11 +27,6 @@ void syscall_get_uid(union syscall_args* args) {
   }
 }
 void syscall_set_spawned_uid(union syscall_args* args) {
-  if (args->arg1 || args->arg2 || args->arg3 || args->arg4) {
-    puts("Reserved argument is set");
-    terminate_current_task(&args->registers);
-    return;
-  }
   if (!current_task()->spawned_process) {
     puts("No process is currently being spawned");
     terminate_current_task(&args->registers);
@@ -51,11 +40,6 @@ void syscall_set_spawned_uid(union syscall_args* args) {
   current_task()->spawned_process->uid = args->arg0;
 }
 void syscall_grant_capabilities(union syscall_args* args) {
-  if (args->arg2 || args->arg3 || args->arg4) {
-    puts("Reserved argument is set");
-    terminate_current_task(&args->registers);
-    return;
-  }
   if (args->arg0 >= 64) {
     puts("Capability namespace out of range");
     terminate_current_task(&args->registers);
@@ -74,11 +58,6 @@ void syscall_grant_capabilities(union syscall_args* args) {
   current_task()->spawned_process->capabilities[args->arg0] |= args->arg1;
 }
 void syscall_drop_capabilities(union syscall_args* args) {
-  if (args->arg2 || args->arg3 || args->arg4) {
-    puts("Reserved argument is set");
-    terminate_current_task(&args->registers);
-    return;
-  }
   if (args->arg0 >= 64) {
     puts("Capability namespace out of range");
     terminate_current_task(&args->registers);

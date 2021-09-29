@@ -42,11 +42,6 @@ void syscall_spawn_process(union syscall_args* args) {
   args->return_value = current_task()->spawned_process->pid;
 }
 void syscall_start_process(union syscall_args* args) {
-  if (args->arg2 || args->arg3 || args->arg4) {
-    puts("Reserved argument is set");
-    terminate_current_task(&args->registers);
-    return;
-  }
   if (args->arg0 >= 2) {
     puts("Argument out of range");
     terminate_current_task(&args->registers);
@@ -70,12 +65,6 @@ void syscall_start_process(union syscall_args* args) {
   load_elf(current_task()->process->file_i);
 }
 void syscall_get_pid(union syscall_args* args) {
-  if (args->arg1 || args->arg2 || args->arg3 || args->arg4) {
-    acquire_lock();
-    puts("Reserved argument is set");
-    terminate_current_task(&args->registers);
-    return release_lock();
-  }
   switch (args->arg0) {
   case 0:
     args->return_value = current_task()->process->pid;
@@ -122,11 +111,6 @@ void syscall_get_pid(union syscall_args* args) {
   }
 }
 void syscall_wait(union syscall_args* args) {
-  if (args->arg0 || args->arg1 || args->arg2 || args->arg3 || args->arg4) {
-    puts("Reserved argument is set");
-    terminate_current_task(&args->registers);
-    return;
-  }
   for (struct process* child = current_task()->process->first_child; child; child = child->next_sibling) {
     if (child->exited) {
       args->return_value = child->pid;
@@ -143,12 +127,6 @@ void syscall_wait(union syscall_args* args) {
   block_current_task(&args->registers);
 }
 void syscall_has_arguments(union syscall_args* args) {
-  if (args->arg1 || args->arg2 || args->arg3 || args->arg4) {
-    acquire_lock();
-    puts("Reserved argument is set");
-    terminate_current_task(&args->registers);
-    return release_lock();
-  }
   switch (args->arg0) {
   case 0:
     args->return_value = current_task()->process->has_arguments;
@@ -164,19 +142,9 @@ void syscall_has_arguments(union syscall_args* args) {
   }
 }
 void syscall_sleep(union syscall_args* args) {
-  if (args->arg1 || args->arg2 || args->arg3 || args->arg4) {
-    puts("Reserved argument is set");
-    terminate_current_task(&args->registers);
-    return;
-  }
   sleep_current_task(args->arg0, &args->registers);
 }
 void syscall_change_priority(union syscall_args* args) {
-  if (args->arg1 || args->arg2 || args->arg3 || args->arg4) {
-    puts("Reserved argument is set");
-    terminate_current_task(&args->registers);
-    return;
-  }
   if (args->arg0 > PRIORITY_USER_LOW) {
     puts("Argument out of range");
     terminate_current_task(&args->registers);
@@ -196,12 +164,6 @@ void syscall_change_priority(union syscall_args* args) {
   scheduler(&args->registers);
 }
 void syscall_set_fs(union syscall_args* args) {
-  if (args->arg1 || args->arg2 || args->arg3 || args->arg4) {
-    acquire_lock();
-    puts("Reserved argument is set");
-    terminate_current_task(&args->registers);
-    return release_lock();
-  }
   if (args->arg0 >= PAGING_USER_PHYS_MAPPINGS_START) {
     acquire_lock();
     puts("Invalid FS value");
@@ -214,11 +176,6 @@ void syscall_set_fs(union syscall_args* args) {
                : "c"(0xc0000100), "a"(current_task()->fs), "d"(current_task()->fs >> 32));
 }
 void syscall_spawn_thread(union syscall_args* args) {
-  if (args->arg3 || args->arg4) {
-    puts("Reserved argument is set");
-    terminate_current_task(&args->registers);
-    return;
-  }
   if (args->arg0 >= PAGING_USER_PHYS_MAPPINGS_START) {
     puts("Invalid thread start");
     terminate_current_task(&args->registers);
@@ -233,11 +190,6 @@ void syscall_spawn_thread(union syscall_args* args) {
   jmp_user(arg1, arg2, arg0);
 }
 void syscall_fork(union syscall_args* args) {
-  if (args->arg0 || args->arg1 || args->arg2 || args->arg3 || args->arg4) {
-    puts("Reserved argument is set");
-    terminate_current_task(&args->registers);
-    return;
-  }
   if (current_task()->spawned_process) {
     puts("Already spawning process");
     terminate_current_task(&args->registers);
@@ -246,11 +198,6 @@ void syscall_fork(union syscall_args* args) {
   spawn_child(1);
 }
 void syscall_start_fork(union syscall_args* args) {
-  if (args->arg0 || args->arg1 || args->arg2 || args->arg3 || args->arg4) {
-    puts("Reserved argument is set");
-    terminate_current_task(&args->registers);
-    return;
-  }
   if (!current_task()->spawned_process) {
     puts("No process ready to start");
     terminate_current_task(&args->registers);

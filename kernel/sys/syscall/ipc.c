@@ -7,11 +7,6 @@
 struct linked_list syscall_processes;
 
 void syscall_wait_ipc(union syscall_args* args) {
-  if (args->arg0 || args->arg1 || args->arg2 || args->arg3 || args->arg4) {
-    puts("Reserved argument is set");
-    terminate_current_task(&args->registers);
-    return;
-  }
   if (current_task()->servicing_syscall_requester) {
     puts("Can't register handler while servicing syscall");
     terminate_current_task(&args->registers);
@@ -155,11 +150,6 @@ void syscall_handle_ipc(union syscall_args* args) {
   }
 }
 void syscall_return_ipc(union syscall_args* args) {
-  if (args->arg1 || args->arg2 || args->arg3 || args->arg4) {
-    puts("Reserved argument is set");
-    terminate_current_task(&args->registers);
-    return;
-  }
   if (current_task()->sharing_memory) {
     for (size_t i = 0; i < PAGING_PHYSICAL_MAPPINGS_SIZE / 0x1000 / 64; i++) {
       if (!current_task()->mappings_bitset[i]) {
@@ -187,11 +177,6 @@ void syscall_return_ipc(union syscall_args* args) {
   schedule_task(requester, &args->registers);
 }
 void syscall_block_ipc_call(union syscall_args* args) {
-  if (args->arg0 || args->arg1 || args->arg2 || args->arg3 || args->arg4) {
-    puts("Reserved argument is set");
-    terminate_current_task(&args->registers);
-    return;
-  }
   struct task* requester = current_task()->servicing_syscall_requester;
   if (!requester) {
     puts("Not currently handling IPC call");
@@ -217,11 +202,6 @@ void syscall_block_ipc_call(union syscall_args* args) {
   current_task()->servicing_syscall_requester = 0;
 }
 void syscall_unblock_ipc_call(union syscall_args* args) {
-  if (args->arg1 || args->arg2 || args->arg3 || args->arg4) {
-    puts("Reserved argument is set");
-    terminate_current_task(&args->registers);
-    return;
-  }
   struct task* syscall_requester = 0;
   for (struct task* task = (struct task*) current_task()->process->blocked_ipc_calls_queue.first; task; task = (struct task*) task->list_member.next) {
     if (!args->arg0 || task->process->pid == args->arg0) {
