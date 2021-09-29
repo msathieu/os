@@ -11,7 +11,7 @@ $(DESTDIR)/lib/libc.a: $(OFILES)
 	$(AR) d $@ calloc.o
 install-headers:
 	mkdir -p $(DESTDIR)/include/__/freestanding
-	cp -r include $(DESTDIR)
-	cp freestanding/include/*.h $(DESTDIR)/include/__/freestanding
+	cp -rp include $(DESTDIR)
+	cp -p freestanding/include/*.h $(DESTDIR)/include/__/freestanding
 -include $(OFILES:.o=.d)
 .DELETE_ON_ERROR:

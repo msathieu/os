@@ -4,7 +4,7 @@ export CC:=clang
 export AR:=llvm-ar
 export AS:=clang
 export OBJCOPY:=llvm-objcopy
-export CFLAGS:=-Wall -Wextra -Werror -O2 -MMD -Iinclude -Wshadow
+export CFLAGS:=-Wall -Wextra -Werror -O2 -MD -Iinclude -Wshadow
 export ASFLAGS:=-c
 export LDTARGET:=elf
 ifeq ($(shell uname),Darwin)
