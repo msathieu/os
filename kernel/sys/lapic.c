@@ -84,7 +84,7 @@ void setup_lapic(size_t nlapic) {
     registers = map_physical(madt_lapic_address, 0x400, 1, 1);
     madt_bsp_lapic_id = madt_lapics[0]->lapic_id;
     if (madt_bsp_lapic_id) {
-      //TODO: Allow BSP to have different ID
+      // TODO: Allow BSP to have different ID
       panic("BSP has unexpected LAPIC ID");
     }
   }

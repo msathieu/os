@@ -308,7 +308,7 @@ struct paging_table* clone_pml4(void) {
   struct paging_table* pml4 = current_pml4();
   struct paging_table* clone_pml4 = create_pml4();
   switch_pml4(clone_pml4);
-  //TODO: Clone last entry partially up to PAGING_USER_PHYS_MAPPINGS_START
+  // TODO: Clone last entry partially up to PAGING_USER_PHYS_MAPPINGS_START
   for (size_t i = 0; i < 255; i++) {
     struct paging_table* pdpt = pml4->entries[i];
     if (pdpt) {

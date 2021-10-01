@@ -292,10 +292,10 @@ void _ZdaPvjSt11align_val_t(void* p, uint64_t size, uint64_t align) {
 
 __attribute__((used)) static const interpose_t macinterpose_malloc[]
   __attribute__((section("__DATA, __interpose"))) = {
-    //new and new[]
+    // new and new[]
     MAC_INTERPOSE_PAIR(rpmalloc, _Znwm),
     MAC_INTERPOSE_PAIR(rpmalloc, _Znam),
-    //delete and delete[]
+    // delete and delete[]
     MAC_INTERPOSE_PAIR(rpfree, _ZdlPv),
     MAC_INTERPOSE_PAIR(rpfree, _ZdaPv),
     MAC_INTERPOSE_PAIR(rpmalloc, malloc),
@@ -494,7 +494,7 @@ extern __declspec(dllexport) BOOL WINAPI
   return TRUE;
 }
 
-//end BUILD_DYNAMIC_LINK
+// end BUILD_DYNAMIC_LINK
 #else
 
 extern void
@@ -518,7 +518,7 @@ __declspec(allocate(".CRT$XIB")) void (*_rpmalloc_module_init)(void) = _global_r
 
 #endif
 
-//end !BUILD_DYNAMIC_LINK
+// end !BUILD_DYNAMIC_LINK
 #endif
 
 #else
@@ -605,7 +605,7 @@ int pthread_create(pthread_t* thread,
   thread_starter_arg* starter_arg = rpmalloc(sizeof(thread_starter_arg));
   starter_arg->real_start = start_routine;
   starter_arg->real_arg = arg;
-  return (*(int (*)(pthread_t*, const pthread_attr_t*, void* (*) (void*), void*)) real_pthread_create) (thread, attr, thread_starter, starter_arg);
+  return (*(int (*)(pthread_t*, const pthread_attr_t*, void* (*) (void*), void*)) real_pthread_create)(thread, attr, thread_starter, starter_arg);
 }
 
 #endif

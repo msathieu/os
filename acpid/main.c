@@ -7,7 +7,7 @@
 #include <pthread.h>
 #include <syslog.h>
 
-//TODO: Replace with mutex
+// TODO: Replace with mutex
 static pthread_spinlock_t lock;
 
 static int64_t power_state_handler(uint64_t type, uint64_t arg1, uint64_t arg2, uint64_t arg3, uint64_t arg4) {
