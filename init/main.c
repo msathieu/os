@@ -82,7 +82,7 @@ static void spawn(const char* name) {
     uintptr_t fb_phys_addr = _syscall(_SYSCALL_GET_FB_INFO, 0, 0, 0, 0, 0);
     size_t height = _syscall(_SYSCALL_GET_FB_INFO, 2, 0, 0, 0, 0);
     size_t pitch = _syscall(_SYSCALL_GET_FB_INFO, 3, 0, 0, 0, 0);
-    map_physical_memory(fb_phys_addr, height * pitch, 1);
+    map_physical_memory(fb_phys_addr, (height * pitch + 0xfff) / 0x1000 * 0x1000, 1);
   } else if (!strcmp(name, "/sbin/ps2d")) {
     grant_ioport(0x60);
     grant_ioport(0x64);

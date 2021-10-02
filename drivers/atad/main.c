@@ -257,6 +257,8 @@ static int64_t write_handler(uint64_t offset, uint64_t arg1, uint64_t arg2, uint
 }
 int main(void) {
   register_ipc(1);
+  outb(alternate_ports[0], 0);
+  outb(alternate_ports[1], 0);
   identify(0, 0);
   identify(0, 1);
   identify(1, 0);
