@@ -59,11 +59,11 @@ build: private.key
 	cp -r sysroot/sbin system
 	tools/bin/svfs
 	tools/bin/lvm
-QEMU:=qemu-system-x86_64 -drive file=os.iso,format=raw -cpu max -serial stdio -m 512 -smp 2
+QEMU:=qemu-system-x86_64 -drive file=os.iso,format=raw -cpu max -m 512 -smp 2
 run-efi: build-efi
-	$(QEMU) -bios OVMF.fd
+	$(QEMU) -serial stdio -bios OVMF.fd
 run-grub: build-grub
-	$(QEMU)
+	$(QEMU) -serial stdio
 run-grub-nographic: build-grub
 	$(QEMU) -nographic
 toolchain:
@@ -73,7 +73,7 @@ format:
 	clang-format -i $(filter-out $(shell find ./acpid/lai -name *.c) $(shell find ./acpid/lai -name *.h), $(shell find . -name *.c) $(shell find . -name *.h))
 analyze:
 	CFLAGS="$(CFLAGS) -fno-sanitize=all" $(MAKE) -Ctools
-	scan-build --status-bugs --use-cc=clang $(MAKE) build-multiboot
+	scan-build --status-bugs --use-cc=clang $(MAKE) build-grub build-efi
 clean:
 	$(MAKE) clean -Ctools
 	rm -rf iso sysroot system *.img os.iso tools/bin `find . -name *.o` `find . -name *.d` loader-mb/libc.a loader-efi/libc.a kernel/libc.a

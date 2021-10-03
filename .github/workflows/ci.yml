@@ -39,7 +39,7 @@ jobs:
     steps:
       - name: Install dependencies
         if: ${{ matrix.os == 'ubuntu-20.04' }}
-        run: sudo apt-get update && sudo apt-get install -y qemu-system-x86 mtools
+        run: sudo apt-get update && sudo apt-get install -y qemu-system-x86
       - name: Checkout
         uses: actions/checkout@v2
         with:
@@ -54,69 +54,6 @@ jobs:
       - name: Build OS image with GRUB
         if: ${{ matrix.os == 'ubuntu-20.04' }}
         run: make build-grub -j2
-      - name: Upload loader-mb
-        if: ${{ matrix.os == 'ubuntu-20.04' }}
-        uses: actions/upload-artifact@v2
-        with:
-          name: loader-mb
-          path: boot/boot/loader.bin
-      - name: Upload kernel
-        if: ${{ matrix.os == 'ubuntu-20.04' }}
-        uses: actions/upload-artifact@v2
-        with:
-          name: kernel
-          path: boot/boot/kernel.bin
-      - name: Upload init
-        if: ${{ matrix.os == 'ubuntu-20.04' }}
-        uses: actions/upload-artifact@v2
-        with:
-          name: init
-          path: boot/boot/init
-      - name: Upload drivers
-        if: ${{ matrix.os == 'ubuntu-20.04' }}
-        uses: actions/upload-artifact@v2
-        with:
-          name: drivers
-          path: |
-            boot/boot/atad
-            boot/boot/pcid
-      - name: Upload servers
-        if: ${{ matrix.os == 'ubuntu-20.04' }}
-        uses: actions/upload-artifact@v2
-        with:
-          name: servers
-          path: |
-            boot/boot/argd
-            boot/boot/ipcd
-            boot/boot/logd
-      - name: Upload filesystems
-        if: ${{ matrix.os == 'ubuntu-20.04' }}
-        uses: actions/upload-artifact@v2
-        with:
-          name: filesystems
-          path: |
-            boot/boot/lvmd
-            boot/boot/mbrd
-            boot/boot/svfsd
-            boot/boot/vfsd
-      - name: Upload loadelf
-        if: ${{ matrix.os == 'ubuntu-20.04' }}
-        uses: actions/upload-artifact@v2
-        with:
-          name: lelf
-          path: boot/boot/lelf
-      - name: Upload system volume
-        if: ${{ matrix.os == 'ubuntu-20.04' }}
-        uses: actions/upload-artifact@v2
-        with:
-          name: svfs
-          path: svfs.img
-      - name: Upload LVM image
-        if: ${{ matrix.os == 'ubuntu-20.04' }}
-        uses: actions/upload-artifact@v2
-        with:
-          name: lvm
-          path: lvm.img
       - name: Test OS
         if: ${{ matrix.os == 'ubuntu-20.04' }}
         timeout-minutes: 1
