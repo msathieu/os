@@ -50,7 +50,7 @@ jobs:
           key: toolchain-${{ matrix.os }}-${{ hashFiles('tools/Makefile') }}
           path: tools/toolchain
       - name: Build OS
-        run: make build-multiboot -j2
+        run: make build -j2
       - name: Build OS image with GRUB
         if: ${{ matrix.os == 'ubuntu-20.04' }}
         run: make build-grub -j2

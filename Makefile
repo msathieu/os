@@ -14,30 +14,32 @@ ifdef UBSAN
 CFLAGS+=-fsanitize=undefined
 endif
 
-build-grub: build-multiboot
-	mkdir -p sysroot/boot/grub
-	cp grub.cfg sysroot/boot/grub
-	tools/bin/sign sign
-	mkdir -p boot
-	cp -r sysroot/boot boot
-	grub-mkrescue -o os.iso boot -quiet
-	mkdir -p system
-	cp -r sysroot/bin system
-	cp -r sysroot/include system
-	cp -r sysroot/lib system
-	cp -r sysroot/sbin system
-	tools/bin/svfs
-	tools/bin/lvm
+build-grub: build
+	$(MAKE) -Cloader-mb
+	mkdir -p sysroot/boot/boot/grub
+	cp grub.cfg sysroot/boot/boot/grub
+	grub-mkrescue -o os.iso sysroot/boot -quiet
 	cat lvm.img >> os.iso
 	tools/bin/mbr
-build-multiboot: build
-	$(MAKE) -Cloader-mb
+build-efi: build
+	mkdir -p sysroot/boot/efi/boot
+	$(MAKE) -Cloader-efi
+	dd if=/dev/zero of=boot.img bs=1k count=2880
+	mformat -i boot.img
+	mcopy -i boot.img sysroot/boot/* ::
+	mmd -i boot.img efi/boot
+	mcopy -i boot.img sysroot/boot/efi/boot/bootx64.efi ::/efi/boot
+	mkdir -p iso
+	cp boot.img iso
+	xorriso -as mkisofs -e boot.img --protective-msdos-label -o os.iso iso
+	cat lvm.img >> os.iso
+	tools/bin/mbr
 private.key:
 	CFLAGS="$(CFLAGS) -fno-sanitize=all" $(MAKE) -Ctools
 	tools/bin/sign generate
 build: private.key
 	CFLAGS="$(CFLAGS) -fno-sanitize=all" $(MAKE) -Ctools
-	mkdir -p sysroot/boot sysroot/sbin sysroot/bin sysroot/lib sysroot/include
+	mkdir -p sysroot/boot sysroot/sbin sysroot/bin sysroot/lib sysroot/include system
 	$(MAKE) -Ckernel
 	$(MAKE) install-headers -Clibc
 	$(MAKE) -Clibc
@@ -50,10 +52,20 @@ build: private.key
 	$(MAKE) -Cloadelf
 	$(MAKE) -Csh
 	$(MAKE) -Ccoreutils
+	tools/bin/sign sign
+	cp -r sysroot/bin system
+	cp -r sysroot/include system
+	cp -r sysroot/lib system
+	cp -r sysroot/sbin system
+	tools/bin/svfs
+	tools/bin/lvm
+QEMU:=qemu-system-x86_64 -drive file=os.iso,format=raw -cpu max -serial stdio -m 512 -smp 2
+run-efi: build-efi
+	$(QEMU) -bios OVMF.fd
 run-grub: build-grub
-	qemu-system-x86_64 -drive file=os.iso,format=raw -cpu max -serial stdio -m 512 -smp 2
+	$(QEMU)
 run-grub-nographic: build-grub
-	qemu-system-x86_64 -drive file=os.iso,format=raw -cpu max -nographic -m 512 -smp 2
+	$(QEMU) -nographic
 toolchain:
 	$(MAKE) install-headers -Clibc
 	$(MAKE) build-toolchain -Ctools
@@ -64,4 +76,4 @@ analyze:
 	scan-build --status-bugs --use-cc=clang $(MAKE) build-multiboot
 clean:
 	$(MAKE) clean -Ctools
-	rm -rf sysroot boot system *.img os.iso tools/bin `find . -name *.o` `find . -name *.d`
+	rm -rf iso sysroot system *.img os.iso tools/bin `find . -name *.o` `find . -name *.d` loader-mb/libc.a loader-efi/libc.a kernel/libc.a
