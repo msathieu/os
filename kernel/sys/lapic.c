@@ -76,7 +76,7 @@ void smp_broadcast_nmi(void) {
   }
 }
 void smp_wakeup_core(size_t core_i) {
-  write_register(LAPIC_REGISTER_INTERRUPT_COMMAND + 1, madt_lapics[core_i]->lapic_id << 24);
+  write_register(LAPIC_REGISTER_INTERRUPT_COMMAND + 1, core_i << 24);
   write_register(LAPIC_REGISTER_INTERRUPT_COMMAND, 254);
 }
 void setup_lapic(size_t nlapic) {
