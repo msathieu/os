@@ -116,11 +116,7 @@ static void gen_entry(struct paging_table* table, size_t i) {
 }
 bool is_page_mapped(uintptr_t address, bool write) {
   struct paging_entry* page = get_page(address, current_pml4());
-  if (page && (page->write || !write)) {
-    return 1;
-  } else {
-    return 0;
-  }
+  return page && (page->write || !write);
 }
 // Doesn't free frame
 void unmap_page(uintptr_t address) {

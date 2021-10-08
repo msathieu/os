@@ -127,9 +127,5 @@ void remove_process(struct process* process) {
   free(process);
 }
 bool has_process_capability(struct process* process, int capability) {
-  if (__atomic_load_n(&process->capabilities[0], __ATOMIC_SEQ_CST) & (1 << CAP_MANAGE | 1 << capability)) {
-    return 1;
-  } else {
-    return 0;
-  }
+  return __atomic_load_n(&process->capabilities[0], __ATOMIC_SEQ_CST) & (1 << CAP_MANAGE | 1 << capability);
 }

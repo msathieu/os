@@ -23,6 +23,6 @@ build-toolchain: $(LLVM).tar.gz
 	mkdir -p toolchain/lib/clang/13.0.0/share
 	touch toolchain/lib/clang/13.0.0/share/cfi_ignorelist.txt
 clean:
-	rm -rf toolchain/os-llvm-$(LLVM) *.tar.gz
+	rm -rf toolchain/os-llvm-* *.tar.gz
 -include $(wildcard */*.d) monocypher.d
 .DELETE_ON_ERROR:
