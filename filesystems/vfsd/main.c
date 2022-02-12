@@ -61,39 +61,33 @@ static int64_t mount_handler(uint64_t arg0, uint64_t arg1, uint64_t arg2, uint64
     syslog(LOG_DEBUG, "Not currently spawning a process");
     return -IPC_ERR_PROGRAM_DEFINED;
   }
-  char* buffer = malloc(size);
-  memcpy(buffer, (void*) address, size);
+  char* buffer = (char*) address;
   if (buffer[size - 1]) {
-    free(buffer);
     syslog(LOG_DEBUG, "Path isn't null terminated");
     return -IPC_ERR_INVALID_ARGUMENTS;
   }
   if (buffer[0] != '/') {
-    free(buffer);
     syslog(LOG_DEBUG, "Path isn't absolute");
     return -IPC_ERR_INVALID_ARGUMENTS;
   }
   if (buffer[size - 2] != '/') {
-    free(buffer);
     syslog(LOG_DEBUG, "Path isn't a directory");
     return -IPC_ERR_INVALID_ARGUMENTS;
   }
   for (size_t i = 0; i < size - 1; i++) {
     if (!isalnum(buffer[i]) && buffer[i] != '/') {
-      free(buffer);
       syslog(LOG_DEBUG, "Path contains invalid characters");
       return -IPC_ERR_INVALID_ARGUMENTS;
     }
   }
   for (size_t i = 0; i < 512; i++) {
     if (!mounts[i].path) {
-      mounts[i].path = buffer;
+      mounts[i].path = strdup(buffer);
       mounts[i].pid = pid;
       mounts[i].node.nfds = 1; // Prevent node from being freed
       return 0;
     }
   }
-  free(buffer);
   syslog(LOG_CRIT, "Reached maximum number of mounts");
   return -IPC_ERR_PROGRAM_DEFINED;
 }
@@ -150,20 +144,16 @@ static int64_t open_file_handler(uint64_t flags, uint64_t arg1, uint64_t arg2, u
     syslog(LOG_DEBUG, "Invalid flags");
     return -IPC_ERR_INVALID_ARGUMENTS;
   }
-  char* buffer = malloc(size);
-  memcpy(buffer, (void*) address, size);
+  char* buffer = (char*) address;
   if (buffer[size - 1]) {
-    free(buffer);
     syslog(LOG_DEBUG, "Path isn't null terminated");
     return -IPC_ERR_INVALID_ARGUMENTS;
   }
   if (buffer[0] != '/') {
-    free(buffer);
     return -IPC_ERR_INVALID_ARGUMENTS;
   }
   for (size_t i = 0; i < size - 1; i++) {
     if (!isprint(buffer[i])) {
-      free(buffer);
       return -IPC_ERR_INVALID_ARGUMENTS;
     }
   }
@@ -176,7 +166,6 @@ static int64_t open_file_handler(uint64_t flags, uint64_t arg1, uint64_t arg2, u
     }
   }
   if (mount_i == -1 || !mounts[mount_i].mounted) {
-    free(buffer);
     blocked_calls++;
     return -IPC_ERR_BLOCK;
   }
@@ -184,12 +173,10 @@ static int64_t open_file_handler(uint64_t flags, uint64_t arg1, uint64_t arg2, u
   char* next_part;
   for (char* part = strtok(buffer + mount_size, "/"); part; part = next_part) {
     if (node->stat.type != VFS_TYPE_DIR) {
-      free(buffer);
       free_node(node);
       return -IPC_ERR_INVALID_ARGUMENTS;
     }
     if (strlen(part) >= 256) {
-      free(buffer);
       free_node(node);
       return -IPC_ERR_INVALID_ARGUMENTS;
     }
@@ -215,7 +202,6 @@ static int64_t open_file_handler(uint64_t flags, uint64_t arg1, uint64_t arg2, u
       inode = send_pid_ipc_call(mounts[mount_i].pid, IPC_VFSD_FS_OPEN, flags, node->inode, 0, (uintptr_t) part, strlen(part) + 1);
     }
     if (inode < 0) {
-      free(buffer);
       free_node(node);
       return -IPC_ERR_PROGRAM_DEFINED;
     }
@@ -227,7 +213,6 @@ static int64_t open_file_handler(uint64_t flags, uint64_t arg1, uint64_t arg2, u
     send_pid_ipc_call(mounts[mount_i].pid, IPC_VFSD_FS_STAT, child->inode, 0, 0, (uintptr_t) &child->stat, sizeof(struct vfs_stat));
     node = child;
   }
-  free(buffer);
   pid_t caller_pid = get_ipc_caller_pid();
   struct process* process = 0;
   for (struct process* loop_process = (struct process*) process_list.first; loop_process; loop_process = (struct process*) loop_process->list_member.next) {

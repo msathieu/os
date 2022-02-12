@@ -83,10 +83,8 @@ static int64_t add_arg_handler(uint64_t arg0, uint64_t arg1, uint64_t arg2, uint
     syslog(LOG_DEBUG, "Not currently spawning a process");
     return -IPC_ERR_PROGRAM_DEFINED;
   }
-  char* buffer = malloc(size);
-  memcpy(buffer, (void*) address, size);
+  char* buffer = (char*) address;
   if (buffer[size - 1]) {
-    free(buffer);
     syslog(LOG_DEBUG, "Buffer isn't null terminated");
     return -IPC_ERR_INVALID_ARGUMENTS;
   }
@@ -100,7 +98,7 @@ static int64_t add_arg_handler(uint64_t arg0, uint64_t arg1, uint64_t arg2, uint
   }
   arg->num = num_args;
   arg->size = size;
-  arg->value = buffer;
+  arg->value = strdup(buffer);
   insert_linked_list(&args_list, &arg->list_member);
   return 0;
 }

@@ -27,18 +27,17 @@ static int64_t log_handler(uint64_t arg0, uint64_t arg1, uint64_t arg2, uint64_t
   if (get_ipc_caller_uid()) {
     return -IPC_ERR_INSUFFICIENT_PRIVILEGE;
   }
-  char* msg = malloc(size + 1);
-  memcpy(msg, (void*) address, size);
+  char* msg = (char*) address;
   if (msg[size - 1]) {
-    free(msg);
     return -IPC_ERR_INVALID_ARGUMENTS;
   }
   for (size_t i = 0; i < size - 1; i++) {
     if (!isprint(msg[i])) {
-      free(msg);
       return -IPC_ERR_INVALID_ARGUMENTS;
     }
   }
+  msg = malloc(size + 1);
+  memcpy(msg, (void*) address, size);
   msg[size - 1] = '\n';
   msg[size] = 0;
   if (log_kernel) {

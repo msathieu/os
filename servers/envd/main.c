@@ -77,15 +77,12 @@ static int64_t add_env_handler(uint64_t arg0, uint64_t arg1, uint64_t arg2, uint
     syslog(LOG_DEBUG, "Not currently spawning a process");
     return -IPC_ERR_PROGRAM_DEFINED;
   }
-  char* buffer = malloc(size);
-  memcpy(buffer, (void*) address, size);
+  char* buffer = (char*) address;
   if (buffer[size - 1]) {
-    free(buffer);
     syslog(LOG_DEBUG, "Buffer isn't null terminated");
     return -IPC_ERR_INVALID_ARGUMENTS;
   }
   if (!strchr(buffer, '=')) {
-    free(buffer);
     syslog(LOG_DEBUG, "Buffer doesn't contain separator");
     return -IPC_ERR_INVALID_ARGUMENTS;
   }
@@ -99,7 +96,7 @@ static int64_t add_env_handler(uint64_t arg0, uint64_t arg1, uint64_t arg2, uint
   }
   env->num = num_envs;
   env->size = size;
-  env->value = buffer;
+  env->value = strdup(buffer);
   insert_linked_list(&envs_list, &env->list_member);
   return 0;
 }

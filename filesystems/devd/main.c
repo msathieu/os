@@ -31,32 +31,28 @@ static int64_t register_device_handler(uint64_t arg0, uint64_t arg1, uint64_t ar
     syslog(LOG_DEBUG, "Not currently spawning a process");
     return -IPC_ERR_PROGRAM_DEFINED;
   }
-  char* buffer = malloc(size);
-  memcpy(buffer, (void*) address, size);
+  char* buffer = (char*) address;
   if (buffer[size - 1]) {
-    free(buffer);
     syslog(LOG_DEBUG, "Name isn't null terminated");
     return -IPC_ERR_INVALID_ARGUMENTS;
   }
   for (size_t i = 0; i < size - 1; i++) {
     if (!isalnum(buffer[i])) {
-      free(buffer);
       syslog(LOG_DEBUG, "Name contains invalid characters");
       return -IPC_ERR_INVALID_ARGUMENTS;
     }
   }
   for (size_t i = 0; i < 512; i++) {
     if (!devices[i].name) {
-      devices[i].name = buffer;
+      devices[i].name = strdup(buffer);
       devices[i].pid = pid;
       return 0;
     }
   }
-  free(buffer);
   syslog(LOG_CRIT, "Reached maximum number of devices");
   return -IPC_ERR_PROGRAM_DEFINED;
 }
-static int64_t open_handler(__attribute__((unused)) uint64_t flags, __attribute__((unused)) uint64_t parent_inode, uint64_t arg2, uint64_t address, uint64_t size) {
+static int64_t open_handler(__attribute__((unused)) uint64_t flags, __attribute__((unused)) uint64_t parent_inode, uint64_t arg2, uint64_t address, __attribute__((unused)) uint64_t size) {
   if (arg2) {
     syslog(LOG_DEBUG, "Reserved argument is set");
     return -IPC_ERR_INVALID_ARGUMENTS;
@@ -65,15 +61,12 @@ static int64_t open_handler(__attribute__((unused)) uint64_t flags, __attribute_
     syslog(LOG_DEBUG, "Not allowed to open file");
     return -IPC_ERR_INSUFFICIENT_PRIVILEGE;
   }
-  char* buffer = malloc(size);
-  memcpy(buffer, (void*) address, size);
+  char* buffer = (char*) address;
   for (size_t i = 0; i < 512; i++) {
     if (devices[i].name && !strcmp(devices[i].name, buffer)) {
-      free(buffer);
       return i;
     }
   }
-  free(buffer);
   return -IPC_ERR_INVALID_ARGUMENTS;
 }
 static int64_t stat_handler(__attribute__((unused)) uint64_t inode, uint64_t arg1, uint64_t arg2, uint64_t address, __attribute__((unused)) uint64_t size) {

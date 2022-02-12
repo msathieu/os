@@ -20,7 +20,7 @@ struct file {
 static struct linked_list files_list;
 static size_t next_inode = 1;
 
-static int64_t open_handler(uint64_t flags, __attribute__((unused)) uint64_t parent_inode, uint64_t arg2, uint64_t address, uint64_t size) {
+static int64_t open_handler(uint64_t flags, __attribute__((unused)) uint64_t parent_inode, uint64_t arg2, uint64_t address, __attribute__((unused)) uint64_t size) {
   if (arg2) {
     syslog(LOG_DEBUG, "Reserved argument is set");
     return -IPC_ERR_INVALID_ARGUMENTS;
@@ -29,11 +29,9 @@ static int64_t open_handler(uint64_t flags, __attribute__((unused)) uint64_t par
     syslog(LOG_DEBUG, "Not allowed to open file");
     return -IPC_ERR_INSUFFICIENT_PRIVILEGE;
   }
-  char* buffer = malloc(size);
-  memcpy(buffer, (void*) address, size);
+  char* buffer = (char*) address;
   for (struct file* file = (struct file*) files_list.first; file; file = (struct file*) file->list_member.next) {
     if (!strcmp(file->path, buffer)) {
-      free(buffer);
       if (flags & O_TRUNC) {
         free(file->data);
         file->size = 0;
@@ -44,11 +42,10 @@ static int64_t open_handler(uint64_t flags, __attribute__((unused)) uint64_t par
   if (flags & O_CREAT) {
     struct file* file = calloc(1, sizeof(struct file));
     file->inode = next_inode++;
-    file->path = buffer;
+    file->path = strdup(buffer);
     insert_linked_list(&files_list, &file->list_member);
     return file->inode;
   } else {
-    free(buffer);
     return -IPC_ERR_INVALID_ARGUMENTS;
   }
 }
