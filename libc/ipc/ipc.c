@@ -18,6 +18,7 @@ int64_t ipc_common(uint8_t syscall, uint64_t arg0, uint64_t arg1, uint64_t arg2,
     return -IPC_ERR_INVALID_ARGUMENTS;
   }
   if (syscall & IPC_CALL_MEMORY_SHARING) {
+    __builtin_assume(arg3 != 0);
     void* address = malloc(arg4);
     memcpy(address, (void*) arg3, arg4);
     int64_t return_value = _ipc_calls[syscall].handler(arg0, arg1, arg2, (uintptr_t) address, arg4);
