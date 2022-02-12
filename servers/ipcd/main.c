@@ -18,7 +18,7 @@ static void unblock_all(void) {
   }
   blocked_processes = 0;
 }
-int64_t registration_handler(uint64_t arg0, uint64_t arg1, uint64_t arg2, uint64_t arg3, uint64_t arg4) {
+static int64_t registration_handler(uint64_t arg0, uint64_t arg1, uint64_t arg2, uint64_t arg3, uint64_t arg4) {
   if (!has_ipc_caller_capability(CAP_NAMESPACE_SERVERS, CAP_IPCD_REGISTER)) {
     return -IPC_ERR_INSUFFICIENT_PRIVILEGE;
   }
@@ -39,10 +39,7 @@ int64_t registration_handler(uint64_t arg0, uint64_t arg1, uint64_t arg2, uint64
   }
   return -IPC_ERR_PROGRAM_DEFINED;
 }
-int64_t set_started_handler(uint64_t arg0, uint64_t arg1, uint64_t arg2, uint64_t arg3, uint64_t arg4) {
-  if (arg0 || arg1 || arg2 || arg3 || arg4) {
-    return -IPC_ERR_INVALID_ARGUMENTS;
-  }
+static int64_t set_started_handler(__attribute__((unused)) uint64_t arg0, __attribute__((unused)) uint64_t arg1, __attribute__((unused)) uint64_t arg2, __attribute__((unused)) uint64_t arg3, __attribute__((unused)) uint64_t arg4) {
   pid_t pid = get_ipc_caller_pid();
   for (size_t i = 0; i < 64; i++) {
     if (processes[i].pid == pid && !processes[i].started) {
@@ -53,7 +50,7 @@ int64_t set_started_handler(uint64_t arg0, uint64_t arg1, uint64_t arg2, uint64_
   }
   return -IPC_ERR_PROGRAM_DEFINED;
 }
-int64_t discovery_handler(uint64_t arg0, uint64_t arg1, uint64_t arg2, uint64_t arg3, uint64_t arg4) {
+static int64_t discovery_handler(uint64_t arg0, uint64_t arg1, uint64_t arg2, uint64_t arg3, uint64_t arg4) {
   for (size_t i = 0; i < 64; i++) {
     if (processes[i].name[0] == (char) arg0 && processes[i].name[1] == (char) arg1 && processes[i].name[2] == (char) arg2 && processes[i].name[3] == (char) arg3 && processes[i].name[4] == (char) arg4) {
       if (processes[i].started) {
@@ -70,9 +67,9 @@ int main(void) {
   change_priority(PRIORITY_SYSTEM_HIGH);
   drop_capability(CAP_NAMESPACE_KERNEL, CAP_KERNEL_PRIORITY);
   register_ipc(0);
-  ipc_handlers[IPC_IPCD_REGISTER] = registration_handler;
-  ipc_handlers[IPC_IPCD_SET_STARTED] = set_started_handler;
-  ipc_handlers[IPC_IPCD_DISCOVER] = discovery_handler;
+  register_ipc_call(IPC_IPCD_REGISTER, registration_handler, 5);
+  register_ipc_call(IPC_IPCD_SET_STARTED, set_started_handler, 0);
+  register_ipc_call(IPC_IPCD_DISCOVER, discovery_handler, 5);
   while (1) {
     handle_ipc();
   }

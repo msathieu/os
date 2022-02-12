@@ -34,11 +34,7 @@ static int handle_key_event(struct layout_key* key, bool release) {
   }
   return leds;
 }
-static int64_t keypress_handler(uint64_t keycode, uint64_t release, uint64_t arg2, uint64_t arg3, uint64_t arg4) {
-  if (arg2 || arg3 || arg4) {
-    syslog(LOG_DEBUG, "Reserved argument is set");
-    return -IPC_ERR_INVALID_ARGUMENTS;
-  }
+static int64_t keypress_handler(uint64_t keycode, uint64_t release, __attribute__((unused)) uint64_t arg2, __attribute__((unused)) uint64_t arg3, __attribute__((unused)) uint64_t arg4) {
   if (!has_ipc_caller_capability(CAP_NAMESPACE_SERVERS, CAP_KBDD_SEND_KEYPRESS)) {
     syslog(LOG_DEBUG, "No permission to send keypress");
     return -IPC_ERR_INSUFFICIENT_PRIVILEGE;
@@ -60,10 +56,7 @@ static int64_t keypress_handler(uint64_t keycode, uint64_t release, uint64_t arg
   struct layout_key placeholder_key = {0};
   return handle_key_event(&placeholder_key, release);
 }
-static int64_t registration_handler(uint64_t arg0, uint64_t arg1, uint64_t arg2, uint64_t arg3, uint64_t arg4) {
-  if (arg0 || arg1 || arg2 || arg3 || arg4) {
-    return -IPC_ERR_INVALID_ARGUMENTS;
-  }
+static int64_t registration_handler(__attribute__((unused)) uint64_t arg0, __attribute__((unused)) uint64_t arg1, __attribute__((unused)) uint64_t arg2, __attribute__((unused)) uint64_t arg3, __attribute__((unused)) uint64_t arg4) {
   if (!has_ipc_caller_capability(CAP_NAMESPACE_SERVERS, CAP_KBDD_RECEIVE_EVENTS)) {
     syslog(LOG_DEBUG, "No permission to register keypress handler");
     return -IPC_ERR_INSUFFICIENT_PRIVILEGE;
@@ -71,11 +64,9 @@ static int64_t registration_handler(uint64_t arg0, uint64_t arg1, uint64_t arg2,
   event_receiver = get_ipc_caller_pid();
   return 0;
 }
-static int64_t change_layout_handler(uint64_t country0, uint64_t country1, uint64_t arg2, uint64_t arg3, uint64_t arg4) {
-  if (arg2 || arg3 || arg4) {
-    return -IPC_ERR_INVALID_ARGUMENTS;
-  }
+static int64_t change_layout_handler(uint64_t country0, uint64_t country1, __attribute__((unused)) uint64_t arg2, __attribute__((unused)) uint64_t arg3, __attribute__((unused)) uint64_t arg4) {
   if (get_ipc_caller_uid()) {
+    syslog(LOG_DEBUG, "No permission to change keyboard layout");
     return -IPC_ERR_INSUFFICIENT_PRIVILEGE;
   }
   char country[] = {country0, country1, 0};
@@ -92,9 +83,9 @@ int main(void) {
   register_ipc(0);
   ipc_set_started();
   layout = layouts[0];
-  ipc_handlers[IPC_KBDD_KEYPRESS] = keypress_handler;
-  ipc_handlers[IPC_KBDD_REGISTER] = registration_handler;
-  ipc_handlers[IPC_KBDD_CHANGE_LAYOUT] = change_layout_handler;
+  register_ipc_call(IPC_KBDD_KEYPRESS, keypress_handler, 2);
+  register_ipc_call(IPC_KBDD_REGISTER, registration_handler, 0);
+  register_ipc_call(IPC_KBDD_CHANGE_LAYOUT, change_layout_handler, 2);
   while (1) {
     handle_ipc();
   }

@@ -25,11 +25,7 @@ static struct mbr {
 static pid_t parent_pid;
 static pid_t child_pid[4];
 
-static int64_t handle_transfer(uint64_t offset, uint64_t arg1, uint64_t arg2, uint64_t address, uint64_t size, bool write) {
-  if (arg1 || arg2) {
-    syslog(LOG_DEBUG, "Reserved argument is set");
-    return -IPC_ERR_INVALID_ARGUMENTS;
-  }
+static int64_t handle_transfer(uint64_t offset, __attribute__((unused)) uint64_t arg1, __attribute__((unused)) uint64_t arg2, uint64_t address, uint64_t size, bool write) {
   pid_t caller_pid = get_ipc_caller_pid();
   int partition_i = -1;
   for (size_t i = 0; i < 4; i++) {
@@ -74,8 +70,8 @@ int main(void) {
       break;
     }
   }
-  ipc_handlers[IPC_VFSD_FS_WRITE] = write_handler;
-  ipc_handlers[IPC_VFSD_FS_READ] = read_handler;
+  register_ipc_call(IPC_VFSD_FS_WRITE, write_handler, 1);
+  register_ipc_call(IPC_VFSD_FS_READ, read_handler, 1);
   while (1) {
     handle_ipc();
   }

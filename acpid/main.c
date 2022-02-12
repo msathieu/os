@@ -10,11 +10,7 @@
 // TODO: Replace with mutex
 static pthread_spinlock_t lock;
 
-static int64_t power_state_handler(uint64_t type, uint64_t arg1, uint64_t arg2, uint64_t arg3, uint64_t arg4) {
-  if (arg1 || arg2 || arg3 || arg4) {
-    syslog(LOG_DEBUG, "Reserved argument is set");
-    return -IPC_ERR_INVALID_ARGUMENTS;
-  }
+static int64_t power_state_handler(uint64_t type, __attribute__((unused)) uint64_t arg1, __attribute__((unused)) uint64_t arg2, __attribute__((unused)) uint64_t arg3, __attribute__((unused)) uint64_t arg4) {
   if (get_ipc_caller_uid()) {
     syslog(LOG_DEBUG, "No permission to change system power state");
     return -IPC_ERR_INSUFFICIENT_PRIVILEGE;
@@ -59,7 +55,7 @@ int main(void) {
   lai_set_sci_event(ACPI_POWER_BUTTON);
   pthread_spin_init(&lock, 0);
   thrd_create(0, sci_handler, 0);
-  ipc_handlers[IPC_ACPID_POWER_STATE] = power_state_handler;
+  register_ipc_call(IPC_ACPID_POWER_STATE, power_state_handler, 1);
   while (1) {
     handle_ipc();
   }

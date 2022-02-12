@@ -11,20 +11,14 @@ static pid_t ttyd;
 static char* buffer;
 static bool log_kernel;
 
-static int64_t registration_handler(uint64_t arg0, uint64_t arg1, uint64_t arg2, uint64_t arg3, uint64_t arg4) {
-  if (arg0 || arg1 || arg2 || arg3 || arg4) {
-    return -IPC_ERR_INVALID_ARGUMENTS;
-  }
+static int64_t registration_handler(__attribute__((unused)) uint64_t arg0, __attribute__((unused)) uint64_t arg1, __attribute__((unused)) uint64_t arg2, __attribute__((unused)) uint64_t arg3, __attribute__((unused)) uint64_t arg4) {
   if (!has_ipc_caller_capability(CAP_NAMESPACE_SERVERS, CAP_LOGD_TTY)) {
     return -IPC_ERR_INSUFFICIENT_PRIVILEGE;
   }
   ttyd = get_ipc_caller_pid();
   return 0;
 }
-static int64_t log_handler(uint64_t arg0, uint64_t arg1, uint64_t arg2, uint64_t address, uint64_t size) {
-  if (arg0 || arg1 || arg2) {
-    return -IPC_ERR_INVALID_ARGUMENTS;
-  }
+static int64_t log_handler(__attribute__((unused)) uint64_t arg0, __attribute__((unused)) uint64_t arg1, __attribute__((unused)) uint64_t arg2, uint64_t address, uint64_t size) {
   if (get_ipc_caller_uid()) {
     return -IPC_ERR_INSUFFICIENT_PRIVILEGE;
   }
@@ -46,17 +40,13 @@ static int64_t log_handler(uint64_t arg0, uint64_t arg1, uint64_t arg2, uint64_t
       _syscall(_SYSCALL_LOG, msg[i], 0, 0, 0, 0);
     }
   }
-  if (ttyd) {
-    send_pid_ipc_call(ttyd, IPC_VFSD_FS_WRITE, 0, 0, 0, (uintptr_t) msg, size);
+  if (!buffer) {
+    buffer = msg;
   } else {
-    if (!buffer) {
-      buffer = strdup(msg);
-    } else {
-      buffer = realloc(buffer, strlen(buffer) + size + 1);
-      strcat(buffer, msg);
-    }
+    buffer = realloc(buffer, strlen(buffer) + size + 1);
+    strcat(buffer, msg);
+    free(msg);
   }
-  free(msg);
   return 0;
 }
 int main(void) {
@@ -68,8 +58,8 @@ int main(void) {
   if (ecx & 0x80000000) {
     log_kernel = 1;
   }
-  ipc_handlers[IPC_LOGD_REGISTER] = registration_handler;
-  ipc_handlers[IPC_LOGD_LOG] = log_handler;
+  register_ipc_call(IPC_LOGD_REGISTER, registration_handler, 0);
+  register_ipc_call(IPC_LOGD_LOG, log_handler, 0);
   while (1) {
     handle_ipc();
     if (buffer && ttyd) {

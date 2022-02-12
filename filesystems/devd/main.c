@@ -13,11 +13,7 @@ struct device {
 
 static struct device devices[512];
 
-static int64_t register_device_handler(uint64_t arg0, uint64_t arg1, uint64_t arg2, uint64_t address, uint64_t size) {
-  if (arg0 || arg1 || arg2) {
-    syslog(LOG_DEBUG, "Reserved argument is set");
-    return -IPC_ERR_INVALID_ARGUMENTS;
-  }
+static int64_t register_device_handler(__attribute__((unused)) uint64_t arg0, __attribute__((unused)) uint64_t arg1, __attribute__((unused)) uint64_t arg2, uint64_t address, uint64_t size) {
   if (!has_ipc_caller_capability(CAP_NAMESPACE_FILESYSTEMS, CAP_VFSD_MOUNT)) {
     syslog(LOG_DEBUG, "No permission to mount filesystem");
     return -IPC_ERR_INSUFFICIENT_PRIVILEGE;
@@ -69,11 +65,7 @@ static int64_t open_handler(__attribute__((unused)) uint64_t flags, __attribute_
   }
   return -IPC_ERR_INVALID_ARGUMENTS;
 }
-static int64_t stat_handler(__attribute__((unused)) uint64_t inode, uint64_t arg1, uint64_t arg2, uint64_t address, __attribute__((unused)) uint64_t size) {
-  if (arg1 || arg2) {
-    syslog(LOG_DEBUG, "Reserved argument is set");
-    return -IPC_ERR_INVALID_ARGUMENTS;
-  }
+static int64_t stat_handler(__attribute__((unused)) uint64_t inode, __attribute__((unused)) uint64_t arg1, __attribute__((unused)) uint64_t arg2, uint64_t address, __attribute__((unused)) uint64_t size) {
   if (!has_ipc_caller_capability(CAP_NAMESPACE_FILESYSTEMS, CAP_VFSD)) {
     syslog(LOG_DEBUG, "Not allowed to stat file");
     return -IPC_ERR_INSUFFICIENT_PRIVILEGE;
@@ -82,11 +74,7 @@ static int64_t stat_handler(__attribute__((unused)) uint64_t inode, uint64_t arg
   stat->type = VFS_TYPE_FILE;
   return 0;
 }
-static int64_t handle_transfer(uint64_t inode, uint64_t offset, uint64_t arg2, uint64_t address, uint64_t size, bool write) {
-  if (arg2) {
-    syslog(LOG_DEBUG, "Reserved argument is set");
-    return -IPC_ERR_INVALID_ARGUMENTS;
-  }
+static int64_t handle_transfer(uint64_t inode, uint64_t offset, __attribute__((unused)) uint64_t arg2, uint64_t address, uint64_t size, bool write) {
   if (!has_ipc_caller_capability(CAP_NAMESPACE_FILESYSTEMS, CAP_VFSD)) {
     syslog(LOG_DEBUG, "Not allowed to access file");
     return -IPC_ERR_INSUFFICIENT_PRIVILEGE;
@@ -110,11 +98,11 @@ int main(void) {
   struct vfs_stat stat = {0};
   stat.type = VFS_TYPE_DIR;
   send_ipc_call("vfsd", IPC_VFSD_FINISH_MOUNT, 512, 0, 0, (uintptr_t) &stat, sizeof(struct vfs_stat));
-  ipc_handlers[IPC_VFSD_FS_OPEN] = open_handler;
-  ipc_handlers[IPC_VFSD_FS_WRITE] = write_handler;
-  ipc_handlers[IPC_DEVD_REGISTER] = register_device_handler;
-  ipc_handlers[IPC_VFSD_FS_READ] = read_handler;
-  ipc_handlers[IPC_VFSD_FS_STAT] = stat_handler;
+  register_ipc_call(IPC_VFSD_FS_OPEN, open_handler, 2);
+  register_ipc_call(IPC_VFSD_FS_WRITE, write_handler, 2);
+  register_ipc_call(IPC_DEVD_REGISTER, register_device_handler, 0);
+  register_ipc_call(IPC_VFSD_FS_READ, read_handler, 2);
+  register_ipc_call(IPC_VFSD_FS_STAT, stat_handler, 1);
   while (1) {
     handle_ipc();
   }

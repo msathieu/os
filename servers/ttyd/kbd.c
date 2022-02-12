@@ -14,11 +14,7 @@ static bool alt_pressed;
 bool call_blocked = 0;
 size_t selected_framebuffer;
 
-static int64_t key_event_handler(uint64_t type, uint64_t value, uint64_t release, uint64_t arg3, uint64_t arg4) {
-  if (arg3 || arg4) {
-    syslog(LOG_DEBUG, "Reserved argument is set");
-    return -IPC_ERR_INVALID_ARGUMENTS;
-  }
+static int64_t key_event_handler(uint64_t type, uint64_t value, uint64_t release, __attribute__((unused)) uint64_t arg3, __attribute__((unused)) uint64_t arg4) {
   if (!has_ipc_caller_capability(CAP_NAMESPACE_SERVERS, CAP_KBDD)) {
     syslog(LOG_DEBUG, "No permission to send keypress");
     return -IPC_ERR_INSUFFICIENT_PRIVILEGE;
@@ -123,5 +119,5 @@ char get_character(void) {
 void setup_kbd(void) {
   send_ipc_call("kbdd", IPC_KBDD_REGISTER, 0, 0, 0, 0, 0);
   drop_capability(CAP_NAMESPACE_SERVERS, CAP_KBDD_RECEIVE_EVENTS);
-  ipc_handlers[IPC_TTYD_KEY_EVENT] = key_event_handler;
+  register_ipc_call(IPC_TTYD_KEY_EVENT, key_event_handler, 3);
 }

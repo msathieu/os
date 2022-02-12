@@ -43,11 +43,7 @@ static struct mount mounts[512];
 static struct linked_list process_list;
 static size_t blocked_calls;
 
-static int64_t mount_handler(uint64_t arg0, uint64_t arg1, uint64_t arg2, uint64_t address, uint64_t size) {
-  if (arg0 || arg1 || arg2) {
-    syslog(LOG_DEBUG, "Reserved argument is set");
-    return -IPC_ERR_INVALID_ARGUMENTS;
-  }
+static int64_t mount_handler(__attribute__((unused)) uint64_t arg0, __attribute__((unused)) uint64_t arg1, __attribute__((unused)) uint64_t arg2, uint64_t address, uint64_t size) {
   if (!has_ipc_caller_capability(CAP_NAMESPACE_FILESYSTEMS, CAP_VFSD_MOUNT)) {
     syslog(LOG_DEBUG, "No permission to mount filesystem");
     return -IPC_ERR_INSUFFICIENT_PRIVILEGE;
@@ -91,11 +87,7 @@ static int64_t mount_handler(uint64_t arg0, uint64_t arg1, uint64_t arg2, uint64
   syslog(LOG_CRIT, "Reached maximum number of mounts");
   return -IPC_ERR_PROGRAM_DEFINED;
 }
-static int64_t finish_mount_handler(uint64_t inode, uint64_t arg1, uint64_t arg2, uint64_t address, uint64_t size) {
-  if (arg1 || arg2) {
-    syslog(LOG_DEBUG, "Reserved argument is set");
-    return -IPC_ERR_INVALID_ARGUMENTS;
-  }
+static int64_t finish_mount_handler(uint64_t inode, __attribute__((unused)) uint64_t arg1, __attribute__((unused)) uint64_t arg2, uint64_t address, uint64_t size) {
   if (size != sizeof(struct vfs_stat)) {
     syslog(LOG_DEBUG, "Invalid stat size");
     return -IPC_ERR_INVALID_ARGUMENTS;
@@ -130,11 +122,7 @@ static void free_node(struct fs_node* node) {
     free_node(parent);
   }
 }
-static int64_t open_file_handler(uint64_t flags, uint64_t arg1, uint64_t arg2, uint64_t address, uint64_t size) {
-  if (arg1 || arg2) {
-    syslog(LOG_DEBUG, "Reserved argument is set");
-    return -IPC_ERR_INVALID_ARGUMENTS;
-  }
+static int64_t open_file_handler(uint64_t flags, __attribute__((unused)) uint64_t arg1, __attribute__((unused)) uint64_t arg2, uint64_t address, uint64_t size) {
   size_t access_flags = flags & (O_RDONLY | O_RDWR | O_WRONLY);
   if (access_flags != O_RDONLY && access_flags != O_RDWR && access_flags != O_WRONLY) {
     syslog(LOG_DEBUG, "Invalid flags");
@@ -249,11 +237,7 @@ static int64_t open_file_handler(uint64_t flags, uint64_t arg1, uint64_t arg2, u
   fd->node->nfds++;
   return fd_i;
 }
-static int64_t close_file_handler(uint64_t fd_num, uint64_t arg1, uint64_t arg2, uint64_t arg3, uint64_t arg4) {
-  if (arg1 || arg2 || arg3 || arg4) {
-    syslog(LOG_DEBUG, "Reserved argument is set");
-    return -IPC_ERR_INVALID_ARGUMENTS;
-  }
+static int64_t close_file_handler(uint64_t fd_num, __attribute__((unused)) uint64_t arg1, __attribute__((unused)) uint64_t arg2, __attribute__((unused)) uint64_t arg3, __attribute__((unused)) uint64_t arg4) {
   pid_t caller_pid = get_ipc_caller_pid();
   for (struct process* process = (struct process*) process_list.first; process; process = (struct process*) process->list_member.next) {
     if (process->pid == caller_pid) {
@@ -271,11 +255,7 @@ static int64_t close_file_handler(uint64_t fd_num, uint64_t arg1, uint64_t arg2,
   syslog(LOG_DEBUG, "File descriptor doesn't exist");
   return -IPC_ERR_INVALID_ARGUMENTS;
 }
-static int64_t handle_transfer(uint64_t fd_num, uint64_t arg1, uint64_t arg2, uint64_t address, uint64_t size, bool write) {
-  if (arg1 || arg2) {
-    syslog(LOG_DEBUG, "Reserved argument is set");
-    return -IPC_ERR_INVALID_ARGUMENTS;
-  }
+static int64_t handle_transfer(uint64_t fd_num, __attribute__((unused)) uint64_t arg1, __attribute__((unused)) uint64_t arg2, uint64_t address, uint64_t size, bool write) {
   pid_t caller_pid = get_ipc_caller_pid();
   for (struct process* process = (struct process*) process_list.first; process; process = (struct process*) process->list_member.next) {
     if (process->pid == caller_pid) {
@@ -325,11 +305,7 @@ static int64_t read_file_handler(uint64_t fd_num, uint64_t arg1, uint64_t arg2, 
 static int64_t write_file_handler(uint64_t fd_num, uint64_t arg1, uint64_t arg2, uint64_t address, uint64_t size) {
   return handle_transfer(fd_num, arg1, arg2, address, size, 1);
 }
-static int64_t seek_file_handler(uint64_t fd_num, uint64_t mode, uint64_t arg_position, uint64_t arg3, uint64_t arg4) {
-  if (arg3 || arg4) {
-    syslog(LOG_DEBUG, "Reserved argument is set");
-    return -IPC_ERR_INVALID_ARGUMENTS;
-  }
+static int64_t seek_file_handler(uint64_t fd_num, uint64_t mode, uint64_t arg_position, __attribute__((unused)) uint64_t arg3, __attribute__((unused)) uint64_t arg4) {
   if (mode >= 2) {
     syslog(LOG_DEBUG, "Argument out of range");
     return -IPC_ERR_INVALID_ARGUMENTS;
@@ -356,11 +332,7 @@ static int64_t seek_file_handler(uint64_t fd_num, uint64_t mode, uint64_t arg_po
   syslog(LOG_DEBUG, "File descriptor doesn't exist");
   return -IPC_ERR_INVALID_ARGUMENTS;
 }
-static int64_t clone_fds_handler(uint64_t fork, uint64_t arg1, uint64_t arg2, uint64_t arg3, uint64_t arg4) {
-  if (arg1 | arg2 | arg3 || arg4) {
-    syslog(LOG_DEBUG, "Reserved argument is set");
-    return -IPC_ERR_INVALID_ARGUMENTS;
-  }
+static int64_t clone_fds_handler(uint64_t fork, __attribute__((unused)) uint64_t arg1, __attribute__((unused)) uint64_t arg2, __attribute__((unused)) uint64_t arg3, __attribute__((unused)) uint64_t arg4) {
   if (fork >= 2) {
     syslog(LOG_DEBUG, "Argument out of range");
     return -IPC_ERR_INVALID_ARGUMENTS;
@@ -418,14 +390,14 @@ int main(void) {
   ipc_set_started();
   listen_exits();
   drop_capability(CAP_NAMESPACE_KERNEL, CAP_KERNEL_LISTEN_EXITS);
-  ipc_handlers[IPC_VFSD_CLOSE] = close_file_handler;
-  ipc_handlers[IPC_VFSD_SEEK] = seek_file_handler;
-  ipc_handlers[IPC_VFSD_CLONE_FDS] = clone_fds_handler;
-  ipc_handlers[IPC_VFSD_OPEN] = open_file_handler;
-  ipc_handlers[IPC_VFSD_MOUNT] = mount_handler;
-  ipc_handlers[IPC_VFSD_WRITE] = write_file_handler;
-  ipc_handlers[IPC_VFSD_FINISH_MOUNT] = finish_mount_handler;
-  ipc_handlers[IPC_VFSD_READ] = read_file_handler;
+  register_ipc_call(IPC_VFSD_CLOSE, close_file_handler, 1);
+  register_ipc_call(IPC_VFSD_SEEK, seek_file_handler, 3);
+  register_ipc_call(IPC_VFSD_CLONE_FDS, clone_fds_handler, 1);
+  register_ipc_call(IPC_VFSD_OPEN, open_file_handler, 1);
+  register_ipc_call(IPC_VFSD_MOUNT, mount_handler, 0);
+  register_ipc_call(IPC_VFSD_WRITE, write_file_handler, 1);
+  register_ipc_call(IPC_VFSD_FINISH_MOUNT, finish_mount_handler, 1);
+  register_ipc_call(IPC_VFSD_READ, read_file_handler, 1);
   while (1) {
     handle_ipc();
     pid_t pid;

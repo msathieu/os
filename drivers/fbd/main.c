@@ -14,16 +14,12 @@ static int green_index;
 static int blue_index;
 static char* framebuffer = (char*) PHYSICAL_MAPPINGS_START;
 
-static int64_t info_handler(uint64_t arg0, uint64_t arg1, uint64_t arg2, uint64_t arg3, uint64_t arg4) {
-  if (arg1 || arg2 || arg3 || arg4) {
-    syslog(LOG_DEBUG, "Reserved argument is set");
-    return -IPC_ERR_INVALID_ARGUMENTS;
-  }
+static int64_t info_handler(uint64_t info, __attribute__((unused)) uint64_t arg1, __attribute__((unused)) uint64_t arg2, __attribute__((unused)) uint64_t arg3, __attribute__((unused)) uint64_t arg4) {
   if (!has_ipc_caller_capability(CAP_NAMESPACE_DRIVERS, CAP_FBD_DRAW)) {
     syslog(LOG_DEBUG, "No permission to access framebuffer data");
     return -IPC_ERR_INSUFFICIENT_PRIVILEGE;
   }
-  switch (arg0) {
+  switch (info) {
   case 0:
     return width;
     break;
@@ -50,11 +46,7 @@ static int64_t info_handler(uint64_t arg0, uint64_t arg1, uint64_t arg2, uint64_
     return -IPC_ERR_INVALID_ARGUMENTS;
   }
 }
-static int64_t copy_handler(uint64_t offset, uint64_t arg1, uint64_t arg2, uint64_t address, uint64_t size) {
-  if (arg1 || arg2) {
-    syslog(LOG_DEBUG, "Reserved argument is set");
-    return -IPC_ERR_INVALID_ARGUMENTS;
-  }
+static int64_t copy_handler(uint64_t offset, __attribute__((unused)) uint64_t arg1, __attribute__((unused)) uint64_t arg2, uint64_t address, uint64_t size) {
   if (!has_ipc_caller_capability(CAP_NAMESPACE_DRIVERS, CAP_FBD_DRAW)) {
     syslog(LOG_DEBUG, "No permission to write to framebuffer");
     return -IPC_ERR_INSUFFICIENT_PRIVILEGE;
@@ -84,8 +76,8 @@ int main(void) {
   blue_index = _syscall(_SYSCALL_GET_FB_INFO, 7, 0, 0, 0, 0);
   drop_capability(CAP_NAMESPACE_KERNEL, CAP_KERNEL_GET_FB_INFO);
   memset(framebuffer, 0, height * pitch);
-  ipc_handlers[IPC_FBD_INFO] = info_handler;
-  ipc_handlers[IPC_FBD_COPY] = copy_handler;
+  register_ipc_call(IPC_FBD_INFO, info_handler, 1);
+  register_ipc_call(IPC_FBD_COPY, copy_handler, 1);
   while (1) {
     handle_ipc();
   }

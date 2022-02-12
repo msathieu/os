@@ -33,11 +33,7 @@ static void pci_writeb(uint8_t bus, uint8_t device, uint8_t function, uint8_t of
   current_value |= value << ((offset & 3) * 8);
   pci_writel(bus, device, function, offset, current_value);
 }
-static int64_t access_handler(uint64_t write, uint64_t width, uint64_t address, uint64_t value, uint64_t arg4) {
-  if (arg4) {
-    syslog(LOG_DEBUG, "Reserved argument is set");
-    return -IPC_ERR_INVALID_ARGUMENTS;
-  }
+static int64_t access_handler(uint64_t write, uint64_t width, uint64_t address, uint64_t value, __attribute__((unused)) uint64_t arg4) {
   if (!has_ipc_caller_capability(CAP_NAMESPACE_DRIVERS, CAP_PCID_ACCESS)) {
     syslog(LOG_DEBUG, "No permission to access PCI");
     return -IPC_ERR_INSUFFICIENT_PRIVILEGE;
@@ -96,7 +92,7 @@ int main(void) {
       }
     }
   }
-  ipc_handlers[IPC_PCID_ACCESS] = access_handler;
+  register_ipc_call(IPC_PCID_ACCESS, access_handler, 4);
   while (1) {
     handle_ipc();
   }

@@ -17,11 +17,7 @@ struct environment_var {
 
 struct linked_list envs_list;
 
-static int64_t get_num_envs_handler(uint64_t arg0, uint64_t arg1, uint64_t arg2, uint64_t arg3, uint64_t arg4) {
-  if (arg0 || arg1 || arg2 || arg3 || arg4) {
-    syslog(LOG_DEBUG, "Reserved argument is set");
-    return -IPC_ERR_INVALID_ARGUMENTS;
-  }
+static int64_t get_num_envs_handler(__attribute__((unused)) uint64_t arg0, __attribute__((unused)) uint64_t arg1, __attribute__((unused)) uint64_t arg2, __attribute__((unused)) uint64_t arg3, __attribute__((unused)) uint64_t arg4) {
   pid_t caller_pid = get_ipc_caller_pid();
   size_t num_envs = 0;
   for (struct environment_var* env = (struct environment_var*) envs_list.first; env; env = (struct environment_var*) env->list_member.next) {
@@ -31,11 +27,7 @@ static int64_t get_num_envs_handler(uint64_t arg0, uint64_t arg1, uint64_t arg2,
   }
   return num_envs;
 }
-static int64_t get_env_size_handler(uint64_t num, uint64_t arg1, uint64_t arg2, uint64_t arg3, uint64_t arg4) {
-  if (arg1 || arg2 || arg3 || arg4) {
-    syslog(LOG_DEBUG, "Reserved argument is set");
-    return -IPC_ERR_INVALID_ARGUMENTS;
-  }
+static int64_t get_env_size_handler(uint64_t num, __attribute__((unused)) uint64_t arg1, __attribute__((unused)) uint64_t arg2, __attribute__((unused)) uint64_t arg3, __attribute__((unused)) uint64_t arg4) {
   pid_t caller_pid = get_ipc_caller_pid();
   for (struct environment_var* env = (struct environment_var*) envs_list.first; env; env = (struct environment_var*) env->list_member.next) {
     if (env->pid == caller_pid && env->num == num) {
@@ -45,11 +37,7 @@ static int64_t get_env_size_handler(uint64_t num, uint64_t arg1, uint64_t arg2, 
   syslog(LOG_DEBUG, "Invalid environment variable number");
   return -IPC_ERR_INVALID_ARGUMENTS;
 }
-static int64_t get_env_handler(uint64_t num, uint64_t arg1, uint64_t arg2, uint64_t address, uint64_t size) {
-  if (arg1 || arg2) {
-    syslog(LOG_DEBUG, "Reserved argument is set");
-    return -IPC_ERR_INVALID_ARGUMENTS;
-  }
+static int64_t get_env_handler(uint64_t num, __attribute__((unused)) uint64_t arg1, __attribute__((unused)) uint64_t arg2, uint64_t address, uint64_t size) {
   pid_t caller_pid = get_ipc_caller_pid();
   for (struct environment_var* env = (struct environment_var*) envs_list.first; env; env = (struct environment_var*) env->list_member.next) {
     if (env->pid == caller_pid && env->num == num) {
@@ -67,11 +55,7 @@ static int64_t get_env_handler(uint64_t num, uint64_t arg1, uint64_t arg2, uint6
   syslog(LOG_DEBUG, "Invalid environment variable number");
   return -IPC_ERR_INVALID_ARGUMENTS;
 }
-static int64_t add_env_handler(uint64_t arg0, uint64_t arg1, uint64_t arg2, uint64_t address, uint64_t size) {
-  if (arg0 || arg1 || arg2) {
-    syslog(LOG_DEBUG, "Reserved argument is set");
-    return -IPC_ERR_INVALID_ARGUMENTS;
-  }
+static int64_t add_env_handler(__attribute__((unused)) uint64_t arg0, __attribute__((unused)) uint64_t arg1, __attribute__((unused)) uint64_t arg2, uint64_t address, uint64_t size) {
   pid_t pid = get_caller_spawned_pid();
   if (!pid) {
     syslog(LOG_DEBUG, "Not currently spawning a process");
@@ -107,10 +91,10 @@ int main(void) {
   drop_capability(CAP_NAMESPACE_KERNEL, CAP_KERNEL_LISTEN_EXITS);
   register_ipc(1);
   ipc_set_started();
-  ipc_handlers[IPC_ENVD_GET_NUM] = get_num_envs_handler;
-  ipc_handlers[IPC_ENVD_GET_SIZE] = get_env_size_handler;
-  ipc_handlers[IPC_ENVD_ADD] = add_env_handler;
-  ipc_handlers[IPC_ENVD_GET] = get_env_handler;
+  register_ipc_call(IPC_ENVD_GET_NUM, get_num_envs_handler, 0);
+  register_ipc_call(IPC_ENVD_GET_SIZE, get_env_size_handler, 1);
+  register_ipc_call(IPC_ENVD_ADD, add_env_handler, 0);
+  register_ipc_call(IPC_ENVD_GET, get_env_handler, 1);
   while (1) {
     handle_ipc();
     pid_t pid;

@@ -149,11 +149,7 @@ static void write(int bus, int drive, size_t lba, uint8_t* buffer) {
     outw(base_ports[bus], value);
   }
 }
-static int64_t read_handler(uint64_t offset, uint64_t arg1, uint64_t arg2, uint64_t address, uint64_t size) {
-  if (arg1 || arg2) {
-    syslog(LOG_DEBUG, "Reserved argument is set");
-    return -IPC_ERR_INVALID_ARGUMENTS;
-  }
+static int64_t read_handler(uint64_t offset, __attribute__((unused)) uint64_t arg1, __attribute__((unused)) uint64_t arg2, uint64_t address, uint64_t size) {
   pid_t caller_pid = get_ipc_caller_pid();
   if (caller_pid != child_pid[0] && caller_pid != child_pid[1] && caller_pid != child_pid[2] && caller_pid != child_pid[3]) {
     syslog(LOG_DEBUG, "No permission to access disk");
@@ -201,11 +197,7 @@ static int64_t read_handler(uint64_t offset, uint64_t arg1, uint64_t arg2, uint6
   }
   return size;
 }
-static int64_t write_handler(uint64_t offset, uint64_t arg1, uint64_t arg2, uint64_t address, uint64_t size) {
-  if (arg1 || arg2) {
-    syslog(LOG_DEBUG, "Reserved argument is set");
-    return -IPC_ERR_INVALID_ARGUMENTS;
-  }
+static int64_t write_handler(uint64_t offset, __attribute__((unused)) uint64_t arg1, __attribute__((unused)) uint64_t arg2, uint64_t address, uint64_t size) {
   pid_t caller_pid = get_ipc_caller_pid();
   if (caller_pid != child_pid[0] && caller_pid != child_pid[1] && caller_pid != child_pid[2] && caller_pid != child_pid[3]) {
     syslog(LOG_DEBUG, "No permission to access disk");
@@ -264,8 +256,8 @@ int main(void) {
   identify(1, 0);
   identify(1, 1);
   clear_irqs();
-  ipc_handlers[IPC_VFSD_FS_WRITE] = write_handler;
-  ipc_handlers[IPC_VFSD_FS_READ] = read_handler;
+  register_ipc_call(IPC_VFSD_FS_WRITE, write_handler, 1);
+  register_ipc_call(IPC_VFSD_FS_READ, read_handler, 1);
   while (1) {
     handle_ipc();
   }

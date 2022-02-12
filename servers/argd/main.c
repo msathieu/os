@@ -17,11 +17,7 @@ struct argument {
 
 struct linked_list args_list;
 
-static int64_t get_num_args_handler(uint64_t arg0, uint64_t arg1, uint64_t arg2, uint64_t arg3, uint64_t arg4) {
-  if (arg0 || arg1 || arg2 || arg3 || arg4) {
-    syslog(LOG_DEBUG, "Reserved argument is set");
-    return -IPC_ERR_INVALID_ARGUMENTS;
-  }
+static int64_t get_num_args_handler(__attribute__((unused)) uint64_t arg0, __attribute__((unused)) uint64_t arg1, __attribute__((unused)) uint64_t arg2, __attribute__((unused)) uint64_t arg3, __attribute__((unused)) uint64_t arg4) {
   pid_t caller_pid = get_ipc_caller_pid();
   size_t num_args = 0;
   for (struct argument* arg = (struct argument*) args_list.first; arg; arg = (struct argument*) arg->list_member.next) {
@@ -31,11 +27,7 @@ static int64_t get_num_args_handler(uint64_t arg0, uint64_t arg1, uint64_t arg2,
   }
   return num_args;
 }
-static int64_t get_arg_size_handler(uint64_t num, uint64_t arg1, uint64_t arg2, uint64_t arg3, uint64_t arg4) {
-  if (arg1 || arg2 || arg3 || arg4) {
-    syslog(LOG_DEBUG, "Reserved argument is set");
-    return -IPC_ERR_INVALID_ARGUMENTS;
-  }
+static int64_t get_arg_size_handler(uint64_t num, __attribute__((unused)) uint64_t arg1, __attribute__((unused)) uint64_t arg2, __attribute__((unused)) uint64_t arg3, __attribute__((unused)) uint64_t arg4) {
   pid_t caller_pid = get_ipc_caller_pid();
   for (struct argument* arg = (struct argument*) args_list.first; arg; arg = (struct argument*) arg->list_member.next) {
     if (arg->pid == caller_pid && arg->num == num) {
@@ -45,11 +37,7 @@ static int64_t get_arg_size_handler(uint64_t num, uint64_t arg1, uint64_t arg2, 
   syslog(LOG_DEBUG, "Invalid argument number");
   return -IPC_ERR_INVALID_ARGUMENTS;
 }
-static int64_t get_arg_handler(uint64_t num, uint64_t noremove, uint64_t arg2, uint64_t address, uint64_t size) {
-  if (arg2) {
-    syslog(LOG_DEBUG, "Reserved argument is set");
-    return -IPC_ERR_INVALID_ARGUMENTS;
-  }
+static int64_t get_arg_handler(uint64_t num, uint64_t noremove, __attribute__((unused)) uint64_t arg2, uint64_t address, uint64_t size) {
   if (noremove >= 2) {
     syslog(LOG_DEBUG, "Argument out of range");
     return -IPC_ERR_INVALID_ARGUMENTS;
@@ -73,11 +61,7 @@ static int64_t get_arg_handler(uint64_t num, uint64_t noremove, uint64_t arg2, u
   syslog(LOG_DEBUG, "Invalid argument number");
   return -IPC_ERR_INVALID_ARGUMENTS;
 }
-static int64_t add_arg_handler(uint64_t arg0, uint64_t arg1, uint64_t arg2, uint64_t address, uint64_t size) {
-  if (arg0 || arg1 || arg2) {
-    syslog(LOG_DEBUG, "Reserved argument is set");
-    return -IPC_ERR_INVALID_ARGUMENTS;
-  }
+static int64_t add_arg_handler(__attribute__((unused)) uint64_t arg0, __attribute__((unused)) uint64_t arg1, __attribute__((unused)) uint64_t arg2, uint64_t address, uint64_t size) {
   pid_t pid = get_caller_spawned_pid();
   if (!pid) {
     syslog(LOG_DEBUG, "Not currently spawning a process");
@@ -109,10 +93,10 @@ int main(void) {
   drop_capability(CAP_NAMESPACE_KERNEL, CAP_KERNEL_LISTEN_EXITS);
   register_ipc(1);
   ipc_set_started();
-  ipc_handlers[IPC_ARGD_GET_NUM] = get_num_args_handler;
-  ipc_handlers[IPC_ARGD_GET_SIZE] = get_arg_size_handler;
-  ipc_handlers[IPC_ARGD_ADD] = add_arg_handler;
-  ipc_handlers[IPC_ARGD_GET] = get_arg_handler;
+  register_ipc_call(IPC_ARGD_GET_NUM, get_num_args_handler, 0);
+  register_ipc_call(IPC_ARGD_GET_SIZE, get_arg_size_handler, 1);
+  register_ipc_call(IPC_ARGD_ADD, add_arg_handler, 0);
+  register_ipc_call(IPC_ARGD_GET, get_arg_handler, 2);
   while (1) {
     handle_ipc();
     pid_t pid;

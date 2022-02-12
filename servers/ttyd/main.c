@@ -7,11 +7,7 @@
 #include <tty/fb.h>
 #include <tty/kbd.h>
 
-static int64_t print_handler(__attribute__((unused)) uint64_t offset, uint64_t arg1, uint64_t arg2, uint64_t address, uint64_t size) {
-  if (arg1 || arg2) {
-    syslog(LOG_DEBUG, "Reserved argument is set");
-    return -IPC_ERR_INVALID_ARGUMENTS;
-  }
+static int64_t print_handler(__attribute__((unused)) uint64_t offset, __attribute__((unused)) uint64_t arg1, __attribute__((unused)) uint64_t arg2, uint64_t address, uint64_t size) {
   size_t fb = 0;
   if (has_ipc_caller_capability(CAP_NAMESPACE_SERVERS, CAP_LOGD)) {
     fb = 11;
@@ -27,11 +23,7 @@ static int64_t print_handler(__attribute__((unused)) uint64_t offset, uint64_t a
   update_fb();
   return size;
 }
-static int64_t kbd_input_handler(__attribute__((unused)) uint64_t offset, uint64_t arg1, uint64_t arg2, uint64_t address, uint64_t size) {
-  if (arg1 || arg2) {
-    syslog(LOG_DEBUG, "Reserved argument is set");
-    return -IPC_ERR_INVALID_ARGUMENTS;
-  }
+static int64_t kbd_input_handler(__attribute__((unused)) uint64_t offset, __attribute__((unused)) uint64_t arg1, __attribute__((unused)) uint64_t arg2, uint64_t address, uint64_t size) {
   if (!has_ipc_caller_capability(CAP_NAMESPACE_FILESYSTEMS, CAP_DEVD)) {
     syslog(LOG_DEBUG, "Not allowed to access tty");
     return -IPC_ERR_INSUFFICIENT_PRIVILEGE;
@@ -67,8 +59,8 @@ int main(void) {
   fopen("/dev/tty", "w");
   spawn_process("/bin/sh");
   start_process();
-  ipc_handlers[IPC_VFSD_FS_WRITE] = print_handler;
-  ipc_handlers[IPC_VFSD_FS_READ] = kbd_input_handler;
+  register_ipc_call(IPC_VFSD_FS_WRITE, print_handler, 1);
+  register_ipc_call(IPC_VFSD_FS_READ, kbd_input_handler, 1);
   while (1) {
     handle_ipc();
   }
