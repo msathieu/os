@@ -36,6 +36,7 @@ struct service services[] = {
   {"vfsd", 1, 0, {[CAP_NAMESPACE_KERNEL] = 1 << CAP_KERNEL_LISTEN_EXITS, [CAP_NAMESPACE_FILESYSTEMS] = 1 << CAP_VFSD}, "vfsd"},
 };
 
+int _disable_syslog;
 int _noclonefds;
 
 static void spawn(const char* name) {

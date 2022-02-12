@@ -8,6 +8,7 @@ struct ipc_process {
   bool started;
 };
 
+int _disable_syslog;
 static struct ipc_process processes[64];
 static size_t blocked_processes;
 

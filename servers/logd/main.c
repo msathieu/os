@@ -6,6 +6,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+int _disable_syslog;
 static pid_t ttyd;
 static char* buffer;
 static bool log_kernel;
