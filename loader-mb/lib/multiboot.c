@@ -93,9 +93,7 @@ static void* find_mb_tag(int type, bool required) {
 void parse_multiboot_header(uintptr_t ptr) {
   mbptr = ptr;
   struct mb_command_tag* cmd_tag = find_mb_tag(MULTIBOOT_CMD_TAG, 1);
-  if (!strcmp((char*) cmd_tag->command, "ci")) {
-    loader_struct.ci = 1;
-  }
+  loader_struct.ci = !strcmp((char*) cmd_tag->command, "ci");
   struct mb_memory_map_tag* memory_map = find_mb_tag(MULTIBOOT_MEMORY_MAP_TAG, 1);
   size_t j = 0;
   for (

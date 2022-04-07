@@ -86,14 +86,14 @@ static int64_t handle_transfer(uint64_t inode, uint64_t offset, __attribute__((u
   return send_pid_ipc_call(devices[inode].pid, call, offset, 0, 0, address, size);
 }
 static int64_t read_handler(uint64_t inode, uint64_t offset, uint64_t arg2, uint64_t address, uint64_t size) {
-  return handle_transfer(inode, offset, arg2, address, size, 0);
+  return handle_transfer(inode, offset, arg2, address, size, false);
 }
 static int64_t write_handler(uint64_t inode, uint64_t offset, uint64_t arg2, uint64_t address, uint64_t size) {
-  return handle_transfer(inode, offset, arg2, address, size, 1);
+  return handle_transfer(inode, offset, arg2, address, size, true);
 }
 int main(void) {
   drop_capability(CAP_NAMESPACE_KERNEL, CAP_KERNEL_PRIORITY);
-  register_ipc(1);
+  register_ipc(true);
   ipc_set_started();
   struct vfs_stat stat = {0};
   stat.type = VFS_TYPE_DIR;
@@ -103,7 +103,7 @@ int main(void) {
   register_ipc_call(IPC_DEVD_REGISTER, register_device_handler, 0);
   register_ipc_call(IPC_VFSD_FS_READ, read_handler, 2);
   register_ipc_call(IPC_VFSD_FS_STAT, stat_handler, 1);
-  while (1) {
+  while (true) {
     handle_ipc();
   }
 }

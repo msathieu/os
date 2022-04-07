@@ -67,13 +67,13 @@ static int64_t handle_transfer(uint64_t offset, __attribute__((unused)) uint64_t
   return written_size;
 }
 static int64_t read_handler(uint64_t offset, uint64_t arg1, uint64_t arg2, uint64_t address, uint64_t size) {
-  return handle_transfer(offset, arg1, arg2, address, size, 0);
+  return handle_transfer(offset, arg1, arg2, address, size, false);
 }
 static int64_t write_handler(uint64_t offset, uint64_t arg1, uint64_t arg2, uint64_t address, uint64_t size) {
-  return handle_transfer(offset, arg1, arg2, address, size, 1);
+  return handle_transfer(offset, arg1, arg2, address, size, true);
 }
 int main(void) {
-  register_ipc(1);
+  register_ipc(true);
   parent_pid = getppid();
   send_pid_ipc_call(parent_pid, IPC_VFSD_FS_READ, 0, 0, 0, (uintptr_t) &header, sizeof(struct lvm_header));
   if (header.magic != LVM_MAGIC || header.version) {
@@ -104,7 +104,7 @@ int main(void) {
   }
   register_ipc_call(IPC_VFSD_FS_WRITE, write_handler, 1);
   register_ipc_call(IPC_VFSD_FS_READ, read_handler, 1);
-  while (1) {
+  while (true) {
     handle_ipc();
   }
 }

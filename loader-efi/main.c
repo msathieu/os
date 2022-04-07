@@ -1,5 +1,7 @@
+#include <stdbool.h>
+
 void lmain(void) {
-  while (1) {
+  while (true) {
     asm volatile("hlt");
   }
 }

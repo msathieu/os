@@ -42,13 +42,13 @@ uint64_t kernel_entry;
 extern int _binary____public_key_start;
 
 void load_kernel(uintptr_t addr, uintptr_t size) {
-  bool verified = 0;
+  bool verified = false;
   for (size_t i = 0; i < 64; i++) {
     if (!strcmp((char*) loader_struct.files[i].name, "kernel.sig")) {
       if (crypto_check((uint8_t*) loader_struct.files[i].address, (uint8_t*) &_binary____public_key_start, (uint8_t*) addr, size)) {
         panic("Invalid kernel signature");
       }
-      verified = 1;
+      verified = true;
       break;
     }
   }

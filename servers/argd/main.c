@@ -91,13 +91,13 @@ int main(void) {
   drop_capability(CAP_NAMESPACE_KERNEL, CAP_KERNEL_PRIORITY);
   listen_exits();
   drop_capability(CAP_NAMESPACE_KERNEL, CAP_KERNEL_LISTEN_EXITS);
-  register_ipc(1);
+  register_ipc(true);
   ipc_set_started();
   register_ipc_call(IPC_ARGD_GET_NUM, get_num_args_handler, 0);
   register_ipc_call(IPC_ARGD_GET_SIZE, get_arg_size_handler, 1);
   register_ipc_call(IPC_ARGD_ADD, add_arg_handler, 0);
   register_ipc_call(IPC_ARGD_GET, get_arg_handler, 2);
-  while (1) {
+  while (true) {
     handle_ipc();
     pid_t pid;
     while ((pid = get_exited_pid())) {

@@ -49,13 +49,13 @@ void load_elf(size_t file_i) {
   char signature_name[strlen((char*) loader_struct.files[file_i].name) + 5];
   strcpy(signature_name, (char*) loader_struct.files[file_i].name);
   strcat(signature_name, ".sig");
-  bool verified = 0;
+  bool verified = false;
   for (size_t i = 0; i < 64; i++) {
     if (!strcmp((char*) loader_struct.files[i].name, signature_name)) {
       if (crypto_check((uint8_t*) loader_struct.files[i].address, (uint8_t*) &_binary____public_key_start, (uint8_t*) address, loader_struct.files[file_i].size)) {
         panic("Invalid executable signature");
       }
-      verified = 1;
+      verified = true;
       break;
     }
   }
@@ -82,18 +82,18 @@ void load_elf(size_t file_i) {
     uintptr_t mapped_address;
     if (pheader->type == ELF_SEGMENT_LOAD) {
       mapped_address = pheader->memory_address;
-      map_range(pheader->memory_address, pheader->memory_size, 0, 1, 0);
+      map_range(pheader->memory_address, pheader->memory_size, false, true, false);
     } else {
-      mapped_address = get_free_range(pheader->memory_size, 0, 1, 0, 0x80000000);
+      mapped_address = get_free_range(pheader->memory_size, false, true, false, 0x80000000);
       tls = mapped_address;
       tls_size = pheader->memory_size;
     }
     memset((void*) mapped_address, 0, pheader->memory_size);
     memcpy((void*) mapped_address, (void*) address + pheader->file_offset, pheader->file_size);
     if (pheader->type == ELF_SEGMENT_LOAD) {
-      set_paging_flags(mapped_address, pheader->memory_size, 1, pheader->flags & ELF_FLAGS_WRITE, pheader->flags & ELF_FLAGS_EXEC);
+      set_paging_flags(mapped_address, pheader->memory_size, true, pheader->flags & ELF_FLAGS_WRITE, pheader->flags & ELF_FLAGS_EXEC);
     } else {
-      set_paging_flags(mapped_address, pheader->memory_size, 1, 0, 0);
+      set_paging_flags(mapped_address, pheader->memory_size, true, false, false);
     }
   }
   if (header->entry >= 0x8000000000000000) {
@@ -101,8 +101,8 @@ void load_elf(size_t file_i) {
   }
   if (loader_struct.ci) {
     outw(0x604, 0x2000);
-    while (1)
-      ;
+    while (true) {
+    }
   }
   release_lock();
   jmp_user(tls, tls_size, header->entry);

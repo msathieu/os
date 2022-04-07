@@ -1,5 +1,6 @@
 #include <elf.h>
 #include <multiboot.h>
+#include <stdbool.h>
 #include <stdlib.h>
 #include <struct.h>
 
@@ -27,8 +28,8 @@ static void gen_entry(struct paging_table* table, size_t i) {
     return;
   }
   table->entries[i] = vcalloc(sizeof(struct paging_table));
-  table->phys_entries[i].present = 1;
-  table->phys_entries[i].write = 1;
+  table->phys_entries[i].present = true;
+  table->phys_entries[i].write = true;
   table->phys_entries[i].address = (uintptr_t) table->entries[i] / 0x1000;
 }
 static void create_mapping(uint64_t virt, uintptr_t phys) {
@@ -44,8 +45,8 @@ static void create_mapping(uint64_t virt, uintptr_t phys) {
   gen_entry(page_directory, page_directory_i);
   struct paging_table* page_table = page_directory->entries[page_directory_i];
   struct paging_entry* page = &page_table->phys_entries[page_table_i];
-  page->present = 1;
-  page->write = 1;
+  page->present = true;
+  page->write = true;
   page->address = phys / 0x1000;
 }
 static void identity_map(uintptr_t start, uintptr_t end) {

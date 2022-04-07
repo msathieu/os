@@ -109,9 +109,9 @@ static void gen_entry(struct paging_table* table, size_t i) {
   }
   table->entries[i] = valloc(sizeof(struct paging_table));
   memset(table->entries[i], 0, sizeof(struct paging_table));
-  table->phys_entries[i].present = 1;
-  table->phys_entries[i].user = 1;
-  table->phys_entries[i].write = 1;
+  table->phys_entries[i].present = true;
+  table->phys_entries[i].user = true;
+  table->phys_entries[i].write = true;
   table->phys_entries[i].address = convert_to_physical((uintptr_t) table->entries[i], current_pml4()) / 0x1000;
 }
 bool is_page_mapped(uintptr_t address, bool write) {
@@ -154,14 +154,12 @@ void create_mapping(uintptr_t virt, uintptr_t phys, bool user, bool write, bool 
   gen_entry(page_directory, page_directory_i);
   struct paging_table* page_table = page_directory->entries[page_directory_i];
   struct paging_entry* page = &page_table->phys_entries[page_table_i];
-  page->present = 1;
+  page->present = true;
   page->user = user;
   page->write = write;
   page->noexec = !exec;
   page->cache_disable = cache_disable;
-  if (pml4_i >= 256) {
-    page->global = 1;
-  }
+  page->global = pml4_i >= 256;
   page->address = phys / 0x1000;
   bitset_set(frames, page->address);
 }
@@ -318,9 +316,9 @@ struct paging_table* clone_pml4(void) {
                 struct paging_entry* page = &page_table->phys_entries[l];
                 if (page->present) {
                   uintptr_t address = (l + (k + (j + i * 512) * 512) * 512) * 0x1000;
-                  map_address(address, 1, page->write, !page->noexec);
-                  void* src = map_physical(page->address * 0x1000, 0x1000, 0, 0);
-                  void* dest = map_physical(clone_pml4->entries[i]->entries[j]->entries[k]->phys_entries[l].address * 0x1000, 0x1000, 1, 0);
+                  map_address(address, true, page->write, !page->noexec);
+                  void* src = map_physical(page->address * 0x1000, 0x1000, false, false);
+                  void* dest = map_physical(clone_pml4->entries[i]->entries[j]->entries[k]->phys_entries[l].address * 0x1000, 0x1000, true, false);
                   memcpy(dest, src, 0x1000);
                   unmap_page((uintptr_t) src);
                   unmap_page((uintptr_t) dest);
@@ -381,25 +379,25 @@ void setup_paging(void) {
   bitset_set(frames, 1);
   current_pml4s[get_current_lapic_id()] = valloc(sizeof(struct paging_table));
   for (uintptr_t virtual_addr = (uintptr_t) text_start; virtual_addr < (uintptr_t) text_end; virtual_addr += 0x1000) {
-    create_mapping(virtual_addr, virtual_addr - KERNEL_VIRTUAL_ADDRESS + loader_struct.kernel_physical_addr, 0, 0, 1, 0);
+    create_mapping(virtual_addr, virtual_addr - KERNEL_VIRTUAL_ADDRESS + loader_struct.kernel_physical_addr, false, false, true, false);
   }
   for (uintptr_t virtual_addr = (uintptr_t) rodata_start; virtual_addr < (uintptr_t) rodata_end; virtual_addr += 0x1000) {
-    create_mapping(virtual_addr, virtual_addr - KERNEL_VIRTUAL_ADDRESS + loader_struct.kernel_physical_addr, 0, 0, 0, 0);
+    create_mapping(virtual_addr, virtual_addr - KERNEL_VIRTUAL_ADDRESS + loader_struct.kernel_physical_addr, false, false, false, false);
   }
   for (uintptr_t virtual_addr = (uintptr_t) data_start; virtual_addr < (uintptr_t) data_end; virtual_addr += 0x1000) {
-    create_mapping(virtual_addr, virtual_addr - KERNEL_VIRTUAL_ADDRESS + loader_struct.kernel_physical_addr, 0, 1, 0, 0);
+    create_mapping(virtual_addr, virtual_addr - KERNEL_VIRTUAL_ADDRESS + loader_struct.kernel_physical_addr, false, true, false, false);
   }
   for (uintptr_t virtual_addr = (uintptr_t) bss_start; virtual_addr < (uintptr_t) bss_end; virtual_addr += 0x1000) {
-    create_mapping(virtual_addr, virtual_addr - KERNEL_VIRTUAL_ADDRESS + loader_struct.kernel_physical_addr, 0, 1, 0, 0);
+    create_mapping(virtual_addr, virtual_addr - KERNEL_VIRTUAL_ADDRESS + loader_struct.kernel_physical_addr, false, true, false, false);
   }
   for (size_t i = 0; i < 64; i++) {
-    loader_struct.files[i].address = (uintptr_t) map_physical(loader_struct.files[i].address, loader_struct.files[i].size, 0, 0);
+    loader_struct.files[i].address = (uintptr_t) map_physical(loader_struct.files[i].address, loader_struct.files[i].size, false, false);
   }
   for (size_t i = 256; i < 512; i++) {
     gen_entry(current_pml4(), i);
-    current_pml4()->phys_entries[i].user = 0;
+    current_pml4()->phys_entries[i].user = false;
     if (i != 511) {
-      current_pml4()->phys_entries[i].noexec = 1;
+      current_pml4()->phys_entries[i].noexec = true;
     }
   }
   asm volatile("rdmsr; bts $11, %%rax; wrmsr" // Execute disable
@@ -407,6 +405,6 @@ void setup_paging(void) {
                : "c"(0xc0000080)
                : "rax", "rdx");
   switch_pml4(current_pml4());
-  paging_enabled = 1;
+  paging_enabled = true;
   isr_handlers[14] = fault_handler;
 }

@@ -17,7 +17,7 @@ extern void (*__init_array_start[])(void);
 extern void (*__init_array_end[])(void);
 
 static void setup_thread_libc(void* tls) {
-  ((uintptr_t*) (tls + _tls_size))[0] = (uintptr_t) tls + _tls_size;
+  *((uintptr_t*) (tls + _tls_size)) = (uintptr_t) tls + _tls_size;
   memcpy(tls, tls_master, _tls_size);
   _syscall(_SYSCALL_SET_FS, (uintptr_t) tls + _tls_size, 0, 0, 0, 0);
   rpmalloc_initialize();
@@ -33,11 +33,7 @@ void _setup_libc(uintptr_t _tls_master, size_t tls_size) {
     for (size_t i = 0; i < _argc; i++) {
       size_t size = send_ipc_call("argd", IPC_ARGD_GET_SIZE, i, 0, 0, 0, 0);
       _argv[i] = calloc(size, 1);
-      bool noremove = 0;
-      if (&_noremove_args) {
-        noremove = 1;
-      }
-      send_ipc_call("argd", IPC_ARGD_GET, i, noremove, 0, (uintptr_t) _argv[i], size);
+      send_ipc_call("argd", IPC_ARGD_GET, i, (bool) &_noremove_args, 0, (uintptr_t) _argv[i], size);
     }
     _argv[_argc] = 0;
   } else {

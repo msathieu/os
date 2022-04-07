@@ -20,7 +20,7 @@ void syscall_listen_exits(union syscall_args* args) {
   for (size_t i = 0; i < 64; i++) {
     if (!exit_listener_processes[i]) {
       exit_listener_processes[i] = current_task()->process;
-      current_task()->process->exit_listener = 1;
+      current_task()->process->exit_listener = true;
       return;
     }
   }

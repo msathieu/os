@@ -28,15 +28,15 @@ static int64_t kbd_input_handler(__attribute__((unused)) uint64_t offset, __attr
     syslog(LOG_DEBUG, "Not allowed to access tty");
     return -IPC_ERR_INSUFFICIENT_PRIVILEGE;
   }
-  bool block = 1;
+  bool block = true;
   for (size_t i = 0; i < size; i++) {
     char c = get_character();
     if (c) {
-      block = 0;
+      block = false;
       ((char*) address)[i] = c;
     } else {
       if (block) {
-        call_blocked = 1;
+        call_blocked = true;
         return -IPC_ERR_BLOCK;
       } else {
         return i;
@@ -47,13 +47,13 @@ static int64_t kbd_input_handler(__attribute__((unused)) uint64_t offset, __attr
 }
 int main(void) {
   drop_capability(CAP_NAMESPACE_KERNEL, CAP_KERNEL_PRIORITY);
-  register_ipc(1);
+  register_ipc(true);
   ipc_set_started();
   setup_fb();
   setup_kbd();
   send_ipc_call("logd", IPC_LOGD_REGISTER, 0, 0, 0, 0, 0);
   drop_capability(CAP_NAMESPACE_SERVERS, CAP_LOGD_TTY);
-  setenv("PATH", "/bin", 0);
+  setenv("PATH", "/bin", false);
   fopen("/dev/tty", "r");
   fopen("/dev/tty", "w");
   fopen("/dev/tty", "w");
@@ -61,7 +61,7 @@ int main(void) {
   start_process();
   register_ipc_call(IPC_VFSD_FS_WRITE, print_handler, 1);
   register_ipc_call(IPC_VFSD_FS_READ, kbd_input_handler, 1);
-  while (1) {
+  while (true) {
     handle_ipc();
   }
 }

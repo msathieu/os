@@ -43,7 +43,7 @@ static int64_t set_started_handler(__attribute__((unused)) uint64_t arg0, __attr
   pid_t pid = get_ipc_caller_pid();
   for (size_t i = 0; i < 64; i++) {
     if (processes[i].pid == pid && !processes[i].started) {
-      processes[i].started = 1;
+      processes[i].started = true;
       unblock_all();
       return 0;
     }
@@ -66,11 +66,11 @@ static int64_t discovery_handler(uint64_t arg0, uint64_t arg1, uint64_t arg2, ui
 int main(void) {
   change_priority(PRIORITY_SYSTEM_HIGH);
   drop_capability(CAP_NAMESPACE_KERNEL, CAP_KERNEL_PRIORITY);
-  register_ipc(0);
+  register_ipc(false);
   register_ipc_call(IPC_IPCD_REGISTER, registration_handler, 5);
   register_ipc_call(IPC_IPCD_SET_STARTED, set_started_handler, 0);
   register_ipc_call(IPC_IPCD_DISCOVER, discovery_handler, 5);
-  while (1) {
+  while (true) {
     handle_ipc();
   }
 }

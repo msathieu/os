@@ -64,7 +64,7 @@ void smp_invalidate_page_cache(void) {
   }
 }
 void smp_broadcast_nmi(void) {
-  broadcasted_nmi = 1;
+  broadcasted_nmi = true;
   if (aps_jmp_user) {
     for (size_t i = 0; i < madt_num_lapics; i++) {
       if (madt_lapics[i]->lapic_id == get_current_lapic_id()) {
@@ -81,7 +81,7 @@ void smp_wakeup_core(size_t core_i) {
 }
 void setup_lapic(size_t nlapic) {
   if (!nlapic) {
-    registers = map_physical(madt_lapic_address, 0x400, 1, 1);
+    registers = map_physical(madt_lapic_address, 0x400, true, true);
     madt_bsp_lapic_id = madt_lapics[0]->lapic_id;
     if (madt_bsp_lapic_id) {
       // TODO: Allow BSP to have different ID
@@ -119,7 +119,7 @@ void setup_lapic_timer(bool ap) {
   write_register(LAPIC_REGISTER_TIMER, 254);
 }
 void start_aps(void) {
-  create_mapping(0x1000, 0x1000, 0, 1, 0, 0);
+  create_mapping(0x1000, 0x1000, false, true, false, false);
   memcpy((void*) 0x1000, &ap_trampoline, 0x1000);
   ((uint64_t*) 0x1000)[3] = convert_to_physical((uintptr_t) current_pml4s[0], current_pml4());
   for (size_t i = 1; i < madt_num_lapics; i++) {
@@ -130,13 +130,13 @@ void start_aps(void) {
     write_register(LAPIC_REGISTER_INTERRUPT_COMMAND, LAPIC_DELIVERY_INIT);
     sleep(10 * TIME_MILLISECOND);
     write_register(LAPIC_REGISTER_INTERRUPT_COMMAND + 1, madt_lapics[i]->lapic_id << 24);
-    set_paging_flags(0x1000, 0x1000, 0, 0, 1);
+    set_paging_flags(0x1000, 0x1000, false, false, true);
     write_register(LAPIC_REGISTER_INTERRUPT_COMMAND, LAPIC_DELIVERY_STARTUP | 1);
     while (!ap_startup) {
       asm volatile("pause");
     }
     ap_startup = 0;
-    set_paging_flags(0x1000, 0x1000, 0, 1, 0);
+    set_paging_flags(0x1000, 0x1000, false, true, false);
   }
   free_page(0x1000);
 }

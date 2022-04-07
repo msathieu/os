@@ -54,7 +54,7 @@ static void draw_cursor(size_t x, size_t y, size_t fb, bool cursor) {
     }
   }
   if (fb == selected_framebuffer) {
-    line_updated[y] = 1;
+    line_updated[y] = true;
   }
 }
 static void draw_character(size_t x, size_t y, unsigned char c, size_t fb) {
@@ -75,7 +75,7 @@ static void draw_character(size_t x, size_t y, unsigned char c, size_t fb) {
     }
   }
   if (fb == selected_framebuffer) {
-    line_updated[y] = 1;
+    line_updated[y] = true;
   }
 }
 void put_character(char c, size_t fb) {
@@ -102,7 +102,7 @@ void put_character(char c, size_t fb) {
     memmove(framebuffer[fb], framebuffer[fb] + 16 * fb_pitch, (fb_height - 16) * fb_pitch);
     memset(framebuffer[fb] + (fb_height - 16) * fb_pitch, 0, 16 * fb_pitch);
     if (fb == selected_framebuffer) {
-      screen_updated = 1;
+      screen_updated = true;
     }
     current_y[fb]--;
   }
@@ -124,13 +124,13 @@ void update_fb(void) {
   if (screen_updated) {
     send_ipc_call("fbd", IPC_FBD_COPY, 0, 0, 0, (uintptr_t) framebuffer[selected_framebuffer], fb_height * fb_pitch);
     memset(line_updated, 0, height);
-    screen_updated = 0;
+    screen_updated = false;
     return;
   }
   for (size_t i = 0; i < height; i++) {
     if (line_updated[i]) {
       send_ipc_call("fbd", IPC_FBD_COPY, i * 16 * fb_pitch, 0, 0, (uintptr_t) framebuffer[selected_framebuffer] + i * 16 * fb_pitch, 16 * fb_pitch);
-      line_updated[i] = 0;
+      line_updated[i] = false;
     }
   }
 }

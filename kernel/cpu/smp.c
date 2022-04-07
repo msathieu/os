@@ -79,12 +79,12 @@ void set_cpu_flags(void) {
   }
 }
 _Noreturn void ap_entry(void) {
-  setup_gdt(1);
+  setup_gdt(true);
   load_idt();
   set_cpu_flags();
   setup_lapic(ap_nlapic);
-  setup_lapic_timer(1);
-  ap_startup = 1;
+  setup_lapic_timer(true);
+  ap_startup = true;
   while (!aps_jmp_user) {
     asm volatile("pause");
   }

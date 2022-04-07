@@ -39,7 +39,7 @@ static void identify(int bus, int drive) {
     }
   }
   if (inb(base_ports[bus] + ATA_PORT_LBAMIDDLE) || inb(base_ports[bus] + ATA_PORT_LBAHIGH)) {
-    is_atapi[bus * 2 + drive] = 1;
+    is_atapi[bus * 2 + drive] = true;
     outb(base_ports[bus] + ATA_PORT_COMMAND, ATAPI_CMD_IDENTIFY);
     tries = 0;
     while (inb(alternate_ports[bus]) & ATA_STATUS_BSY) {
@@ -51,7 +51,7 @@ static void identify(int bus, int drive) {
     }
   }
   tries = 0;
-  while (1) {
+  while (true) {
     uint8_t status = inb(base_ports[bus] + ATA_PORT_COMMAND);
     if (status & ATA_STATUS_ERR) {
       syslog(LOG_ERR, "Error identifying drive %d on bus %d", drive, bus);
@@ -248,7 +248,7 @@ static int64_t write_handler(uint64_t offset, __attribute__((unused)) uint64_t a
   return size;
 }
 int main(void) {
-  register_ipc(1);
+  register_ipc(true);
   outb(alternate_ports[0], 0);
   outb(alternate_ports[1], 0);
   identify(0, 0);
@@ -258,7 +258,7 @@ int main(void) {
   clear_irqs();
   register_ipc_call(IPC_VFSD_FS_WRITE, write_handler, 1);
   register_ipc_call(IPC_VFSD_FS_READ, read_handler, 1);
-  while (1) {
+  while (true) {
     handle_ipc();
   }
 }

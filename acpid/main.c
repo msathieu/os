@@ -19,7 +19,7 @@ static int64_t power_state_handler(uint64_t type, __attribute__((unused)) uint64
   case 0:
     pthread_spin_lock(&lock);
     lai_enter_sleep(5);
-    while (1) {
+    while (true) {
       asm volatile("pause");
     }
   case 1:
@@ -28,7 +28,7 @@ static int64_t power_state_handler(uint64_t type, __attribute__((unused)) uint64
     if (error) {
       _syscall(_SYSCALL_RESET, 0, 0, 0, 0, 0);
     }
-    while (1) {
+    while (true) {
       asm volatile("pause");
     }
   default:
@@ -40,23 +40,23 @@ static int sci_handler(__attribute__((unused)) void* arg) {
   wait_irq();
   pthread_spin_lock(&lock);
   lai_enter_sleep(5);
-  while (1) {
+  while (true) {
     asm volatile("pause");
   }
 }
 int main(void) {
   drop_capability(CAP_NAMESPACE_KERNEL, CAP_KERNEL_PRIORITY);
-  register_ipc(0);
+  register_ipc(false);
   ipc_set_started();
   int revision = _syscall(_SYSCALL_GET_ACPI_REVISION, 0, 0, 0, 0, 0);
   lai_set_acpi_revision(revision);
   lai_create_namespace();
   lai_enable_acpi(1);
   lai_set_sci_event(ACPI_POWER_BUTTON);
-  pthread_spin_init(&lock, 0);
+  pthread_spin_init(&lock, false);
   thrd_create(0, sci_handler, 0);
   register_ipc_call(IPC_ACPID_POWER_STATE, power_state_handler, 1);
-  while (1) {
+  while (true) {
     handle_ipc();
   }
 }

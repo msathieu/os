@@ -80,13 +80,13 @@ static int64_t change_layout_handler(uint64_t country0, uint64_t country1, __att
 }
 int main(void) {
   drop_capability(CAP_NAMESPACE_KERNEL, CAP_KERNEL_PRIORITY);
-  register_ipc(0);
+  register_ipc(false);
   ipc_set_started();
   layout = layouts[0];
   register_ipc_call(IPC_KBDD_KEYPRESS, keypress_handler, 2);
   register_ipc_call(IPC_KBDD_REGISTER, registration_handler, 0);
   register_ipc_call(IPC_KBDD_CHANGE_LAYOUT, change_layout_handler, 2);
-  while (1) {
+  while (true) {
     handle_ipc();
   }
 }

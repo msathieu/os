@@ -50,8 +50,8 @@ size_t get_time(void) {
 }
 static void handler(struct isr_registers* isr_registers) {
   if (kernel_sleep) {
-    sleep_done = 1;
-    kernel_sleep = 0;
+    sleep_done = true;
+    kernel_sleep = false;
     write_register(HPET_REGISTER_TIMERS_CONFIG, read_register(HPET_REGISTER_TIMERS_CONFIG) & ~HPET_TIMER_CONFIG_ENABLE);
   } else {
     struct task* next_task;
@@ -76,7 +76,7 @@ static void handler(struct isr_registers* isr_registers) {
   }
 }
 void sleep(size_t time) {
-  kernel_sleep = 1;
+  kernel_sleep = true;
   size_t comparator = read_register(HPET_REGISTER_COUNTER) + time / tick_length;
   write_register(HPET_REGISTER_TIMERS_COMPARATOR, comparator);
   write_register(HPET_REGISTER_TIMERS_CONFIG, read_register(HPET_REGISTER_TIMERS_CONFIG) | HPET_TIMER_CONFIG_ENABLE);
@@ -87,7 +87,7 @@ void sleep(size_t time) {
     asm volatile("cli");
   }
   asm volatile("sti");
-  sleep_done = 0;
+  sleep_done = false;
 }
 void sleep_current_task(size_t duration, struct isr_registers* isr_registers) {
   if (duration > 24 * 60 * 60 * 1000) {

@@ -1,4 +1,5 @@
 #include <__/syscall.h>
+#include <stdbool.h>
 #include <stddef.h>
 
 extern void (*__fini_array_start[])(void);
@@ -9,6 +10,6 @@ _Noreturn void exit(int status) {
     __fini_array_start[i]();
   }
   _syscall(_SYSCALL_EXIT, status, 1, 0, 0, 0);
-  while (1)
-    ;
+  while (true) {
+  }
 }

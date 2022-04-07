@@ -36,7 +36,7 @@ static void send_command(int cmd, int arg, size_t cmd_tries) {
     outb(PS2_PORT_DATA, arg);
   }
   tries = 0;
-  while (1) {
+  while (true) {
     if (inb(PS2_PORT_COMMAND) & PS2_STATUS_OUTPUT) {
       int response = inb(PS2_PORT_DATA);
       if (response == PS2_RESPONSE_ACK) {
@@ -91,7 +91,7 @@ int main(void) {
   outb(PS2_PORT_COMMAND, PS2_CMD_ENABLE_FIRST);
   send_command(PS2_DEVICE_RESET, -1, 0);
   tries = 0;
-  while (1) {
+  while (true) {
     if (inb(PS2_PORT_COMMAND) & PS2_STATUS_OUTPUT) {
       int response = inb(PS2_PORT_DATA);
       if (response == PS2_RESPONSE_RESET) {
@@ -109,32 +109,32 @@ int main(void) {
       exit(1);
     }
   }
-  bool release = 0;
-  bool extended = 0;
-  while (1) {
+  bool release = false;
+  bool extended = false;
+  while (true) {
     if (inb(PS2_PORT_COMMAND) & PS2_STATUS_OUTPUT) {
       int scancode = inb(PS2_PORT_DATA);
       if (scancode == SCANCODE_RELEASE) {
-        release = 1;
+        release = true;
         continue;
       }
       if (scancode == SCANCODE_EXTENDED) {
-        extended = 1;
+        extended = true;
         continue;
       }
       int key;
       if (extended) {
         key = scancode_conversion_extended[scancode];
-        extended = 0;
+        extended = false;
       } else {
         key = scancode_conversion[scancode];
       }
       if (!key) {
-        release = 0;
+        release = false;
         continue;
       }
       int return_value = send_ipc_call("kbdd", IPC_KBDD_KEYPRESS, key, release, 0, 0, 0);
-      release = 0;
+      release = false;
       change_leds(return_value);
     } else {
       wait_irq();

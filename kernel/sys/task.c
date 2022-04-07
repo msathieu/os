@@ -95,7 +95,7 @@ void terminate_current_task(struct isr_registers* registers) {
   destroy_task(task);
 }
 static _Noreturn void idle(void) {
-  while (1) {
+  while (true) {
     asm volatile("hlt");
   }
 }

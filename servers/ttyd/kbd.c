@@ -11,7 +11,7 @@ static size_t buffer_size;
 static size_t buffer_len;
 static bool ctrl_pressed;
 static bool alt_pressed;
-bool call_blocked = 0;
+bool call_blocked;
 size_t selected_framebuffer;
 
 static int64_t key_event_handler(uint64_t type, uint64_t value, uint64_t release, __attribute__((unused)) uint64_t arg3, __attribute__((unused)) uint64_t arg4) {
@@ -91,7 +91,7 @@ static int64_t key_event_handler(uint64_t type, uint64_t value, uint64_t release
       buffer[buffer_len++] = value;
       if (call_blocked && value == '\n') {
         ipc_unblock(0);
-        call_blocked = 0;
+        call_blocked = false;
       }
     } else if (type == KBD_SPECIAL && value == KBD_BACKSPACE && buffer_len) {
       size_t nchars = 1;

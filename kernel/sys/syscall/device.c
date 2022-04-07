@@ -101,21 +101,21 @@ static void usermode_irq_handler(struct isr_registers* registers) {
   if (isr == 253) {
     struct task* handler = sci_process->irq_handler;
     if (handler) {
-      handler->blocked = 0;
+      handler->blocked = false;
       sci_process->irq_handler = 0;
       schedule_task(handler, registers);
     } else {
-      sci_fired = 1;
+      sci_fired = true;
     }
   } else {
     struct task* handler = isa_irqs_process[isr - 48]->irq_handler;
     if (handler) {
-      handler->blocked = 0;
+      handler->blocked = false;
       handler->registers.rax = isr - 48;
       isa_irqs_process[isr - 48]->irq_handler = 0;
       schedule_task(handler, registers);
     } else {
-      isa_irqs_fired[isr - 48] = 1;
+      isa_irqs_fired[isr - 48] = true;
     }
   }
 }
@@ -180,11 +180,11 @@ void syscall_clear_irqs(union syscall_args* args) {
   }
   for (size_t i = 0; i < 16; i++) {
     if (isa_irqs_process[i] == current_task()->process) {
-      isa_irqs_fired[i] = 0;
+      isa_irqs_fired[i] = false;
     }
   }
   if (sci_process == current_task()->process) {
-    sci_fired = 0;
+    sci_fired = false;
   }
 }
 void syscall_wait_irq(union syscall_args* args) {
@@ -200,13 +200,13 @@ void syscall_wait_irq(union syscall_args* args) {
   }
   for (size_t i = 0; i < 16; i++) {
     if (isa_irqs_process[i] == current_task()->process && isa_irqs_fired[i]) {
-      isa_irqs_fired[i] = 0;
+      isa_irqs_fired[i] = false;
       args->return_value = i;
       return;
     }
   }
   if (sci_process == current_task()->process && sci_fired) {
-    sci_fired = 0;
+    sci_fired = false;
     args->return_value = 253;
     return;
   }
@@ -250,7 +250,7 @@ void syscall_map_phys_memory(union syscall_args* args) {
     switch_pml4(current_task()->spawned_process->address_space);
   }
   for (size_t i = 0; i < args->arg1; i += 0x1000) {
-    create_mapping(args->return_value + i, args->arg0 + i, 1, 1, 0, 1);
+    create_mapping(args->return_value + i, args->arg0 + i, true, true, false, true);
   }
   if (args->arg2) {
     switch_pml4(current_task()->process->address_space);
@@ -315,17 +315,17 @@ void syscall_get_acpi_table(union syscall_args* args) {
     args->arg1,
     args->arg2,
     args->arg3};
-  struct acpi_header* table = acpi_find_table(name, 0, args->arg4);
+  struct acpi_header* table = acpi_find_table(name, false, args->arg4);
   if (!table) {
     args->return_value = 0;
     return;
   }
-  args->return_value = get_free_range(table->size, 0, 1, 0, 0x1000);
+  args->return_value = get_free_range(table->size, false, true, false, 0x1000);
   if (!args->return_value) {
     puts("Not enough space for requested table");
     terminate_current_task(&args->registers);
     return;
   }
   memcpy((void*) args->return_value, table, table->size);
-  set_paging_flags(args->return_value, table->size, 1, 0, 0);
+  set_paging_flags(args->return_value, table->size, true, false, false);
 }

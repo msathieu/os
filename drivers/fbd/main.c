@@ -65,7 +65,7 @@ static int64_t copy_handler(uint64_t offset, __attribute__((unused)) uint64_t ar
 }
 int main(void) {
   drop_capability(CAP_NAMESPACE_KERNEL, CAP_KERNEL_PRIORITY);
-  register_ipc(1);
+  register_ipc(true);
   ipc_set_started();
   width = _syscall(_SYSCALL_GET_FB_INFO, 1, 0, 0, 0, 0);
   height = _syscall(_SYSCALL_GET_FB_INFO, 2, 0, 0, 0, 0);
@@ -78,7 +78,7 @@ int main(void) {
   memset(framebuffer, 0, height * pitch);
   register_ipc_call(IPC_FBD_INFO, info_handler, 1);
   register_ipc_call(IPC_FBD_COPY, copy_handler, 1);
-  while (1) {
+  while (true) {
     handle_ipc();
   }
 }

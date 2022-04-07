@@ -100,7 +100,7 @@ static int64_t finish_mount_handler(uint64_t inode, __attribute__((unused)) uint
         syslog(LOG_DEBUG, "Mount isn't a directory");
         return -IPC_ERR_INVALID_ARGUMENTS;
       }
-      mounts[i].mounted = 1;
+      mounts[i].mounted = true;
       mounts[i].node.inode = inode;
       for (size_t j = 0; j < blocked_calls; j++) {
         ipc_unblock(0);
@@ -168,11 +168,11 @@ static int64_t open_file_handler(uint64_t flags, __attribute__((unused)) uint64_
       free_node(node);
       return -IPC_ERR_INVALID_ARGUMENTS;
     }
-    bool found_child = 0;
+    bool found_child = false;
     for (struct fs_node* child = (struct fs_node*) node->children.first; child; child = (struct fs_node*) child->list_member.next) {
       if (!strcmp(child->name, part)) {
         node = child;
-        found_child = 1;
+        found_child = true;
         break;
       }
     }
@@ -231,7 +231,7 @@ static int64_t open_file_handler(uint64_t flags, __attribute__((unused)) uint64_
     memset(process + sizeof(struct process) + (process->nfds - 128) * sizeof(struct fd), 0, 128 * sizeof(struct fd));
     fd = &process->fds[fd_i];
   }
-  fd->exists = 1;
+  fd->exists = true;
   fd->flags = flags;
   fd->node = node;
   fd->node->nfds++;
@@ -300,10 +300,10 @@ static int64_t handle_transfer(uint64_t fd_num, __attribute__((unused)) uint64_t
   return -IPC_ERR_INVALID_ARGUMENTS;
 }
 static int64_t read_file_handler(uint64_t fd_num, uint64_t arg1, uint64_t arg2, uint64_t address, uint64_t size) {
-  return handle_transfer(fd_num, arg1, arg2, address, size, 0);
+  return handle_transfer(fd_num, arg1, arg2, address, size, false);
 }
 static int64_t write_file_handler(uint64_t fd_num, uint64_t arg1, uint64_t arg2, uint64_t address, uint64_t size) {
-  return handle_transfer(fd_num, arg1, arg2, address, size, 1);
+  return handle_transfer(fd_num, arg1, arg2, address, size, true);
 }
 static int64_t seek_file_handler(uint64_t fd_num, uint64_t mode, uint64_t arg_position, __attribute__((unused)) uint64_t arg3, __attribute__((unused)) uint64_t arg4) {
   if (mode >= 2) {
@@ -386,7 +386,7 @@ static int64_t clone_fds_handler(uint64_t fork, __attribute__((unused)) uint64_t
 }
 int main(void) {
   drop_capability(CAP_NAMESPACE_KERNEL, CAP_KERNEL_PRIORITY);
-  register_ipc(1);
+  register_ipc(true);
   ipc_set_started();
   listen_exits();
   drop_capability(CAP_NAMESPACE_KERNEL, CAP_KERNEL_LISTEN_EXITS);
@@ -398,7 +398,7 @@ int main(void) {
   register_ipc_call(IPC_VFSD_WRITE, write_file_handler, 1);
   register_ipc_call(IPC_VFSD_FINISH_MOUNT, finish_mount_handler, 1);
   register_ipc_call(IPC_VFSD_READ, read_file_handler, 1);
-  while (1) {
+  while (true) {
     handle_ipc();
     pid_t pid;
     while ((pid = get_exited_pid())) {

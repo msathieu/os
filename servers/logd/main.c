@@ -51,16 +51,16 @@ static int64_t log_handler(__attribute__((unused)) uint64_t arg0, __attribute__(
 }
 int main(void) {
   drop_capability(CAP_NAMESPACE_KERNEL, CAP_KERNEL_PRIORITY);
-  register_ipc(1);
+  register_ipc(true);
   ipc_set_started();
   unsigned eax, ebx, ecx, edx;
   __get_cpuid(1, &eax, &ebx, &ecx, &edx);
   if (ecx & 0x80000000) {
-    log_kernel = 1;
+    log_kernel = true;
   }
   register_ipc_call(IPC_LOGD_REGISTER, registration_handler, 0);
   register_ipc_call(IPC_LOGD_LOG, log_handler, 0);
-  while (1) {
+  while (true) {
     handle_ipc();
     if (buffer && ttyd) {
       send_pid_ipc_call(ttyd, IPC_VFSD_FS_WRITE, 0, 0, 0, (uintptr_t) buffer, strlen(buffer));

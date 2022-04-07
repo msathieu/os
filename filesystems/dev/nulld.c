@@ -10,10 +10,10 @@ static int64_t write_handler(__attribute__((unused)) uint64_t offset, __attribut
 }
 int main(void) {
   drop_capability(CAP_NAMESPACE_KERNEL, CAP_KERNEL_PRIORITY);
-  register_ipc(1);
+  register_ipc(true);
   register_ipc_call(IPC_VFSD_FS_WRITE, write_handler, 1);
   register_ipc_call(IPC_VFSD_FS_READ, read_handler, 1);
-  while (1) {
+  while (true) {
     handle_ipc();
   }
 }

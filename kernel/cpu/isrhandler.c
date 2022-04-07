@@ -43,7 +43,7 @@ isr_handler isr_handlers[256];
 
 void isr_handler_common(struct isr_registers* registers) {
   if (broadcasted_nmi) {
-    while (1) {
+    while (true) {
       asm volatile("hlt");
     }
   }

@@ -23,7 +23,7 @@ static char* read_line(void) {
   char* buffer = malloc(512);
   size_t bufsize = 512;
   size_t len = 0;
-  while (1) {
+  while (true) {
     buffer[len] = getchar();
     if (buffer[len] == '\n') {
       buffer[len] = 0;
@@ -163,7 +163,7 @@ static void execute_line(struct parsed_line* parsed_line) {
   }
 }
 int main(void) {
-  while (1) {
+  while (true) {
     if (getuid()) {
       printf("$ ");
     } else {

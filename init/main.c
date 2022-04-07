@@ -19,28 +19,28 @@ struct service {
 };
 
 struct service services[] = {
-  {"acpid", 1, 0, {[CAP_NAMESPACE_KERNEL] = 1 << CAP_KERNEL_IOPORT | 1 << CAP_KERNEL_MAP_MEMORY | 1 << CAP_KERNEL_ACPI, [CAP_NAMESPACE_DRIVERS] = 1 << CAP_PCID_ACCESS}, "acpid"},
-  {"argd", 1, 0, {[CAP_NAMESPACE_KERNEL] = 1 << CAP_KERNEL_LISTEN_EXITS}, "argd"},
-  {"atad", 1, 0, {[CAP_NAMESPACE_FILESYSTEMS] = 1 << CAP_VFSD_MOUNT}, 0},
-  {"ipcd", 1, 0, {}, 0},
-  {"logd", 1, 0, {[CAP_NAMESPACE_KERNEL] = 1 << CAP_KERNEL_LOG, [CAP_NAMESPACE_SERVERS] = 1 << CAP_LOGD}, "logd"},
-  {"pcid", 1, 0, {[CAP_NAMESPACE_KERNEL] = 1 << CAP_KERNEL_IOPORT | 1 << CAP_KERNEL_IRQ | 1 << CAP_KERNEL_MAP_MEMORY}, "pcid"},
-  {"/sbin/devd", 0, 0, {[CAP_NAMESPACE_FILESYSTEMS] = 1 << CAP_DEVD}, "devd"},
-  {"/sbin/dev-nulld", 0, 0, {}, 0},
-  {"/sbin/dev-zerod", 0, 0, {}, 0},
-  {"/sbin/envd", 0, 0, {[CAP_NAMESPACE_KERNEL] = 1 << CAP_KERNEL_LISTEN_EXITS}, "envd"},
-  {"/sbin/fbd", 0, 0, {[CAP_NAMESPACE_KERNEL] = 1 << CAP_KERNEL_GET_FB_INFO}, "fbd"},
-  {"/sbin/kbdd", 0, 0, {[CAP_NAMESPACE_SERVERS] = 1 << CAP_KBDD}, "kbdd"},
-  {"/sbin/ps2d", 0, 0, {[CAP_NAMESPACE_SERVERS] = 1 << CAP_KBDD_SEND_KEYPRESS}, 0},
-  {"/sbin/ttyd", 0, 0, {[CAP_NAMESPACE_DRIVERS] = 1 << CAP_FBD_DRAW, [CAP_NAMESPACE_SERVERS] = 1 << CAP_KBDD_RECEIVE_EVENTS | 1 << CAP_LOGD_TTY}, "ttyd"},
-  {"vfsd", 1, 0, {[CAP_NAMESPACE_KERNEL] = 1 << CAP_KERNEL_LISTEN_EXITS, [CAP_NAMESPACE_FILESYSTEMS] = 1 << CAP_VFSD}, "vfsd"},
+  {"acpid", true, 0, {[CAP_NAMESPACE_KERNEL] = 1 << CAP_KERNEL_IOPORT | 1 << CAP_KERNEL_MAP_MEMORY | 1 << CAP_KERNEL_ACPI, [CAP_NAMESPACE_DRIVERS] = 1 << CAP_PCID_ACCESS}, "acpid"},
+  {"argd", true, 0, {[CAP_NAMESPACE_KERNEL] = 1 << CAP_KERNEL_LISTEN_EXITS}, "argd"},
+  {"atad", true, 0, {[CAP_NAMESPACE_FILESYSTEMS] = 1 << CAP_VFSD_MOUNT}, 0},
+  {"ipcd", true, 0, {}, 0},
+  {"logd", true, 0, {[CAP_NAMESPACE_KERNEL] = 1 << CAP_KERNEL_LOG, [CAP_NAMESPACE_SERVERS] = 1 << CAP_LOGD}, "logd"},
+  {"pcid", true, 0, {[CAP_NAMESPACE_KERNEL] = 1 << CAP_KERNEL_IOPORT | 1 << CAP_KERNEL_IRQ | 1 << CAP_KERNEL_MAP_MEMORY}, "pcid"},
+  {"/sbin/devd", false, 0, {[CAP_NAMESPACE_FILESYSTEMS] = 1 << CAP_DEVD}, "devd"},
+  {"/sbin/dev-nulld", false, 0, {}, 0},
+  {"/sbin/dev-zerod", false, 0, {}, 0},
+  {"/sbin/envd", false, 0, {[CAP_NAMESPACE_KERNEL] = 1 << CAP_KERNEL_LISTEN_EXITS}, "envd"},
+  {"/sbin/fbd", false, 0, {[CAP_NAMESPACE_KERNEL] = 1 << CAP_KERNEL_GET_FB_INFO}, "fbd"},
+  {"/sbin/kbdd", false, 0, {[CAP_NAMESPACE_SERVERS] = 1 << CAP_KBDD}, "kbdd"},
+  {"/sbin/ps2d", false, 0, {[CAP_NAMESPACE_SERVERS] = 1 << CAP_KBDD_SEND_KEYPRESS}, 0},
+  {"/sbin/ttyd", false, 0, {[CAP_NAMESPACE_DRIVERS] = 1 << CAP_FBD_DRAW, [CAP_NAMESPACE_SERVERS] = 1 << CAP_KBDD_RECEIVE_EVENTS | 1 << CAP_LOGD_TTY}, "ttyd"},
+  {"vfsd", true, 0, {[CAP_NAMESPACE_KERNEL] = 1 << CAP_KERNEL_LISTEN_EXITS, [CAP_NAMESPACE_FILESYSTEMS] = 1 << CAP_VFSD}, "vfsd"},
 };
 
 int _disable_syslog;
 int _noclonefds;
 
 static void spawn(const char* name) {
-  bool service_found = 0;
+  bool service_found = false;
   for (size_t i = 0; i < sizeof(services) / sizeof(struct service); i++) {
     if (!strcmp(services[i].name, name)) {
       if (services[i].raw) {
@@ -54,7 +54,7 @@ static void spawn(const char* name) {
       if (services[i].ipc_name) {
         register_ipc_name(services[i].ipc_name);
       }
-      service_found = 1;
+      service_found = true;
       break;
     }
   }
@@ -113,7 +113,7 @@ int main(void) {
   spawn("/sbin/ttyd");
   spawn("/sbin/ps2d");
   time_t last_restart_time = 0;
-  while (1) {
+  while (true) {
     pid_t pid = wait(0);
     if (time(0) - last_restart_time < 30) {
       sleep(10);

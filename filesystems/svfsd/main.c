@@ -78,7 +78,7 @@ static int64_t read_handler(uint64_t inode, uint64_t offset, __attribute__((unus
 }
 int main(void) {
   drop_capability(CAP_NAMESPACE_KERNEL, CAP_KERNEL_PRIORITY);
-  register_ipc(1);
+  register_ipc(true);
   parent_pid = getppid();
   header = calloc(1, sizeof(struct svfs_header));
   send_pid_ipc_call(parent_pid, IPC_VFSD_FS_READ, 0, 0, 0, (uintptr_t) header, sizeof(struct svfs_header));
@@ -116,7 +116,7 @@ int main(void) {
   register_ipc_call(IPC_VFSD_FS_OPEN, open_handler, 2);
   register_ipc_call(IPC_VFSD_FS_READ, read_handler, 2);
   register_ipc_call(IPC_VFSD_FS_STAT, stat_handler, 1);
-  while (1) {
+  while (true) {
     handle_ipc();
   }
 }

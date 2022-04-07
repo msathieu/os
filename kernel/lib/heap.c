@@ -70,13 +70,13 @@ void setup_heap(void) {
   map_range(HEAP_START, HEAP_INITIAL_SIZE, 0, 1, 0);
   struct heap_header* initial_header = (struct heap_header*) HEAP_START;
   initial_header->size = HEAP_INITIAL_SIZE - sizeof(struct heap_header) - sizeof(struct heap_footer);
-  initial_header->free = 1;
+  initial_header->free = true;
   initial_header->magic = heap_magic;
   struct heap_footer* initial_footer = (struct heap_footer*) (HEAP_START + sizeof(struct heap_header) + initial_header->size);
   initial_footer->magic = heap_magic;
   initial_footer->header = initial_header;
   insert_sorted_list(&heap_list, &initial_header->list_member);
-  heap_enabled = 1;
+  heap_enabled = true;
   placeholder_alloc();
   if (loader_struct.ci) {
     test_alloc();
@@ -101,7 +101,7 @@ void* heap_alloc(size_t requested_size, bool align) {
     panic("Out of heap memory");
   }
   remove_sorted_list(&heap_list, &header->list_member);
-  header->free = 0;
+  header->free = false;
   if (header->size - requested_size > sizeof(struct heap_header) + sizeof(struct heap_footer)) {
     size_t new_free_size = header->size - requested_size - sizeof(struct heap_header) - sizeof(struct heap_footer);
     header->size = requested_size;
@@ -110,7 +110,7 @@ void* heap_alloc(size_t requested_size, bool align) {
     allocated_footer->header = header;
     struct heap_header* new_free_header = (struct heap_header*) (allocated_footer + 1);
     new_free_header->size = new_free_size;
-    new_free_header->free = 1;
+    new_free_header->free = true;
     new_free_header->magic = heap_magic;
     struct heap_footer* new_free_footer = (struct heap_footer*) ((uintptr_t) new_free_header + sizeof(struct heap_header) + new_free_size);
     if (new_free_footer->magic != heap_magic) {
@@ -134,7 +134,7 @@ void* heap_alloc(size_t requested_size, bool align) {
     uintptr_t aligned_addr = (original_addr + 0xfff) / 0x1000 * 0x1000;
     header = (struct heap_header*) (aligned_addr - sizeof(struct heap_header));
     header->size = original_size - (aligned_addr - original_addr);
-    header->free = 0;
+    header->free = false;
     header->magic = heap_magic;
     struct heap_footer* footer = (struct heap_footer*) ((uintptr_t) header + sizeof(struct heap_header) + header->size);
     if (footer->magic != heap_magic) {
@@ -154,7 +154,7 @@ void free(void* address) {
     panic("Invalid magic value");
   }
   memset(address, 0, header->size);
-  header->free = 1;
+  header->free = true;
   struct heap_footer* footer = address + header->size;
   if (footer->magic != heap_magic) {
     panic("Invalid magic value");

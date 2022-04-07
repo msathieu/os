@@ -25,14 +25,14 @@ _Noreturn void kmain(unsigned long magic, uintptr_t structptr) {
     panic("SSE 4.2 isn't supported");
   }
   memcpy(&loader_struct, (void*) structptr, sizeof(struct loader_struct));
-  setup_gdt(0);
+  setup_gdt(false);
   setup_idt();
   setup_paging();
   set_cpu_flags();
   setup_heap();
   disable_pic();
   parse_acpi();
-  setup_lapic_timer(0);
+  setup_lapic_timer(false);
   start_aps();
   setup_multitasking();
 }

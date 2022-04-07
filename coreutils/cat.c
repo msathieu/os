@@ -1,3 +1,4 @@
+#include <stdbool.h>
 #include <stdio.h>
 #include <unistd.h>
 
@@ -9,7 +10,7 @@ int main(int argc, char* argv[]) {
       exit = 1;
       continue;
     }
-    while (1) {
+    while (true) {
       char buffer[1024];
       ssize_t size = read(fileno(file), buffer, 1024);
       if (!size || size == -1) {
