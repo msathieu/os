@@ -2,7 +2,8 @@
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
-#include <unistd.h>
+
+extern char** environ;
 
 int setenv(const char* name, const char* value, int overwrite) {
   if (strchr(name, '=')) {

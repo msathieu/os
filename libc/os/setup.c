@@ -9,6 +9,7 @@
 
 size_t _argc;
 char** _argv;
+char** environ;
 static void* tls_master;
 size_t _tls_size;
 __attribute__((weak)) extern int _noremove_args;

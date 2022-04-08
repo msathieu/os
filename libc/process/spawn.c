@@ -1,10 +1,10 @@
 #include <__/syscall.h>
 #include <ipccalls.h>
 #include <string.h>
-#include <unistd.h>
 
 static bool has_arguments;
 __attribute__((weak)) extern int _noclonefds;
+extern char** environ;
 
 pid_t spawn_process_raw(const char* file) {
   has_arguments = false;

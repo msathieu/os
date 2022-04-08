@@ -76,7 +76,7 @@ jobs:
       - name: Format code
         run: make format
       - name: Check if there are any changes
-        run: git diff --exit-code
+        run: git diff --exit-code --ignore-submodules
   analyze:
     runs-on: ubuntu-20.04
     needs: toolchain
