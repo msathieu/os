@@ -1,8 +1,7 @@
 #include <__/syscall.h>
 #include <ipccalls.h>
 #include <string.h>
-
-extern char** environ;
+#include <unistd.h>
 
 pid_t fork(void) {
   _syscall(_SYSCALL_FORK, 0, 0, 0, 0, 0);

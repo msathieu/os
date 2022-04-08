@@ -51,7 +51,7 @@ static int64_t handle_transfer(uint64_t offset, __attribute__((unused)) uint64_t
       offset_i = offset % LVM_SECTOR;
     }
     size_t size_i = LVM_SECTOR;
-    if (total_size - i < LVM_SECTOR) {
+    if (total_size - i < size_i) {
       size_i = total_size - i;
     }
     if (offset_i) {

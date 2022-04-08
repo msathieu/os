@@ -44,7 +44,7 @@ void set_cpu_flags(void) {
   asm volatile("wrmsr"
                :
                : "c"(0xc0000082), "a"(syscall), "d"((uintptr_t) syscall >> 32));
-  asm volatile("rdmsr; bts $9, %%rax; bts $10, %%rax; wrmsr"
+  asm volatile("rdmsr; bts $9, %%rax; bts $10, %%rax; wrmsr" // Clear IF & DF on syscall
                :
                : "c"(0xc0000084)
                : "rax", "rdx");

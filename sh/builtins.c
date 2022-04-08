@@ -1,8 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-
-extern char** environ;
+#include <unistd.h>
 
 void builtin_exit(char* return_value, __attribute__((unused)) FILE* _stdout) {
   if (return_value) {

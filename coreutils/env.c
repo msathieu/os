@@ -1,6 +1,5 @@
 #include <stdio.h>
-
-extern char** environ;
+#include <unistd.h>
 
 int main(void) {
   for (size_t i = 0; environ[i]; i++) {

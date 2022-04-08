@@ -8,10 +8,10 @@ export CFLAGS:=-Wall -Wextra -Werror -O2 -MD -Iinclude -Wshadow
 export ASFLAGS:=-c
 export LDTARGET:=elf
 ifeq ($(shell uname),Darwin)
-export LDTARGET:=linux-elf
+	export LDTARGET:=linux-elf
 endif
 ifdef UBSAN
-CFLAGS+=-fsanitize=undefined
+	CFLAGS+=-fsanitize=undefined
 endif
 
 build-grub: build

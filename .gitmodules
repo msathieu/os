@@ -1,15 +1,15 @@
 [submodule "loader-efi/libc"]
   path = loader-efi/libc
-  url = https://github.com/msathieu/freestanding-libc
+  url = https://git.strypsteen.me/freestanding-libc
 [submodule "loader-mb/libc"]
   path = loader-mb/libc
-  url = https://github.com/msathieu/freestanding-libc
+  url = https://git.strypsteen.me/freestanding-libc
 [submodule "kernel/libc"]
   path = kernel/libc
-  url = https://github.com/msathieu/freestanding-libc
+  url = https://git.strypsteen.me/freestanding-libc
 [submodule "libc/freestanding"]
   path = libc/freestanding
-  url = https://github.com/msathieu/freestanding-libc
+  url = https://git.strypsteen.me/freestanding-libc
 [submodule "acpid/lai"]
   path = acpid/lai
   url = https://github.com/msathieu/lai

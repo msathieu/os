@@ -1,8 +1,8 @@
 #include <__/syscall.h>
 #include <ipccalls.h>
 #include <string.h>
+#include <unistd.h>
 
-extern char** environ;
 static bool has_arguments;
 __attribute__((weak)) extern int _noclonefds;
 
