@@ -59,7 +59,7 @@ static void handler(struct isr_registers* isr_registers) {
     for (struct task* task = (struct task*) sleeping_list.first; task && current_time >= task->sleep_until; task = next_task) {
       next_task = (struct task*) task->list_member.next;
       remove_sorted_list(&sleeping_list, &task->list_member);
-      task->blocked = 0;
+      task->blocked = false;
       schedule_task(task, isr_registers);
     }
     if (sleeping_list.first) {

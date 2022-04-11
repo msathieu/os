@@ -9,11 +9,11 @@
 
 size_t _argc;
 char** _argv;
-char** environ;
 static void* tls_master;
 size_t _tls_size;
 __attribute__((weak)) extern int _noremove_args;
 __attribute__((weak)) extern int _noenvironment_vars;
+extern char** environ;
 extern void (*__init_array_start[])(void);
 extern void (*__init_array_end[])(void);
 

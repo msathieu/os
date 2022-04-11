@@ -4,7 +4,7 @@
 #include <stdlib.h>
 #include <string.h>
 #ifdef linux
-#include <sys/random.h>
+  #include <sys/random.h>
 #endif
 #include <sys/stat.h>
 

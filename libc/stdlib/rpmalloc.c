@@ -20,132 +20,132 @@
 //////
 
 #if defined(__clang__)
-#pragma clang diagnostic ignored "-Wunused-macros"
-#pragma clang diagnostic ignored "-Wunused-function"
-#if __has_warning("-Wreserved-identifier")
-#pragma clang diagnostic ignored "-Wreserved-identifier"
-#endif
+  #pragma clang diagnostic ignored "-Wunused-macros"
+  #pragma clang diagnostic ignored "-Wunused-function"
+  #if __has_warning("-Wreserved-identifier")
+    #pragma clang diagnostic ignored "-Wreserved-identifier"
+  #endif
 #elif defined(__GNUC__)
-#pragma GCC diagnostic ignored "-Wunused-macros"
-#pragma GCC diagnostic ignored "-Wunused-function"
+  #pragma GCC diagnostic ignored "-Wunused-macros"
+  #pragma GCC diagnostic ignored "-Wunused-function"
 #endif
 
 #ifndef HEAP_ARRAY_SIZE
-//! Size of heap hashmap
-#define HEAP_ARRAY_SIZE 47
+  //! Size of heap hashmap
+  #define HEAP_ARRAY_SIZE 47
 #endif
 #ifndef ENABLE_THREAD_CACHE
-//! Enable per-thread cache
-#define ENABLE_THREAD_CACHE 1
+  //! Enable per-thread cache
+  #define ENABLE_THREAD_CACHE 1
 #endif
 #ifndef ENABLE_GLOBAL_CACHE
-//! Enable global cache shared between all threads, requires thread cache
-#define ENABLE_GLOBAL_CACHE 1
+  //! Enable global cache shared between all threads, requires thread cache
+  #define ENABLE_GLOBAL_CACHE 1
 #endif
 #ifndef ENABLE_VALIDATE_ARGS
-//! Enable validation of args to public entry points
-#define ENABLE_VALIDATE_ARGS 0
+  //! Enable validation of args to public entry points
+  #define ENABLE_VALIDATE_ARGS 0
 #endif
 #ifndef ENABLE_STATISTICS
-//! Enable statistics collection
-#define ENABLE_STATISTICS 0
+  //! Enable statistics collection
+  #define ENABLE_STATISTICS 0
 #endif
 #ifndef ENABLE_ASSERTS
-//! Enable asserts
-#define ENABLE_ASSERTS 0
+  //! Enable asserts
+  #define ENABLE_ASSERTS 0
 #endif
 #ifndef ENABLE_OVERRIDE
-//! Override standard library malloc/free and new/delete entry points
-#define ENABLE_OVERRIDE 0
+  //! Override standard library malloc/free and new/delete entry points
+  #define ENABLE_OVERRIDE 0
 #endif
 #ifndef ENABLE_PRELOAD
-//! Support preloading
-#define ENABLE_PRELOAD 0
+  //! Support preloading
+  #define ENABLE_PRELOAD 0
 #endif
 #ifndef DISABLE_UNMAP
-//! Disable unmapping memory pages (also enables unlimited cache)
-#define DISABLE_UNMAP 0
+  //! Disable unmapping memory pages (also enables unlimited cache)
+  #define DISABLE_UNMAP 0
 #endif
 #ifndef ENABLE_UNLIMITED_CACHE
-//! Enable unlimited global cache (no unmapping until finalization)
-#define ENABLE_UNLIMITED_CACHE 0
+  //! Enable unlimited global cache (no unmapping until finalization)
+  #define ENABLE_UNLIMITED_CACHE 0
 #endif
 #ifndef ENABLE_ADAPTIVE_THREAD_CACHE
-//! Enable adaptive thread cache size based on use heuristics
-#define ENABLE_ADAPTIVE_THREAD_CACHE 0
+  //! Enable adaptive thread cache size based on use heuristics
+  #define ENABLE_ADAPTIVE_THREAD_CACHE 0
 #endif
 #ifndef DEFAULT_SPAN_MAP_COUNT
-//! Default number of spans to map in call to map more virtual memory (default values yield 4MiB here)
-#define DEFAULT_SPAN_MAP_COUNT 64
+  //! Default number of spans to map in call to map more virtual memory (default values yield 4MiB here)
+  #define DEFAULT_SPAN_MAP_COUNT 64
 #endif
 #ifndef GLOBAL_CACHE_MULTIPLIER
-//! Multiplier for global cache
-#define GLOBAL_CACHE_MULTIPLIER 8
+  //! Multiplier for global cache
+  #define GLOBAL_CACHE_MULTIPLIER 8
 #endif
 
 #if DISABLE_UNMAP && !ENABLE_GLOBAL_CACHE
-#error Must use global cache if unmap is disabled
+  #error Must use global cache if unmap is disabled
 #endif
 
 #if DISABLE_UNMAP
-#undef ENABLE_UNLIMITED_CACHE
-#define ENABLE_UNLIMITED_CACHE 1
+  #undef ENABLE_UNLIMITED_CACHE
+  #define ENABLE_UNLIMITED_CACHE 1
 #endif
 
 #if !ENABLE_GLOBAL_CACHE
-#undef ENABLE_UNLIMITED_CACHE
-#define ENABLE_UNLIMITED_CACHE 0
+  #undef ENABLE_UNLIMITED_CACHE
+  #define ENABLE_UNLIMITED_CACHE 0
 #endif
 
 #if !ENABLE_THREAD_CACHE
-#undef ENABLE_ADAPTIVE_THREAD_CACHE
-#define ENABLE_ADAPTIVE_THREAD_CACHE 0
+  #undef ENABLE_ADAPTIVE_THREAD_CACHE
+  #define ENABLE_ADAPTIVE_THREAD_CACHE 0
 #endif
 
 #if defined(_WIN32) || defined(__WIN32__) || defined(_WIN64)
-#define PLATFORM_WINDOWS 1
-#define PLATFORM_POSIX 0
+  #define PLATFORM_WINDOWS 1
+  #define PLATFORM_POSIX 0
 #else
-#define PLATFORM_WINDOWS 0
-#define PLATFORM_POSIX 1
+  #define PLATFORM_WINDOWS 0
+  #define PLATFORM_POSIX 1
 #endif
 
 /// Platform and arch specifics
 #if defined(_MSC_VER) && !defined(__clang__)
-#pragma warning(disable : 5105)
-#ifndef FORCEINLINE
-#define FORCEINLINE inline __forceinline
-#endif
-#define _Static_assert static_assert
+  #pragma warning(disable : 5105)
+  #ifndef FORCEINLINE
+    #define FORCEINLINE inline __forceinline
+  #endif
+  #define _Static_assert static_assert
 #else
-#ifndef FORCEINLINE
-#define FORCEINLINE inline __attribute__((__always_inline__))
-#endif
+  #ifndef FORCEINLINE
+    #define FORCEINLINE inline __attribute__((__always_inline__))
+  #endif
 #endif
 #if PLATFORM_WINDOWS
-#ifndef WIN32_LEAN_AND_MEAN
-#define WIN32_LEAN_AND_MEAN
-#endif
-#include <windows.h>
-#if ENABLE_VALIDATE_ARGS
-#include <intsafe.h>
-#endif
+  #ifndef WIN32_LEAN_AND_MEAN
+    #define WIN32_LEAN_AND_MEAN
+  #endif
+  #include <windows.h>
+  #if ENABLE_VALIDATE_ARGS
+    #include <intsafe.h>
+  #endif
 #else
-#include <stdio.h>
-#include <stdlib.h>
-#include <time.h>
-#include <unistd.h>
-#if defined(__APPLE__)
-#include <TargetConditionals.h>
-#if !TARGET_OS_IPHONE && !TARGET_OS_SIMULATOR
-#include <mach/mach_vm.h>
-#include <mach/vm_statistics.h>
-#endif
-#include <pthread.h>
-#endif
-#if defined(__HAIKU__)
-#include <pthread.h>
-#endif
+  #include <stdio.h>
+  #include <stdlib.h>
+  #include <time.h>
+  #include <unistd.h>
+  #if defined(__APPLE__)
+    #include <TargetConditionals.h>
+    #if !TARGET_OS_IPHONE && !TARGET_OS_SIMULATOR
+      #include <mach/mach_vm.h>
+      #include <mach/vm_statistics.h>
+    #endif
+    #include <pthread.h>
+  #endif
+  #if defined(__HAIKU__)
+    #include <pthread.h>
+  #endif
 #endif
 
 #include <errno.h>
@@ -153,57 +153,57 @@
 #include <string.h>
 
 #if defined(_WIN32) && (!defined(BUILD_DYNAMIC_LINK) || !BUILD_DYNAMIC_LINK)
-#include <fibersapi.h>
+  #include <fibersapi.h>
 static DWORD fls_key;
 #endif
 
 #if PLATFORM_POSIX
-#include <sched.h>
-#include <sys/mman.h>
-#ifdef __FreeBSD__
-#include <sys/sysctl.h>
-#define MAP_HUGETLB MAP_ALIGNED_SUPER
-#ifndef PROT_MAX
-#define PROT_MAX(f) 0
-#endif
-#else
-#define PROT_MAX(f) 0
-#endif
-#ifdef __sun
+  #include <sched.h>
+  #include <sys/mman.h>
+  #ifdef __FreeBSD__
+    #include <sys/sysctl.h>
+    #define MAP_HUGETLB MAP_ALIGNED_SUPER
+    #ifndef PROT_MAX
+      #define PROT_MAX(f) 0
+    #endif
+  #else
+    #define PROT_MAX(f) 0
+  #endif
+  #ifdef __sun
 extern int madvise(caddr_t, size_t, int);
-#endif
-#ifndef MAP_UNINITIALIZED
-#define MAP_UNINITIALIZED 0
-#endif
+  #endif
+  #ifndef MAP_UNINITIALIZED
+    #define MAP_UNINITIALIZED 0
+  #endif
 #endif
 #include <errno.h>
 
 #if ENABLE_ASSERTS
-#undef NDEBUG
-#if defined(_MSC_VER) && !defined(_DEBUG)
-#define _DEBUG
-#endif
-#include <assert.h>
-#define RPMALLOC_TOSTRING_M(x) #x
-#define RPMALLOC_TOSTRING(x) RPMALLOC_TOSTRING_M(x)
-#define rpmalloc_assert(truth, message)                                                            \
-  do {                                                                                             \
-    if (!(truth)) {                                                                                \
-      if (_memory_config.error_callback) {                                                         \
-        _memory_config.error_callback(                                                             \
-          message " (" RPMALLOC_TOSTRING(truth) ") at " __FILE__ ":" RPMALLOC_TOSTRING(__LINE__)); \
-      } else {                                                                                     \
-        assert((truth) && message);                                                                \
-      }                                                                                            \
-    }                                                                                              \
-  } while (0)
+  #undef NDEBUG
+  #if defined(_MSC_VER) && !defined(_DEBUG)
+    #define _DEBUG
+  #endif
+  #include <assert.h>
+  #define RPMALLOC_TOSTRING_M(x) #x
+  #define RPMALLOC_TOSTRING(x) RPMALLOC_TOSTRING_M(x)
+  #define rpmalloc_assert(truth, message)                                                            \
+    do {                                                                                             \
+      if (!(truth)) {                                                                                \
+        if (_memory_config.error_callback) {                                                         \
+          _memory_config.error_callback(                                                             \
+            message " (" RPMALLOC_TOSTRING(truth) ") at " __FILE__ ":" RPMALLOC_TOSTRING(__LINE__)); \
+        } else {                                                                                     \
+          assert((truth) && message);                                                                \
+        }                                                                                            \
+      }                                                                                              \
+    } while (0)
 #else
-#define rpmalloc_assert(truth, message) \
-  do {                                  \
-  } while (0)
+  #define rpmalloc_assert(truth, message) \
+    do {                                  \
+    } while (0)
 #endif
 #if ENABLE_STATISTICS
-#include <stdio.h>
+  #include <stdio.h>
 #endif
 
 //////
@@ -261,12 +261,12 @@ static FORCEINLINE int atomic_cas_ptr(atomicptr_t* dst, void* val, void* ref) {
   return (InterlockedCompareExchangePointer((void* volatile*) dst, val, ref) == ref) ? 1 : 0;
 }
 
-#define EXPECTED(x) (x)
-#define UNEXPECTED(x) (x)
+  #define EXPECTED(x) (x)
+  #define UNEXPECTED(x) (x)
 
 #else
 
-#include <stdatomic.h>
+  #include <stdatomic.h>
 
 typedef volatile _Atomic(int32_t) atomic32_t;
 typedef volatile _Atomic(int64_t) atomic64_t;
@@ -315,8 +315,8 @@ static FORCEINLINE int atomic_cas_ptr(atomicptr_t* dst, void* val, void* ref) {
   return atomic_compare_exchange_weak_explicit(dst, &ref, val, memory_order_relaxed, memory_order_relaxed);
 }
 
-#define EXPECTED(x) __builtin_expect((x), 1)
-#define UNEXPECTED(x) __builtin_expect((x), 0)
+  #define EXPECTED(x) __builtin_expect((x), 1)
+  #define UNEXPECTED(x) __builtin_expect((x), 0)
 
 #endif
 
@@ -327,54 +327,54 @@ static FORCEINLINE int atomic_cas_ptr(atomicptr_t* dst, void* val, void* ref) {
 //////
 
 #if ENABLE_STATISTICS
-#define _rpmalloc_stat_inc(counter) atomic_incr32(counter)
-#define _rpmalloc_stat_dec(counter) atomic_decr32(counter)
-#define _rpmalloc_stat_add(counter, value) atomic_add32(counter, (int32_t) (value))
-#define _rpmalloc_stat_add64(counter, value) atomic_add64(counter, (int64_t) (value))
-#define _rpmalloc_stat_add_peak(counter, value, peak)              \
-  do {                                                             \
-    int32_t _cur_count = atomic_add32(counter, (int32_t) (value)); \
-    if (_cur_count > (peak))                                       \
-      peak = _cur_count;                                           \
-  } while (0)
-#define _rpmalloc_stat_sub(counter, value) atomic_add32(counter, -(int32_t) (value))
-#define _rpmalloc_stat_inc_alloc(heap, class_idx)                                          \
-  do {                                                                                     \
-    int32_t alloc_current = atomic_incr32(&heap->size_class_use[class_idx].alloc_current); \
-    if (alloc_current > heap->size_class_use[class_idx].alloc_peak)                        \
-      heap->size_class_use[class_idx].alloc_peak = alloc_current;                          \
-    atomic_incr32(&heap->size_class_use[class_idx].alloc_total);                           \
-  } while (0)
-#define _rpmalloc_stat_inc_free(heap, class_idx)                   \
-  do {                                                             \
-    atomic_decr32(&heap->size_class_use[class_idx].alloc_current); \
-    atomic_incr32(&heap->size_class_use[class_idx].free_total);    \
-  } while (0)
+  #define _rpmalloc_stat_inc(counter) atomic_incr32(counter)
+  #define _rpmalloc_stat_dec(counter) atomic_decr32(counter)
+  #define _rpmalloc_stat_add(counter, value) atomic_add32(counter, (int32_t) (value))
+  #define _rpmalloc_stat_add64(counter, value) atomic_add64(counter, (int64_t) (value))
+  #define _rpmalloc_stat_add_peak(counter, value, peak)              \
+    do {                                                             \
+      int32_t _cur_count = atomic_add32(counter, (int32_t) (value)); \
+      if (_cur_count > (peak))                                       \
+        peak = _cur_count;                                           \
+    } while (0)
+  #define _rpmalloc_stat_sub(counter, value) atomic_add32(counter, -(int32_t) (value))
+  #define _rpmalloc_stat_inc_alloc(heap, class_idx)                                          \
+    do {                                                                                     \
+      int32_t alloc_current = atomic_incr32(&heap->size_class_use[class_idx].alloc_current); \
+      if (alloc_current > heap->size_class_use[class_idx].alloc_peak)                        \
+        heap->size_class_use[class_idx].alloc_peak = alloc_current;                          \
+      atomic_incr32(&heap->size_class_use[class_idx].alloc_total);                           \
+    } while (0)
+  #define _rpmalloc_stat_inc_free(heap, class_idx)                   \
+    do {                                                             \
+      atomic_decr32(&heap->size_class_use[class_idx].alloc_current); \
+      atomic_incr32(&heap->size_class_use[class_idx].free_total);    \
+    } while (0)
 #else
-#define _rpmalloc_stat_inc(counter) \
-  do {                              \
-  } while (0)
-#define _rpmalloc_stat_dec(counter) \
-  do {                              \
-  } while (0)
-#define _rpmalloc_stat_add(counter, value) \
-  do {                                     \
-  } while (0)
-#define _rpmalloc_stat_add64(counter, value) \
-  do {                                       \
-  } while (0)
-#define _rpmalloc_stat_add_peak(counter, value, peak) \
-  do {                                                \
-  } while (0)
-#define _rpmalloc_stat_sub(counter, value) \
-  do {                                     \
-  } while (0)
-#define _rpmalloc_stat_inc_alloc(heap, class_idx) \
-  do {                                            \
-  } while (0)
-#define _rpmalloc_stat_inc_free(heap, class_idx) \
-  do {                                           \
-  } while (0)
+  #define _rpmalloc_stat_inc(counter) \
+    do {                              \
+    } while (0)
+  #define _rpmalloc_stat_dec(counter) \
+    do {                              \
+    } while (0)
+  #define _rpmalloc_stat_add(counter, value) \
+    do {                                     \
+    } while (0)
+  #define _rpmalloc_stat_add64(counter, value) \
+    do {                                       \
+    } while (0)
+  #define _rpmalloc_stat_add_peak(counter, value, peak) \
+    do {                                                \
+    } while (0)
+  #define _rpmalloc_stat_sub(counter, value) \
+    do {                                     \
+    } while (0)
+  #define _rpmalloc_stat_inc_alloc(heap, class_idx) \
+    do {                                            \
+    } while (0)
+  #define _rpmalloc_stat_inc_free(heap, class_idx) \
+    do {                                           \
+    } while (0)
 #endif
 
 ///
@@ -418,9 +418,9 @@ _Static_assert((SMALL_GRANULARITY & (SMALL_GRANULARITY - 1)) == 0, "Small granul
 _Static_assert((SPAN_HEADER_SIZE & (SPAN_HEADER_SIZE - 1)) == 0, "Span header size must be power of two");
 
 #if ENABLE_VALIDATE_ARGS
-//! Maximum allocation size to avoid integer overflow
-#undef MAX_ALLOC_SIZE
-#define MAX_ALLOC_SIZE (((size_t) -1) - _memory_span_size)
+  //! Maximum allocation size to avoid integer overflow
+  #undef MAX_ALLOC_SIZE
+  #define MAX_ALLOC_SIZE (((size_t) -1) - _memory_span_size)
 #endif
 
 #define pointer_offset(ptr, ofs) (void*) ((char*) (ptr) + (ptrdiff_t) (ofs))
@@ -465,7 +465,7 @@ struct span_use_t {
   atomic32_t current;
   //! High water mark of spans used
   atomic32_t high;
-#if ENABLE_STATISTICS
+  #if ENABLE_STATISTICS
   //! Number of spans in deferred list
   atomic32_t spans_deferred;
   //! Number of spans transitioned to global cache
@@ -482,7 +482,7 @@ struct span_use_t {
   atomic32_t spans_from_reserved;
   //! Number of raw memory map calls
   atomic32_t spans_map_calls;
-#endif
+  #endif
 };
 typedef struct span_use_t span_use_t;
 #endif
@@ -699,10 +699,10 @@ static size_t _memory_span_size_shift;
 //! Mask to get to start of a memory span
 static uintptr_t _memory_span_mask;
 #else
-//! Hardwired span size
-#define _memory_span_size _memory_default_span_size
-#define _memory_span_size_shift _memory_default_span_size_shift
-#define _memory_span_mask _memory_default_span_mask
+  //! Hardwired span size
+  #define _memory_span_size _memory_default_span_size
+  #define _memory_span_size_shift _memory_default_span_size_shift
+  #define _memory_span_mask _memory_default_span_mask
 #endif
 //! Number of spans to map in each map call
 static size_t _memory_span_map_count;
@@ -773,19 +773,19 @@ static int32_t _huge_pages_peak;
 #if (defined(__APPLE__) || defined(__HAIKU__)) && ENABLE_PRELOAD
 static pthread_key_t _memory_thread_heap;
 #else
-#ifdef _MSC_VER
-#define _Thread_local __declspec(thread)
-#define TLS_MODEL
-#else
-#ifndef __HAIKU__
-#define TLS_MODEL __attribute__((tls_model("initial-exec")))
-#else
-#define TLS_MODEL
-#endif
-#if !defined(__clang__) && defined(__GNUC__)
-#define _Thread_local __thread
-#endif
-#endif
+  #ifdef _MSC_VER
+    #define _Thread_local __declspec(thread)
+    #define TLS_MODEL
+  #else
+    #ifndef __HAIKU__
+      #define TLS_MODEL __attribute__((tls_model("initial-exec")))
+    #else
+      #define TLS_MODEL
+    #endif
+    #if !defined(__clang__) && defined(__GNUC__)
+      #define _Thread_local __thread
+    #endif
+  #endif
 static _Thread_local heap_t* _memory_thread_heap TLS_MODEL;
 #endif
 
@@ -819,38 +819,38 @@ get_thread_id(void) {
   return (uintptr_t) ((void*) NtCurrentTeb());
 #elif defined(__GNUC__) || defined(__clang__)
   uintptr_t tid;
-#if defined(__i386__)
+  #if defined(__i386__)
   __asm__("movl %%gs:0, %0"
           : "=r"(tid)
           :
           :);
-#elif defined(__x86_64__)
-#if defined(__MACH__)
+  #elif defined(__x86_64__)
+    #if defined(__MACH__)
   __asm__("movq %%gs:0, %0"
           : "=r"(tid)
           :
           :);
-#else
+    #else
   __asm__("movq %%fs:0, %0"
           : "=r"(tid)
           :
           :);
-#endif
-#elif defined(__arm__)
+    #endif
+  #elif defined(__arm__)
   __asm__ volatile("mrc p15, 0, %0, c13, c0, 3"
                    : "=r"(tid));
-#elif defined(__aarch64__)
-#if defined(__MACH__)
+  #elif defined(__aarch64__)
+    #if defined(__MACH__)
   // tpidr_el0 likely unused, always return 0 on iOS
   __asm__ volatile("mrs %0, tpidrro_el0"
                    : "=r"(tid));
-#else
+    #else
   __asm__ volatile("mrs %0, tpidr_el0"
                    : "=r"(tid));
-#endif
-#else
+    #endif
+  #else
   tid = (uintptr_t) ((void*) get_thread_heap_raw());
-#endif
+  #endif
   return tid;
 #else
   return (uintptr_t) ((void*) get_thread_heap_raw());
@@ -901,12 +901,12 @@ _rpmalloc_spin(void) {
 #if defined(_WIN32) && (!defined(BUILD_DYNAMIC_LINK) || !BUILD_DYNAMIC_LINK)
 static void NTAPI
 _rpmalloc_thread_destructor(void* value) {
-#if ENABLE_OVERRIDE
+  #if ENABLE_OVERRIDE
   // If this is called on main thread it means rpmalloc_finalize
   // has not been called and shutdown is forced (through _exit) or unclean
   if (get_thread_id() == _rpmalloc_main_thread_id)
     return;
-#endif
+  #endif
   if (value)
     rpmalloc_thread_finalize(1);
 }
@@ -968,22 +968,22 @@ _rpmalloc_mmap_os(size_t size, size_t* offset) {
   }
 #else
   int flags = MAP_PRIVATE | MAP_ANONYMOUS | MAP_UNINITIALIZED;
-#if defined(__APPLE__) && !TARGET_OS_IPHONE && !TARGET_OS_SIMULATOR
+  #if defined(__APPLE__) && !TARGET_OS_IPHONE && !TARGET_OS_SIMULATOR
   int fd = (int) VM_MAKE_TAG(240U);
   if (_memory_huge_pages)
     fd |= VM_FLAGS_SUPERPAGE_SIZE_2MB;
   void* ptr = mmap(0, size + padding, PROT_READ | PROT_WRITE, flags, fd, 0);
-#elif defined(MAP_HUGETLB)
+  #elif defined(MAP_HUGETLB)
   void* ptr = mmap(0, size + padding, PROT_READ | PROT_WRITE | PROT_MAX(PROT_READ | PROT_WRITE), (_memory_huge_pages ? MAP_HUGETLB : 0) | flags, -1, 0);
-#elif defined(MAP_ALIGNED)
+  #elif defined(MAP_ALIGNED)
   const size_t align = (sizeof(size_t) * 8) - (size_t) (__builtin_clzl(size - 1));
   void* ptr = mmap(0, size + padding, PROT_READ | PROT_WRITE, (_memory_huge_pages ? MAP_ALIGNED(align) : 0) | flags, -1, 0);
-#elif defined(MAP_ALIGN)
+  #elif defined(MAP_ALIGN)
   caddr_t base = (_memory_huge_pages ? (caddr_t) (4 << 20) : 0);
   void* ptr = mmap(base, size + padding, PROT_READ | PROT_WRITE, (_memory_huge_pages ? MAP_ALIGN : 0) | flags, -1, 0);
-#else
+  #else
   void* ptr = mmap(0, size + padding, PROT_READ | PROT_WRITE, flags, -1, 0);
-#endif
+  #endif
   if ((ptr == MAP_FAILED) || !ptr) {
     if (_memory_config.map_fail_callback) {
       if (_memory_config.map_fail_callback(size + padding))
@@ -1022,34 +1022,34 @@ _rpmalloc_unmap_os(void* _address, size_t size, size_t _offset, size_t release) 
     }
   }
 #if !DISABLE_UNMAP
-#if PLATFORM_WINDOWS
+  #if PLATFORM_WINDOWS
   if (!VirtualFree(address, release ? 0 : size, release ? MEM_RELEASE : MEM_DECOMMIT)) {
     rpmalloc_assert(0, "Failed to unmap virtual memory block");
   }
-#else
+  #else
   if (release) {
     if (munmap(address, release)) {
       rpmalloc_assert(0, "Failed to unmap virtual memory block");
     }
   } else {
-#if defined(MADV_FREE_REUSABLE)
+    #if defined(MADV_FREE_REUSABLE)
     int ret;
     while ((ret = madvise(address, size, MADV_FREE_REUSABLE)) == -1 && (errno == EAGAIN))
       errno = 0;
     if ((ret == -1) && (errno != 0)) {
-#elif defined(MADV_DONTNEED)
+    #elif defined(MADV_DONTNEED)
     if (madvise(address, size, MADV_DONTNEED)) {
-#elif defined(MADV_PAGEOUT)
+    #elif defined(MADV_PAGEOUT)
     if (madvise(address, size, MADV_PAGEOUT)) {
-#elif defined(MADV_FREE)
+    #elif defined(MADV_FREE)
     if (madvise(address, size, MADV_FREE)) {
-#else
+    #else
     if (posix_madvise(address, size, POSIX_MADV_DONTNEED)) {
-#endif
+    #endif
       rpmalloc_assert(0, "Failed to madvise virtual memory block as free");
     }
   }
-#endif
+  #endif
 #endif
   if (release)
     _rpmalloc_stat_sub(&_mapped_pages_os, release >> _memory_page_size_shift);
@@ -1467,22 +1467,22 @@ _rpmalloc_global_cache_insert_spans(span_t** span, size_t span_count, size_t cou
   while (!atomic_cas32_acquire(&cache->lock, 1, 0))
     _rpmalloc_spin();
 
-#if ENABLE_STATISTICS
+  #if ENABLE_STATISTICS
   cache->insert_count += count;
-#endif
+  #endif
   if ((cache->count + insert_count) > cache_limit)
     insert_count = cache_limit - cache->count;
 
   memcpy(cache->span + cache->count, span, sizeof(span_t*) * insert_count);
   cache->count += (uint32_t) insert_count;
 
-#if ENABLE_UNLIMITED_CACHE
+  #if ENABLE_UNLIMITED_CACHE
   while (insert_count < count) {
-#else
+  #else
   // Enable unlimited cache if huge pages, or we will leak since it is unlikely that an entire huge page
   // will be unmapped, and we're unable to partially decommit a huge page
   while ((_memory_page_size > _memory_span_size) && (insert_count < count)) {
-#endif
+  #endif
     span_t* current_span = span[insert_count++];
     current_span->next = cache->overflow;
     cache->overflow = current_span;
@@ -1542,9 +1542,9 @@ _rpmalloc_global_cache_extract_spans(span_t** span, size_t span_count, size_t co
   while (!atomic_cas32_acquire(&cache->lock, 1, 0))
     _rpmalloc_spin();
 
-#if ENABLE_STATISTICS
+  #if ENABLE_STATISTICS
   cache->extract_count += count;
-#endif
+  #endif
   size_t want = count - extract_count;
   if (want > cache->count)
     want = cache->count;
@@ -1559,11 +1559,11 @@ _rpmalloc_global_cache_extract_spans(span_t** span, size_t span_count, size_t co
     cache->overflow = current_span->next;
   }
 
-#if ENABLE_ASSERTS
+  #if ENABLE_ASSERTS
   for (size_t ispan = 0; ispan < extract_count; ++ispan) {
     assert(span[ispan]->span_count == span_count);
   }
-#endif
+  #endif
 
   atomic_store32_release(&cache->lock, 0);
 
@@ -1708,14 +1708,14 @@ _rpmalloc_heap_cache_insert(heap_t* heap, span_t* span) {
     span_cache->span[span_cache->count++] = span;
     if (span_cache->count == MAX_THREAD_SPAN_CACHE) {
       const size_t remain_count = MAX_THREAD_SPAN_CACHE - THREAD_SPAN_CACHE_TRANSFER;
-#if ENABLE_GLOBAL_CACHE
+  #if ENABLE_GLOBAL_CACHE
       _rpmalloc_stat_add64(&heap->thread_to_global, THREAD_SPAN_CACHE_TRANSFER * _memory_span_size);
       _rpmalloc_stat_add(&heap->span_use[span_count - 1].spans_to_global, THREAD_SPAN_CACHE_TRANSFER);
       _rpmalloc_global_cache_insert_spans(span_cache->span + remain_count, span_count, THREAD_SPAN_CACHE_TRANSFER);
-#else
+  #else
       for (size_t ispan = 0; ispan < THREAD_SPAN_CACHE_TRANSFER; ++ispan)
         _rpmalloc_span_unmap(span_cache->span[remain_count + ispan]);
-#endif
+  #endif
       span_cache->count = remain_count;
     }
   } else {
@@ -1727,14 +1727,14 @@ _rpmalloc_heap_cache_insert(heap_t* heap, span_t* span) {
       const size_t transfer_limit = 2 + (cache_limit >> 2);
       const size_t transfer_count = (THREAD_SPAN_LARGE_CACHE_TRANSFER <= transfer_limit ? THREAD_SPAN_LARGE_CACHE_TRANSFER : transfer_limit);
       const size_t remain_count = cache_limit - transfer_count;
-#if ENABLE_GLOBAL_CACHE
+  #if ENABLE_GLOBAL_CACHE
       _rpmalloc_stat_add64(&heap->thread_to_global, transfer_count * span_count * _memory_span_size);
       _rpmalloc_stat_add(&heap->span_use[span_count - 1].spans_to_global, transfer_count);
       _rpmalloc_global_cache_insert_spans(span_cache->span + remain_count, span_count, transfer_count);
-#else
+  #else
       for (size_t ispan = 0; ispan < transfer_count; ++ispan)
         _rpmalloc_span_unmap(span_cache->span[remain_count + ispan]);
-#endif
+  #endif
       span_cache->count = remain_count;
     }
   }
@@ -1785,7 +1785,7 @@ _rpmalloc_heap_reserved_extract(heap_t* heap, size_t span_count) {
 static span_t*
 _rpmalloc_heap_global_cache_extract(heap_t* heap, size_t span_count) {
 #if ENABLE_GLOBAL_CACHE
-#if ENABLE_THREAD_CACHE
+  #if ENABLE_THREAD_CACHE
   span_cache_t* span_cache;
   size_t wanted_count;
   if (span_count == 1) {
@@ -1801,7 +1801,7 @@ _rpmalloc_heap_global_cache_extract(heap_t* heap, size_t span_count) {
     _rpmalloc_stat_add(&heap->span_use[span_count - 1].spans_from_global, span_cache->count);
     return span_cache->span[--span_cache->count];
   }
-#else
+  #else
   span_t* span = 0;
   size_t count = _rpmalloc_global_cache_extract_spans(&span, span_count, 1);
   if (count) {
@@ -1809,7 +1809,7 @@ _rpmalloc_heap_global_cache_extract(heap_t* heap, size_t span_count) {
     _rpmalloc_stat_add(&heap->span_use[span_count - 1].spans_from_global, count);
     return span;
   }
-#endif
+  #endif
 #endif
   (void) sizeof(heap);
   (void) sizeof(span_count);
@@ -2026,7 +2026,7 @@ _rpmalloc_heap_release(void* heapptr, int first_class, int release_cache) {
         span_cache = (span_cache_t*) (heap->span_large_cache + (iclass - 1));
       if (!span_cache->count)
         continue;
-#if ENABLE_GLOBAL_CACHE
+  #if ENABLE_GLOBAL_CACHE
       if (heap->finalize) {
         for (size_t ispan = 0; ispan < span_cache->count; ++ispan)
           _rpmalloc_span_unmap(span_cache->span[ispan]);
@@ -2035,10 +2035,10 @@ _rpmalloc_heap_release(void* heapptr, int first_class, int release_cache) {
         _rpmalloc_stat_add(&heap->span_use[iclass].spans_to_global, span_cache->count);
         _rpmalloc_global_cache_insert_spans(span_cache->span, iclass + 1, span_cache->count);
       }
-#else
+  #else
       for (size_t ispan = 0; ispan < span_cache->count; ++ispan)
         _rpmalloc_span_unmap(span_cache->span[ispan]);
-#endif
+  #endif
       span_cache->count = 0;
     }
 #endif
@@ -2785,7 +2785,7 @@ int rpmalloc_initialize_config(const rpmalloc_config_t* config) {
 #else
     _memory_page_size = _memory_map_granularity;
     if (_memory_config.enable_huge_pages) {
-#if defined(__linux__)
+  #if defined(__linux__)
       size_t huge_page_size = 0;
       FILE* meminfo = fopen("/proc/meminfo", "r");
       if (meminfo) {
@@ -2802,7 +2802,7 @@ int rpmalloc_initialize_config(const rpmalloc_config_t* config) {
         _memory_page_size = huge_page_size;
         _memory_map_granularity = huge_page_size;
       }
-#elif defined(__FreeBSD__)
+  #elif defined(__FreeBSD__)
       int rc;
       size_t sz = sizeof(rc);
 
@@ -2811,11 +2811,11 @@ int rpmalloc_initialize_config(const rpmalloc_config_t* config) {
         _memory_page_size = 2 * 1024 * 1024;
         _memory_map_granularity = _memory_page_size;
       }
-#elif defined(__APPLE__) || defined(__NetBSD__)
+  #elif defined(__APPLE__) || defined(__NetBSD__)
       _memory_huge_pages = 1;
       _memory_page_size = 2 * 1024 * 1024;
       _memory_map_granularity = _memory_page_size;
-#endif
+  #endif
     }
 #endif
   } else {
@@ -3059,19 +3059,19 @@ extern inline RPMALLOC_ALLOCATOR void*
 rpcalloc(size_t num, size_t size) {
   size_t total;
 #if ENABLE_VALIDATE_ARGS
-#if PLATFORM_WINDOWS
+  #if PLATFORM_WINDOWS
   int err = SizeTMult(num, size, &total);
   if ((err != S_OK) || (total >= MAX_ALLOC_SIZE)) {
     errno = EINVAL;
     return 0;
   }
-#else
+  #else
   int err = __builtin_umull_overflow(num, size, &total);
   if (err || (total >= MAX_ALLOC_SIZE)) {
     errno = EINVAL;
     return 0;
   }
-#endif
+  #endif
 #else
   total = num * size;
 #endif
@@ -3117,19 +3117,19 @@ extern inline RPMALLOC_ALLOCATOR void*
 rpaligned_calloc(size_t alignment, size_t num, size_t size) {
   size_t total;
 #if ENABLE_VALIDATE_ARGS
-#if PLATFORM_WINDOWS
+  #if PLATFORM_WINDOWS
   int err = SizeTMult(num, size, &total);
   if ((err != S_OK) || (total >= MAX_ALLOC_SIZE)) {
     errno = EINVAL;
     return 0;
   }
-#else
+  #else
   int err = __builtin_umull_overflow(num, size, &total);
   if (err || (total >= MAX_ALLOC_SIZE)) {
     errno = EINVAL;
     return 0;
   }
-#endif
+  #endif
 #else
   total = num * size;
 #endif
@@ -3277,13 +3277,13 @@ _memory_heap_dump_statistics(heap_t* heap, void* file) {
             atomic_load32(&heap->span_use[iclass].high),
             atomic_load32(&heap->span_use[iclass].spans_deferred),
             ((size_t) atomic_load32(&heap->span_use[iclass].high) * (size_t) _memory_span_size * (iclass + 1)) / (size_t) (1024 * 1024),
-#if ENABLE_THREAD_CACHE
+  #if ENABLE_THREAD_CACHE
             (unsigned int) (!iclass ? heap->span_cache.count : heap->span_large_cache[iclass - 1].count),
             ((size_t) atomic_load32(&heap->span_use[iclass].spans_to_cache) * (iclass + 1) * _memory_span_size) / (size_t) (1024 * 1024),
             ((size_t) atomic_load32(&heap->span_use[iclass].spans_from_cache) * (iclass + 1) * _memory_span_size) / (size_t) (1024 * 1024),
-#else
+  #else
             0, (size_t) 0, (size_t) 0,
-#endif
+  #endif
             ((size_t) atomic_load32(&heap->span_use[iclass].spans_to_reserved) * (iclass + 1) * _memory_span_size) / (size_t) (1024 * 1024),
             ((size_t) atomic_load32(&heap->span_use[iclass].spans_from_reserved) * (iclass + 1) * _memory_span_size) / (size_t) (1024 * 1024),
             ((size_t) atomic_load32(&heap->span_use[iclass].spans_to_global) * (size_t) _memory_span_size * (iclass + 1)) / (size_t) (1024 * 1024),
@@ -3356,7 +3356,7 @@ void rpmalloc_dump_statistics(void* file) {
           unmapped_total / (size_t) (1024 * 1024));
 
   fprintf(file, "\n");
-#if 0
+  #if 0
 	int64_t allocated = atomic_load64(&_allocation_counter);
 	int64_t deallocated = atomic_load64(&_deallocation_counter);
 	fprintf(file, "Allocation count: %lli\n", allocated);
@@ -3364,7 +3364,7 @@ void rpmalloc_dump_statistics(void* file) {
 	fprintf(file, "Current allocations: %lli\n", (allocated - deallocated));
 	fprintf(file, "Master spans: %d\n", atomic_load32(&_master_spans));
 	fprintf(file, "Dangling master spans: %d\n", atomic_load32(&_unmapped_master_spans));
-#endif
+  #endif
 #endif
   (void) sizeof(file);
 }
@@ -3391,23 +3391,23 @@ rpmalloc_heap_release(rpmalloc_heap_t* heap) {
 
 extern inline RPMALLOC_ALLOCATOR void*
 rpmalloc_heap_alloc(rpmalloc_heap_t* heap, size_t size) {
-#if ENABLE_VALIDATE_ARGS
+  #if ENABLE_VALIDATE_ARGS
   if (size >= MAX_ALLOC_SIZE) {
     errno = EINVAL;
     return 0;
   }
-#endif
+  #endif
   return _rpmalloc_allocate(heap, size);
 }
 
 extern inline RPMALLOC_ALLOCATOR void*
 rpmalloc_heap_aligned_alloc(rpmalloc_heap_t* heap, size_t alignment, size_t size) {
-#if ENABLE_VALIDATE_ARGS
+  #if ENABLE_VALIDATE_ARGS
   if (size >= MAX_ALLOC_SIZE) {
     errno = EINVAL;
     return 0;
   }
-#endif
+  #endif
   return _rpmalloc_aligned_allocate(heap, alignment, size);
 }
 
@@ -3419,23 +3419,23 @@ rpmalloc_heap_calloc(rpmalloc_heap_t* heap, size_t num, size_t size) {
 extern inline RPMALLOC_ALLOCATOR void*
 rpmalloc_heap_aligned_calloc(rpmalloc_heap_t* heap, size_t alignment, size_t num, size_t size) {
   size_t total;
-#if ENABLE_VALIDATE_ARGS
-#if PLATFORM_WINDOWS
+  #if ENABLE_VALIDATE_ARGS
+    #if PLATFORM_WINDOWS
   int err = SizeTMult(num, size, &total);
   if ((err != S_OK) || (total >= MAX_ALLOC_SIZE)) {
     errno = EINVAL;
     return 0;
   }
-#else
+    #else
   int err = __builtin_umull_overflow(num, size, &total);
   if (err || (total >= MAX_ALLOC_SIZE)) {
     errno = EINVAL;
     return 0;
   }
-#endif
-#else
+    #endif
+  #else
   total = num * size;
-#endif
+  #endif
   void* block = _rpmalloc_aligned_allocate(heap, alignment, total);
   if (block)
     memset(block, 0, total);
@@ -3444,23 +3444,23 @@ rpmalloc_heap_aligned_calloc(rpmalloc_heap_t* heap, size_t alignment, size_t num
 
 extern inline RPMALLOC_ALLOCATOR void*
 rpmalloc_heap_realloc(rpmalloc_heap_t* heap, void* ptr, size_t size, unsigned int flags) {
-#if ENABLE_VALIDATE_ARGS
+  #if ENABLE_VALIDATE_ARGS
   if (size >= MAX_ALLOC_SIZE) {
     errno = EINVAL;
     return ptr;
   }
-#endif
+  #endif
   return _rpmalloc_reallocate(heap, ptr, size, 0, flags);
 }
 
 extern inline RPMALLOC_ALLOCATOR void*
 rpmalloc_heap_aligned_realloc(rpmalloc_heap_t* heap, void* ptr, size_t alignment, size_t size, unsigned int flags) {
-#if ENABLE_VALIDATE_ARGS
+  #if ENABLE_VALIDATE_ARGS
   if ((size + alignment < size) || (alignment > _memory_page_size)) {
     errno = EINVAL;
     return 0;
   }
-#endif
+  #endif
   return _rpmalloc_aligned_reallocate(heap, ptr, alignment, size, 0, flags);
 }
 
@@ -3507,7 +3507,7 @@ rpmalloc_heap_free_all(rpmalloc_heap_t* heap) {
   heap->large_huge_span = 0;
   heap->full_span_count = 0;
 
-#if ENABLE_THREAD_CACHE
+  #if ENABLE_THREAD_CACHE
   for (size_t iclass = 0; iclass < LARGE_CLASS_COUNT; ++iclass) {
     span_cache_t* span_cache;
     if (!iclass)
@@ -3516,19 +3516,19 @@ rpmalloc_heap_free_all(rpmalloc_heap_t* heap) {
       span_cache = (span_cache_t*) (heap->span_large_cache + (iclass - 1));
     if (!span_cache->count)
       continue;
-#if ENABLE_GLOBAL_CACHE
+    #if ENABLE_GLOBAL_CACHE
     _rpmalloc_stat_add64(&heap->thread_to_global, span_cache->count * (iclass + 1) * _memory_span_size);
     _rpmalloc_stat_add(&heap->span_use[iclass].spans_to_global, span_cache->count);
     _rpmalloc_global_cache_insert_spans(span_cache->span, iclass + 1, span_cache->count);
-#else
+    #else
     for (size_t ispan = 0; ispan < span_cache->count; ++ispan)
       _rpmalloc_span_unmap(span_cache->span[ispan]);
-#endif
+    #endif
     span_cache->count = 0;
   }
-#endif
+  #endif
 
-#if ENABLE_STATISTICS
+  #if ENABLE_STATISTICS
   for (size_t iclass = 0; iclass < SIZE_CLASS_COUNT; ++iclass) {
     atomic_store32(&heap->size_class_use[iclass].alloc_current, 0);
     atomic_store32(&heap->size_class_use[iclass].spans_current, 0);
@@ -3536,7 +3536,7 @@ rpmalloc_heap_free_all(rpmalloc_heap_t* heap) {
   for (size_t iclass = 0; iclass < LARGE_CLASS_COUNT; ++iclass) {
     atomic_store32(&heap->span_use[iclass].current, 0);
   }
-#endif
+  #endif
 }
 
 extern inline void
@@ -3553,6 +3553,6 @@ rpmalloc_heap_thread_set_current(rpmalloc_heap_t* heap) {
 
 #if ENABLE_PRELOAD || ENABLE_OVERRIDE
 
-#include "malloc.h"
+  #include "malloc.h"
 
 #endif

@@ -19,44 +19,44 @@ extern "C" {
 #endif
 
 #if defined(__clang__) || defined(__GNUC__)
-#define RPMALLOC_EXPORT __attribute__((visibility("default")))
-#define RPMALLOC_ALLOCATOR
-#if (defined(__clang_major__) && (__clang_major__ < 4)) || (defined(__GNUC__) && defined(ENABLE_PRELOAD) && ENABLE_PRELOAD)
-#define RPMALLOC_ATTRIB_MALLOC
-#define RPMALLOC_ATTRIB_ALLOC_SIZE(size)
-#define RPMALLOC_ATTRIB_ALLOC_SIZE2(count, size)
-#else
-#define RPMALLOC_ATTRIB_MALLOC __attribute__((__malloc__))
-#define RPMALLOC_ATTRIB_ALLOC_SIZE(size) __attribute__((alloc_size(size)))
-#define RPMALLOC_ATTRIB_ALLOC_SIZE2(count, size) __attribute__((alloc_size(count, size)))
-#endif
-#define RPMALLOC_CDECL
+  #define RPMALLOC_EXPORT __attribute__((visibility("default")))
+  #define RPMALLOC_ALLOCATOR
+  #if (defined(__clang_major__) && (__clang_major__ < 4)) || (defined(__GNUC__) && defined(ENABLE_PRELOAD) && ENABLE_PRELOAD)
+    #define RPMALLOC_ATTRIB_MALLOC
+    #define RPMALLOC_ATTRIB_ALLOC_SIZE(size)
+    #define RPMALLOC_ATTRIB_ALLOC_SIZE2(count, size)
+  #else
+    #define RPMALLOC_ATTRIB_MALLOC __attribute__((__malloc__))
+    #define RPMALLOC_ATTRIB_ALLOC_SIZE(size) __attribute__((alloc_size(size)))
+    #define RPMALLOC_ATTRIB_ALLOC_SIZE2(count, size) __attribute__((alloc_size(count, size)))
+  #endif
+  #define RPMALLOC_CDECL
 #elif defined(_MSC_VER)
-#define RPMALLOC_EXPORT
-#define RPMALLOC_ALLOCATOR __declspec(allocator) __declspec(restrict)
-#define RPMALLOC_ATTRIB_MALLOC
-#define RPMALLOC_ATTRIB_ALLOC_SIZE(size)
-#define RPMALLOC_ATTRIB_ALLOC_SIZE2(count, size)
-#define RPMALLOC_CDECL __cdecl
+  #define RPMALLOC_EXPORT
+  #define RPMALLOC_ALLOCATOR __declspec(allocator) __declspec(restrict)
+  #define RPMALLOC_ATTRIB_MALLOC
+  #define RPMALLOC_ATTRIB_ALLOC_SIZE(size)
+  #define RPMALLOC_ATTRIB_ALLOC_SIZE2(count, size)
+  #define RPMALLOC_CDECL __cdecl
 #else
-#define RPMALLOC_EXPORT
-#define RPMALLOC_ALLOCATOR
-#define RPMALLOC_ATTRIB_MALLOC
-#define RPMALLOC_ATTRIB_ALLOC_SIZE(size)
-#define RPMALLOC_ATTRIB_ALLOC_SIZE2(count, size)
-#define RPMALLOC_CDECL
+  #define RPMALLOC_EXPORT
+  #define RPMALLOC_ALLOCATOR
+  #define RPMALLOC_ATTRIB_MALLOC
+  #define RPMALLOC_ATTRIB_ALLOC_SIZE(size)
+  #define RPMALLOC_ATTRIB_ALLOC_SIZE2(count, size)
+  #define RPMALLOC_CDECL
 #endif
 
 //! Define RPMALLOC_CONFIGURABLE to enable configuring sizes. Will introduce
 //  a very small overhead due to some size calculations not being compile time constants
 #ifndef RPMALLOC_CONFIGURABLE
-#define RPMALLOC_CONFIGURABLE 0
+  #define RPMALLOC_CONFIGURABLE 0
 #endif
 
 //! Define RPMALLOC_FIRST_CLASS_HEAPS to enable heap based API (rpmalloc_heap_* functions).
 //  Will introduce a very small overhead to track fully allocated spans in heaps
 #ifndef RPMALLOC_FIRST_CLASS_HEAPS
-#define RPMALLOC_FIRST_CLASS_HEAPS 0
+  #define RPMALLOC_FIRST_CLASS_HEAPS 0
 #endif
 
 //! Flag to rpaligned_realloc to not preserve content in reallocation

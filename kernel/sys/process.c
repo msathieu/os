@@ -101,7 +101,7 @@ void destroy_process(struct process* process) {
   } else if (process->parent->waiting_task) {
     struct task* task = process->parent->waiting_task;
     process->parent->waiting_task = 0;
-    task->blocked = 0;
+    task->blocked = false;
     task->registers.rax = process->pid;
     schedule_task(task, 0);
     remove_process(process);

@@ -172,7 +172,7 @@ void syscall_return_ipc(union syscall_args* args) {
     return;
   }
   current_task()->servicing_syscall_requester = false;
-  requester->blocked = 0;
+  requester->blocked = false;
   requester->registers.rax = args->arg0;
   schedule_task(requester, &args->registers);
 }
@@ -237,7 +237,7 @@ void syscall_unblock_ipc_call(union syscall_args* args) {
   }
   current_task()->process->syscall_handler = 0;
   syscall_handler->servicing_syscall_requester = syscall_requester;
-  syscall_handler->blocked = 0;
+  syscall_handler->blocked = false;
   syscall_handler->registers.rdi = syscall_requester->registers.rdi & 255;
   syscall_handler->registers.rsi = syscall_requester->registers.rsi;
   syscall_handler->registers.rdx = syscall_requester->registers.rdx;

@@ -1,5 +1,6 @@
+AllowShortFunctionsOnASingleLine: None
 ColumnLimit: 0
+ContinuationIndentWidth: 2
+IndentPPDirectives: BeforeHash
 PointerAlignment: Left
 SpaceAfterCStyleCast: true
-AllowShortFunctionsOnASingleLine: None
-ContinuationIndentWidth: 2

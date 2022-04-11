@@ -86,7 +86,7 @@ void destroy_task(struct task* task) {
   free(task);
 }
 void block_current_task(struct isr_registers* registers) {
-  current_task()->blocked = 1;
+  current_task()->blocked = true;
   scheduler(registers);
 }
 void terminate_current_task(struct isr_registers* registers) {
