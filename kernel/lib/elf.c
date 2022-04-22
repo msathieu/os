@@ -99,11 +99,6 @@ void load_elf(size_t file_i) {
   if (header->entry >= 0x8000000000000000) {
     panic("Executable is higher half");
   }
-  if (loader_struct.ci) {
-    outw(0x604, 0x2000);
-    while (true) {
-    }
-  }
   release_lock();
   jmp_user(tls, tls_size, header->entry);
 }

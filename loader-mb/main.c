@@ -21,7 +21,7 @@ void lmain(int magic, uintptr_t mbptr) {
     panic("Magic value is incorrect");
   }
   if (!(ecx & 0x40000000)) {
-    panic("rdrand not supported");
+    panic("rdrand isn't supported");
   }
   if (!__get_cpuid(0x80000001, &eax, &ebx, &ecx, &edx)) {
     panic("CPU doesn't support x86_64");

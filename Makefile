@@ -76,4 +76,4 @@ analyze:
 	scan-build --status-bugs --use-cc=clang $(MAKE) build-grub build-efi
 clean:
 	$(MAKE) clean -Ctools
-	rm -rf iso sysroot system *.img os.iso tools/bin `find . -name *.o` `find . -name *.d` loader-mb/libc.a loader-efi/libc.a kernel/libc.a
+	rm -rf iso sysroot system *.img os.iso tools/bin `find . -name *.o` `find . -name *.d` loader-mb/libc/libc.a loader-efi/libc/libc.a kernel/libc/libc.a

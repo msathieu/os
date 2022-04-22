@@ -24,10 +24,10 @@ struct loader_file {
 };
 struct loader_struct {
   uint32_t version;
-  uint64_t kernel_physical_addr;
+  uint64_t kernel_physical_address;
   struct loader_memory_map memory_map[1024];
   struct acpi_rsdp_extended rsdp;
-  struct loader_file files[64];
+  struct loader_file files[128];
   uint64_t fb_address;
   uint32_t fb_width;
   uint32_t fb_height;
@@ -36,7 +36,6 @@ struct loader_struct {
   uint16_t fb_red_index;
   uint16_t fb_green_index;
   uint16_t fb_blue_index;
-  uint8_t ci;
   uint16_t debug_port;
 } __attribute__((packed));
 

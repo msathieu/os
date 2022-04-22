@@ -1,5 +1,4 @@
 #include <cpu/ioports.h>
-#include <cpuid.h>
 #include <stdio.h>
 #include <struct.h>
 
@@ -17,8 +16,8 @@ int puts(const char* str) {
   return 0;
 }
 int vprintf(const char* restrict format, va_list args) {
-  char buf[512];
-  int return_value = vsnprintf(buf, 512, format, args);
+  char buf[1024];
+  int return_value = vsnprintf(buf, 1024, format, args);
   for (size_t i = 0; buf[i]; i++) {
     putchar(buf[i]);
   }

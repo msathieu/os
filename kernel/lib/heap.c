@@ -36,34 +36,6 @@ static int heap_compare(void* header1, void* header2) {
 __attribute__((optnone)) void placeholder_alloc(void) {
   heap_alloc(8, 0);
 }
-__attribute__((optnone)) void test_alloc(void) {
-  void* alloc_1 = heap_alloc(8, 0);
-  void* alloc_2 = heap_alloc(16, 0);
-  void* alloc_3 = heap_alloc(8, 0);
-  free(alloc_2);
-  free(alloc_1);
-  free(alloc_3);
-  void* alloc_test = heap_alloc(128, 0);
-  if (alloc_1 != alloc_test) {
-    panic("Memory leak in heap");
-  }
-  void* alloc_aligned_1 = heap_alloc(8, 1);
-  free(alloc_aligned_1);
-  if ((uintptr_t) alloc_aligned_1 % 0x1000) {
-    panic("valloc doesn't properly align");
-  }
-  void* alloc_aligned_2 = heap_alloc(8, 1);
-  free(alloc_aligned_2);
-  if (alloc_aligned_1 != alloc_aligned_2) {
-    panic("Memory leak in heap");
-  }
-  free(alloc_test);
-  void* alloc_test_2 = heap_alloc(256, 0);
-  free(alloc_test_2);
-  if (alloc_test != alloc_test_2) {
-    panic("Memory leak in heap");
-  }
-}
 void setup_heap(void) {
   heap_magic = rdrand();
   heap_list.compare = heap_compare;
@@ -78,9 +50,6 @@ void setup_heap(void) {
   insert_sorted_list(&heap_list, &initial_header->list_member);
   heap_enabled = true;
   placeholder_alloc();
-  if (loader_struct.ci) {
-    test_alloc();
-  }
 }
 void* heap_alloc(size_t requested_size, bool align) {
   requested_size = (requested_size + 15) / 16 * 16;

@@ -1,16 +1,15 @@
-CFLAGS+=--target=x86_64-elf -ffreestanding -fstack-protector-strong -mretpoline -mcmodel=kernel -mno-red-zone -mno-mmx -mno-sse -mno-sse2 -flto -fvisibility=hidden -fsanitize=cfi -fbuiltin -Ilibc/include
+export ARCH=x86_64
+CFLAGS+=--target=x86_64-elf -ffreestanding -fstack-protector-strong -mretpoline -mcmodel=kernel -mno-red-zone -mno-mmx -mno-sse -mno-sse2 -flto -fvisibility=hidden -fsanitize=cfi -fbuiltin -Ilibc/include -D__FLIBC_NO_FLOAT__
 ASFLAGS+=--target=x86_64-elf
 
-LIBC:=$(patsubst %.c, %.o, $(filter-out $(wildcard libc/math/*.c), $(wildcard libc/*/*.c))) $(patsubst %.s, %.o, $(wildcard libc/arch/x86_64/*.s))
 SFILES:=$(wildcard cpu/*.s)
 CFILES:=main.c $(wildcard */*.c) $(wildcard sys/syscall/*.c)
-OFILES:=$(patsubst %.c, %.o, $(CFILES)) $(patsubst %.s, %.o, $(SFILES)) public.o
+OFILES:=$(CFILES:.c=.o) $(SFILES:.s=.o) public.o
 
-$(LIBC): CFLAGS+=-fno-builtin
-$(DESTDIR)/boot/kernel.bin: $(OFILES) libc.a
+$(DESTDIR)/boot/kernel.bin: $(OFILES) libc/libc.a
 	$(CC) --target=x86_64-$(LDTARGET) -fuse-ld=lld -static -nostdlib -s -T link.ld -o $@ $^
-libc.a: $(LIBC)
-	$(AR) rcD $@ $(LIBC)
+libc/libc.a:
+	$(MAKE) -Clibc
 public.o: ../public.key
 	$(OBJCOPY) -O elf64-x86-64 -I binary $^ $@
 -include $(OFILES:.o=.d)

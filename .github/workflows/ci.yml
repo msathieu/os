@@ -54,12 +54,6 @@ jobs:
       - name: Build OS image with GRUB
         if: ${{ matrix.os == 'ubuntu-20.04' }}
         run: make build-grub -j2
-      - name: Test OS
-        if: ${{ matrix.os == 'ubuntu-20.04' }}
-        timeout-minutes: 1
-        run: |
-          sed -i "s/loader.bin/loader.bin ci/" grub.cfg
-          make run-grub-nographic
   style:
     runs-on: ubuntu-20.04
     needs: toolchain

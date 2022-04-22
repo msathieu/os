@@ -73,6 +73,6 @@ void setup_paging(void) {
                :
                : "eax");
   for (uintptr_t addr = 0; addr < kernel_size; addr += 0x1000) {
-    create_mapping(KERNEL_VIRTUAL_ADDRESS + addr, loader_struct.kernel_physical_addr + addr);
+    create_mapping(KERNEL_VIRTUAL_ADDRESS + addr, loader_struct.kernel_physical_address + addr);
   }
 }

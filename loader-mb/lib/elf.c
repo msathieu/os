@@ -97,13 +97,13 @@ void load_kernel(uintptr_t addr, uintptr_t size) {
   if (!physical_base) {
     panic("Couldn't find big enough memory segment to load kernel");
   }
-  loader_struct.kernel_physical_addr = physical_base;
+  loader_struct.kernel_physical_address = physical_base;
   for (size_t i = 0; i < header->num_pheaders; i++) {
     struct program_header* pheader = (struct program_header*) (addr + (size_t) header->pheader_offset + i * header->pheader_size);
     if (pheader->type != ELF_SEGMENT_LOAD) {
       continue;
     }
-    uintptr_t physical_addr = pheader->memory_address - KERNEL_VIRTUAL_ADDRESS + loader_struct.kernel_physical_addr;
+    uintptr_t physical_addr = pheader->memory_address - KERNEL_VIRTUAL_ADDRESS + loader_struct.kernel_physical_address;
     memset((void*) physical_addr, 0, pheader->memory_size);
     memcpy((void*) physical_addr, (void*) addr + pheader->file_offset, pheader->file_size);
   }

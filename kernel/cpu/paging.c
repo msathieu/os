@@ -94,7 +94,7 @@ static struct paging_entry* get_page(uintptr_t address, struct paging_table* pml
 }
 uintptr_t convert_to_physical(uintptr_t address, struct paging_table* pml4) {
   if (!paging_enabled) {
-    return address - KERNEL_VIRTUAL_ADDRESS + loader_struct.kernel_physical_addr;
+    return address - KERNEL_VIRTUAL_ADDRESS + loader_struct.kernel_physical_address;
   }
   struct paging_entry* page = get_page(address, pml4);
   if (page) {
@@ -379,16 +379,16 @@ void setup_paging(void) {
   bitset_set(frames, 1);
   current_pml4s[get_current_lapic_id()] = valloc(sizeof(struct paging_table));
   for (uintptr_t virtual_addr = (uintptr_t) text_start; virtual_addr < (uintptr_t) text_end; virtual_addr += 0x1000) {
-    create_mapping(virtual_addr, virtual_addr - KERNEL_VIRTUAL_ADDRESS + loader_struct.kernel_physical_addr, false, false, true, false);
+    create_mapping(virtual_addr, virtual_addr - KERNEL_VIRTUAL_ADDRESS + loader_struct.kernel_physical_address, false, false, true, false);
   }
   for (uintptr_t virtual_addr = (uintptr_t) rodata_start; virtual_addr < (uintptr_t) rodata_end; virtual_addr += 0x1000) {
-    create_mapping(virtual_addr, virtual_addr - KERNEL_VIRTUAL_ADDRESS + loader_struct.kernel_physical_addr, false, false, false, false);
+    create_mapping(virtual_addr, virtual_addr - KERNEL_VIRTUAL_ADDRESS + loader_struct.kernel_physical_address, false, false, false, false);
   }
   for (uintptr_t virtual_addr = (uintptr_t) data_start; virtual_addr < (uintptr_t) data_end; virtual_addr += 0x1000) {
-    create_mapping(virtual_addr, virtual_addr - KERNEL_VIRTUAL_ADDRESS + loader_struct.kernel_physical_addr, false, true, false, false);
+    create_mapping(virtual_addr, virtual_addr - KERNEL_VIRTUAL_ADDRESS + loader_struct.kernel_physical_address, false, true, false, false);
   }
   for (uintptr_t virtual_addr = (uintptr_t) bss_start; virtual_addr < (uintptr_t) bss_end; virtual_addr += 0x1000) {
-    create_mapping(virtual_addr, virtual_addr - KERNEL_VIRTUAL_ADDRESS + loader_struct.kernel_physical_addr, false, true, false, false);
+    create_mapping(virtual_addr, virtual_addr - KERNEL_VIRTUAL_ADDRESS + loader_struct.kernel_physical_address, false, true, false, false);
   }
   for (size_t i = 0; i < 64; i++) {
     loader_struct.files[i].address = (uintptr_t) map_physical(loader_struct.files[i].address, loader_struct.files[i].size, false, false);

@@ -9,12 +9,6 @@ struct mb_tag {
   uint32_t type;
   uint32_t size;
 };
-#define MULTIBOOT_CMD_TAG 1
-struct mb_command_tag {
-  uint32_t type;
-  uint32_t size;
-  uint8_t command[];
-};
 #define MULTIBOOT_MODULE_TAG 3
 struct mb_module_tag {
   uint32_t type;
@@ -92,8 +86,6 @@ static void* find_mb_tag(int type, bool required) {
 }
 void parse_multiboot_header(uintptr_t ptr) {
   mbptr = ptr;
-  struct mb_command_tag* cmd_tag = find_mb_tag(MULTIBOOT_CMD_TAG, 1);
-  loader_struct.ci = !strcmp((char*) cmd_tag->command, "ci");
   struct mb_memory_map_tag* memory_map = find_mb_tag(MULTIBOOT_MEMORY_MAP_TAG, 1);
   size_t j = 0;
   for (
