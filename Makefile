@@ -70,10 +70,10 @@ toolchain:
 	$(MAKE) install-headers -Clibc
 	$(MAKE) build-toolchain -Ctools
 format:
-	clang-format -i $(filter-out $(shell find ./acpid/lai -name *.c) $(shell find ./acpid/lai -name *.h), $(shell find . -name *.c) $(shell find . -name *.h))
+	clang-format -i $(filter-out `find ./acpid/lai -name "*.c"` `find ./acpid/lai -name "*.h"`, `find . -name "*.c"` `find . -name "*.h"`)
 analyze:
 	CFLAGS="$(CFLAGS) -fno-sanitize=all" $(MAKE) -Ctools
 	scan-build --status-bugs --use-cc=clang $(MAKE) build-grub build-efi
 clean:
 	$(MAKE) clean -Ctools
-	rm -rf iso sysroot system *.img os.iso tools/bin `find . -name *.o` `find . -name *.d` loader-mb/libc/libc.a loader-efi/libc/libc.a kernel/libc/libc.a
+	rm -rf iso sysroot system *.img os.iso tools/bin `find . -name "*.o"` `find . -name "*.d"` loader-mb/libc/libc.a loader-efi/libc/libc.a kernel/libc/libc.a
