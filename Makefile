@@ -73,7 +73,7 @@ format:
 	clang-format -i $(filter-out $(shell find ./acpid/lai -name "*.c") $(shell find ./acpid/lai -name "*.h"), $(shell find . -name "*.c") $(shell find . -name "*.h"))
 analyze:
 	CFLAGS="$(CFLAGS) -fno-sanitize=all" $(MAKE) -Ctools
-	scan-build --status-bugs --use-cc=clang $(MAKE) build-grub build-efi
+	scan-build --status-bugs --use-cc=clang $(MAKE) build-grub
 clean:
 	$(MAKE) clean -Ctools
 	rm -rf iso sysroot system *.img os.iso tools/bin `find . -name "*.o"` `find . -name "*.d"` loader-mb/libc/libc.a loader-efi/libc/libc.a kernel/libc/libc.a

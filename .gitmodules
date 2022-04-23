@@ -1,6 +1,3 @@
-[submodule "loader-efi/libc"]
-  path = loader-efi/libc
-  url = https://git.strypsteen.me/freestanding-libc
 [submodule "loader-mb/libc"]
   path = loader-mb/libc
   url = https://git.strypsteen.me/freestanding-libc
