@@ -4,7 +4,7 @@ export CC:=clang
 export AR:=llvm-ar
 export AS:=clang
 export OBJCOPY:=llvm-objcopy
-export CFLAGS:=-Wall -Wextra -Werror -O2 -MD -Iinclude -Wshadow
+export CFLAGS:=-Wall -Wextra -Werror -O2 -MD -I. -Iinclude -Wshadow
 export ASFLAGS:=-c
 export LDTARGET:=elf
 ifeq ($(shell uname),Darwin)
@@ -76,4 +76,4 @@ analyze:
 	scan-build --status-bugs --use-cc=clang $(MAKE) build-grub
 clean:
 	$(MAKE) clean -Ctools
-	rm -rf iso sysroot system *.img os.iso tools/bin `find . -name "*.o"` `find . -name "*.d"` loader-mb/libc/libc.a loader-efi/libc/libc.a kernel/libc/libc.a
+	rm -rf iso sysroot system *.img os.iso tools/bin `find . -name "*.o"` `find . -name "*.d"` `find kernel loader-mb loadelf -name "*.a"`

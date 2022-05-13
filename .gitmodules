@@ -10,3 +10,12 @@
 [submodule "acpid/lai"]
   path = acpid/lai
   url = https://github.com/msathieu/lai
+[submodule "kernel/libelf"]
+  path = kernel/libelf
+  url = https://git.strypsteen.me/libelf
+[submodule "loader-mb/libelf"]
+  path = loader-mb/libelf
+  url = https://git.strypsteen.me/libelf
+[submodule "loadelf/libelf"]
+  path = loadelf/libelf
+  url = https://git.strypsteen.me/libelf
