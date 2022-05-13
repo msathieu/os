@@ -4,4 +4,3 @@ $(DESTDIR)/boot/lelf: main.o libelf/libelf.a
 libelf/libelf.a:
 	$(MAKE) -Clibelf
 .DELETE_ON_ERROR:
-.PHONY: libelf/libelf.a

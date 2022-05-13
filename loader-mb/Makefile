@@ -14,4 +14,3 @@ public.o: ../public.key
 	$(OBJCOPY) -O elf32-i386 -I binary $^ $@
 -include $(OFILES:.o=.d)
 .DELETE_ON_ERROR:
-.PHONY: libc/libc.a
