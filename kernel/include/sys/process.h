@@ -14,7 +14,8 @@ enum {
   CAP_PRIORITY,
   CAP_ACPI,
   CAP_LOG,
-  CAP_LISTEN_EXITS
+  CAP_LISTEN_EXITS,
+  CAP_REGISTER_IPC_NAME
 };
 
 struct process {
@@ -24,7 +25,6 @@ struct process {
   size_t ntasks;
   struct paging_table* address_space;
   bool accepts_syscalls;
-  bool accepts_shared_memory;
   struct task* syscall_handler;
   struct linked_list syscall_queue;
   size_t file_i;
@@ -44,6 +44,7 @@ struct process {
   struct linked_list exited_pids_list;
   bool exit_listener;
   bool should_exit;
+  char ipc_name[5];
 };
 struct exited_pid {
   struct linked_list_member list_member;

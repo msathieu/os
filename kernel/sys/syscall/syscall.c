@@ -65,7 +65,7 @@ static struct syscall syscall_handlers[256] = {
   {syscall_start_process, 1, 2},
   {syscall_get_pid, 0, 1},
   {syscall_get_uid, 0, 1},
-  {syscall_register_ipc, 1, 2},
+  {syscall_register_ipc, 1, 0},
   {syscall_wait_ipc, 1, 0},
   {syscall_return_ipc, 1, 1},
   {syscall_set_spawned_uid, 1, 1},
@@ -98,7 +98,9 @@ static struct syscall syscall_handlers[256] = {
   {syscall_set_fs, 0, 1},
   {syscall_spawn_thread, 1, 3},
   {syscall_fork, 1, 0},
-  {syscall_start_fork, 1, 0}};
+  {syscall_start_fork, 1, 0},
+  {syscall_register_ipc_name, 1, 5},
+  {syscall_get_ipc_pid, 1, 5}};
 
 void syscall_common(union syscall_args* args) {
   if (current_task()->process->should_exit) {

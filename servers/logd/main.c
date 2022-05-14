@@ -51,8 +51,7 @@ static int64_t log_handler(__attribute__((unused)) uint64_t arg0, __attribute__(
 }
 int main(void) {
   drop_capability(CAP_NAMESPACE_KERNEL, CAP_KERNEL_PRIORITY);
-  register_ipc(true);
-  ipc_set_started();
+  register_ipc();
   unsigned eax, ebx, ecx, edx;
   __get_cpuid(1, &eax, &ebx, &ecx, &edx);
   if (ecx & 0x80000000) {

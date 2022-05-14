@@ -73,7 +73,7 @@ static int64_t write_handler(uint64_t offset, uint64_t arg1, uint64_t arg2, uint
   return handle_transfer(offset, arg1, arg2, address, size, true);
 }
 int main(void) {
-  register_ipc(true);
+  register_ipc();
   parent_pid = getppid();
   send_pid_ipc_call(parent_pid, IPC_VFSD_FS_READ, 0, 0, 0, (uintptr_t) &header, sizeof(struct lvm_header));
   if (header.magic != LVM_MAGIC || header.version) {

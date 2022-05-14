@@ -4,7 +4,7 @@
 #include <sys/ipc.h>
 #include <sys/scheduler.h>
 
-struct linked_list syscall_processes;
+struct linked_list ipc_handling_processes;
 
 void syscall_wait_ipc(union syscall_args* args) {
   if (current_task()->servicing_syscall_requester) {
@@ -58,7 +58,7 @@ void syscall_wait_ipc(union syscall_args* args) {
 void syscall_handle_ipc(union syscall_args* args) {
   size_t pid = args->syscall >> 8;
   struct process* called_process = 0;
-  for (struct process* process = (struct process*) syscall_processes.first; process; process = (struct process*) process->list_member.next) {
+  for (struct process* process = (struct process*) ipc_handling_processes.first; process; process = (struct process*) process->list_member.next) {
     if (process->pid == pid) {
       called_process = process;
       break;
@@ -76,11 +76,6 @@ void syscall_handle_ipc(union syscall_args* args) {
   size_t syscall = args->syscall & 255;
   uintptr_t mapping_start, mapping_end;
   if (syscall & IPC_CALL_MEMORY_SHARING) {
-    if (!called_process->accepts_shared_memory) {
-      puts("Called process doesn't accept shared memory");
-      terminate_current_task(&args->registers);
-      return;
-    }
     mapping_start = args->arg3 / 0x1000 * 0x1000;
     if (!args->arg4 || args->arg4 > 0x8000000) {
       puts("Can't share this much memory");

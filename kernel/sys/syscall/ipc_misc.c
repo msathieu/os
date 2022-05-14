@@ -1,30 +1,16 @@
 #include <stdio.h>
 #include <sys/ipc.h>
+#include <sys/process.h>
 #include <sys/task.h>
 
-void syscall_register_ipc(union syscall_args* args) {
-  if (args->arg0 > 1) {
-    puts("Argument is out of range");
-    terminate_current_task(&args->registers);
-    return;
+static void register_ipc(struct process* process) {
+  if (!current_task()->process->accepts_syscalls) {
+    insert_linked_list(&ipc_handling_processes, &process->list_member);
   }
-  if (args->arg1 > 1) {
-    puts("Argument is out of range");
-    terminate_current_task(&args->registers);
-    return;
-  }
-  if (current_task()->process->accepts_syscalls == (int) args->arg0) {
-    puts("Desired registration status is already set");
-    terminate_current_task(&args->registers);
-    return;
-  }
-  current_task()->process->accepts_syscalls = args->arg0;
-  if (args->arg0) {
-    insert_linked_list(&syscall_processes, &current_task()->process->list_member);
-    current_task()->process->accepts_shared_memory = args->arg1;
-  } else {
-    remove_linked_list(&syscall_processes, &current_task()->process->list_member);
-  }
+  process->accepts_syscalls = true;
+}
+void syscall_register_ipc(__attribute__((unused)) union syscall_args* args) {
+  register_ipc(current_task()->process);
 }
 void syscall_get_ipc_caller_capabilities(union syscall_args* args) {
   if (!args->arg0) {
@@ -66,4 +52,37 @@ void syscall_is_caller_child(union syscall_args* args) {
     return;
   }
   args->return_value = has_child_with_pid(current_task()->servicing_syscall_requester->process->pid, current_task()->process);
+}
+void syscall_register_ipc_name(union syscall_args* args) {
+  if (!has_process_capability(current_task()->process, CAP_REGISTER_IPC_NAME)) {
+    puts("Not allowed to register IPC name");
+    terminate_current_task(&args->registers);
+    return;
+  }
+  if (!current_task()->spawned_process) {
+    puts("Not spawning process");
+    terminate_current_task(&args->registers);
+    return;
+  }
+  struct process* process = current_task()->spawned_process;
+  process->ipc_name[0] = args->arg0;
+  process->ipc_name[1] = args->arg1;
+  process->ipc_name[2] = args->arg2;
+  process->ipc_name[3] = args->arg3;
+  process->ipc_name[4] = args->arg4;
+  register_ipc(process);
+}
+void syscall_get_ipc_pid(union syscall_args* args) {
+  struct process* ipc_process = 0;
+  for (struct process* process = (struct process*) ipc_handling_processes.first; process; process = (struct process*) process->list_member.next) {
+    if (process->ipc_name[0] == (char) args->arg0 && process->ipc_name[1] == (char) args->arg1 && process->ipc_name[2] == (char) args->arg2 && process->ipc_name[3] == (char) args->arg3 && process->ipc_name[4] == (char) args->arg4) {
+      ipc_process = process;
+      break;
+    }
+  }
+  if (!ipc_process) {
+    args->return_value = -1;
+  } else {
+    args->return_value = ipc_process->pid;
+  }
 }

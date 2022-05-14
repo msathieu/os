@@ -47,8 +47,7 @@ static int64_t kbd_input_handler(__attribute__((unused)) uint64_t offset, __attr
 }
 int main(void) {
   drop_capability(CAP_NAMESPACE_KERNEL, CAP_KERNEL_PRIORITY);
-  register_ipc(true);
-  ipc_set_started();
+  register_ipc();
   setup_fb();
   setup_kbd();
   send_ipc_call("logd", IPC_LOGD_REGISTER, 0, 0, 0, 0, 0);

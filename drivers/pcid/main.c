@@ -76,8 +76,7 @@ static int64_t access_handler(uint64_t write, uint64_t width, uint64_t address, 
 static void load_device(__attribute__((unused)) uint8_t bus, __attribute__((unused)) uint8_t device, __attribute__((unused)) uint8_t function) {
 }
 int main(void) {
-  register_ipc(false);
-  ipc_set_started();
+  register_ipc();
   for (size_t bus = 0; bus < 256; bus++) {
     for (size_t device = 0; device < 32; device++) {
       size_t nfunctions = 1;

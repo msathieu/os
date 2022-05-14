@@ -89,8 +89,7 @@ int main(void) {
   drop_capability(CAP_NAMESPACE_KERNEL, CAP_KERNEL_PRIORITY);
   listen_exits();
   drop_capability(CAP_NAMESPACE_KERNEL, CAP_KERNEL_LISTEN_EXITS);
-  register_ipc(true);
-  ipc_set_started();
+  register_ipc();
   register_ipc_call(IPC_ENVD_GET_NUM, get_num_envs_handler, 0);
   register_ipc_call(IPC_ENVD_GET_SIZE, get_env_size_handler, 1);
   register_ipc_call(IPC_ENVD_ADD, add_env_handler, 0);

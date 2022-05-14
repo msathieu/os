@@ -33,7 +33,7 @@ void destroy_process(struct process* process) {
     panic("init exited");
   }
   if (process->accepts_syscalls) {
-    remove_linked_list(&syscall_processes, &process->list_member);
+    remove_linked_list(&ipc_handling_processes, &process->list_member);
   }
   if (process->syscall_queue.first) {
     struct task* next_task;

@@ -248,7 +248,7 @@ static int64_t write_handler(uint64_t offset, __attribute__((unused)) uint64_t a
   return size;
 }
 int main(void) {
-  register_ipc(true);
+  register_ipc();
   outb(alternate_ports[0], 0);
   outb(alternate_ports[1], 0);
   identify(0, 0);

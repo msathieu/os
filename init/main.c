@@ -22,7 +22,6 @@ struct service services[] = {
   {"acpid", true, 0, {[CAP_NAMESPACE_KERNEL] = 1 << CAP_KERNEL_IOPORT | 1 << CAP_KERNEL_MAP_MEMORY | 1 << CAP_KERNEL_ACPI, [CAP_NAMESPACE_DRIVERS] = 1 << CAP_PCID_ACCESS}, "acpid"},
   {"argd", true, 0, {[CAP_NAMESPACE_KERNEL] = 1 << CAP_KERNEL_LISTEN_EXITS}, "argd"},
   {"atad", true, 0, {[CAP_NAMESPACE_FILESYSTEMS] = 1 << CAP_VFSD_MOUNT}, 0},
-  {"ipcd", true, 0, {}, 0},
   {"logd", true, 0, {[CAP_NAMESPACE_KERNEL] = 1 << CAP_KERNEL_LOG, [CAP_NAMESPACE_SERVERS] = 1 << CAP_LOGD}, "logd"},
   {"pcid", true, 0, {[CAP_NAMESPACE_KERNEL] = 1 << CAP_KERNEL_IOPORT | 1 << CAP_KERNEL_IRQ | 1 << CAP_KERNEL_MAP_MEMORY}, "pcid"},
   {"/sbin/devd", false, 0, {[CAP_NAMESPACE_FILESYSTEMS] = 1 << CAP_DEVD}, "devd"},
@@ -97,7 +96,6 @@ int main(void) {
   if (getpid() != 1) {
     return 1;
   }
-  spawn("ipcd");
   spawn("logd");
   spawn("argd");
   spawn("vfsd");
@@ -120,9 +118,6 @@ int main(void) {
     }
     for (size_t i = 0; i < sizeof(services) / sizeof(struct service); i++) {
       if (services[i].pid == pid) {
-        if (!strcmp(services[i].name, "ipcd")) {
-          return 1;
-        }
         spawn(services[i].name);
         break;
       }

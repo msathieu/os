@@ -1,4 +1,4 @@
-PROGRAMS:=$(DESTDIR)/boot/argd $(DESTDIR)/sbin/envd $(DESTDIR)/boot/ipcd $(DESTDIR)/sbin/kbdd $(DESTDIR)/boot/logd $(DESTDIR)/sbin/ttyd
+PROGRAMS:=$(DESTDIR)/boot/argd $(DESTDIR)/sbin/envd $(DESTDIR)/sbin/kbdd $(DESTDIR)/boot/logd $(DESTDIR)/sbin/ttyd
 
 all: $(PROGRAMS)
 .SECONDEXPANSION:

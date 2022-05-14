@@ -93,8 +93,7 @@ static int64_t write_handler(uint64_t inode, uint64_t offset, uint64_t arg2, uin
 }
 int main(void) {
   drop_capability(CAP_NAMESPACE_KERNEL, CAP_KERNEL_PRIORITY);
-  register_ipc(true);
-  ipc_set_started();
+  register_ipc();
   struct vfs_stat stat = {0};
   stat.type = VFS_TYPE_DIR;
   send_ipc_call("vfsd", IPC_VFSD_FINISH_MOUNT, 512, 0, 0, (uintptr_t) &stat, sizeof(struct vfs_stat));

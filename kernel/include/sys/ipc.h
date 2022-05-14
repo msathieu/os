@@ -9,13 +9,15 @@ enum {
   IPC_ERR_INVALID_PID
 };
 
-extern struct linked_list syscall_processes;
+extern struct linked_list ipc_handling_processes;
 
 void syscall_block_ipc_call(union syscall_args*);
 void syscall_get_ipc_caller_capabilities(union syscall_args*);
+void syscall_get_ipc_pid(union syscall_args*);
 void syscall_handle_ipc(union syscall_args*);
 void syscall_is_caller_child(union syscall_args*);
 void syscall_register_ipc(union syscall_args*);
+void syscall_register_ipc_name(union syscall_args*);
 void syscall_return_ipc(union syscall_args*);
 void syscall_unblock_ipc_call(union syscall_args*);
 void syscall_wait_ipc(union syscall_args*);
