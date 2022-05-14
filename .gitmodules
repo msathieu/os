@@ -16,6 +16,6 @@
 [submodule "loader-mb/libelf"]
   path = loader-mb/libelf
   url = https://git.strypsteen.me/libelf
-[submodule "loadelf/libelf"]
-  path = loadelf/libelf
+[submodule "libraries/elf"]
+  path = libraries/elf
   url = https://git.strypsteen.me/libelf

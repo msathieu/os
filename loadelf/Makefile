@@ -1,6 +1,3 @@
-CFLAGS+=-Ilibelf
-$(DESTDIR)/boot/lelf: main.o libelf/libelf.a
-	$(CC) -s -o $@ $^ -Wl,--image-base,0x40000000
-libelf/libelf.a:
-	$(MAKE) -Clibelf
+$(DESTDIR)/boot/lelf: main.o
+	$(CC) -s -o $@ $^ -Wl,--image-base,0x40000000 -lelf
 .DELETE_ON_ERROR:
