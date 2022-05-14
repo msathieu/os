@@ -79,7 +79,7 @@ static int64_t key_event_handler(uint64_t type, uint64_t value, uint64_t release
   }
   if (!selected_framebuffer && !release) {
     if (type == KBD_CHARACTER) {
-      put_character(value, 0);
+      put_character(value, 0, false);
       if (buffer_len == buffer_size) {
         buffer_size += 512;
         if (buffer) {

@@ -17,7 +17,7 @@ static int64_t print_handler(__attribute__((unused)) uint64_t offset, __attribut
   }
   for (size_t i = 0; i < size; i++) {
     if (((char*) address)[i]) {
-      put_character(((char*) address)[i], fb);
+      put_character(((char*) address)[i], fb, i != size - 1);
     }
   }
   update_fb();

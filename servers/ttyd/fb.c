@@ -19,6 +19,7 @@ static size_t current_y[12];
 static char* framebuffer[12];
 static bool* line_updated;
 static bool screen_updated;
+static bool cursor_drawn[12];
 
 void setup_fb(void) {
   fb_width = send_ipc_call("fbd", IPC_FBD_INFO, 0, 0, 0, 0, 0);
@@ -56,13 +57,16 @@ static void draw_cursor(size_t x, size_t y, size_t fb, bool cursor) {
   if (fb == selected_framebuffer) {
     line_updated[y] = true;
   }
+  cursor_drawn[fb] = cursor;
 }
 static void draw_character(size_t x, size_t y, unsigned char c, size_t fb) {
   if (x >= width || y >= height) {
     return;
   }
   if (c >= 128) {
-    draw_cursor(x, y, fb, 0);
+    if (cursor_drawn[fb]) {
+      draw_cursor(x, y, fb, 0);
+    }
     return;
   }
   for (size_t cy = 0; cy < 16; cy++) {
@@ -78,16 +82,18 @@ static void draw_character(size_t x, size_t y, unsigned char c, size_t fb) {
     line_updated[y] = true;
   }
 }
-void put_character(char c, size_t fb) {
+void put_character(char c, size_t fb, bool defer_cursor) {
   switch (c) {
   case '\n':
-    draw_cursor(current_x[fb], current_y[fb], fb, 0);
+    if (cursor_drawn[fb]) {
+      draw_cursor(current_x[fb], current_y[fb], fb, 0);
+    }
     current_x[fb] = 0;
     current_y[fb]++;
     break;
   case '\t':;
     for (size_t i = 0; i < 8; i++) {
-      put_character(' ', fb);
+      put_character(' ', fb, defer_cursor);
     }
     break;
   default:
@@ -106,7 +112,9 @@ void put_character(char c, size_t fb) {
     }
     current_y[fb]--;
   }
-  draw_cursor(current_x[fb], current_y[fb], fb, 1);
+  if (!defer_cursor) {
+    draw_cursor(current_x[fb], current_y[fb], fb, 1);
+  }
 }
 void fb_backspace(size_t fb) {
   if (current_x[fb]) {
