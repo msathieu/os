@@ -7,6 +7,31 @@
 int _noremove_args;
 int _noenvironment_vars;
 
+static bool fn_read(void* buffer, void* handle, size_t offset, size_t size) {
+  fseek(handle, offset, SEEK_SET);
+  fread(buffer, size, 1, handle);
+  return true;
+}
+static int get_permissions_bitmask(bool read, bool write, bool exec) {
+  int permissions = 0;
+  if (read) {
+    permissions |= PROT_READ;
+  }
+  if (write) {
+    permissions |= PROT_WRITE;
+  }
+  if (exec) {
+    permissions |= PROT_EXEC;
+  }
+  return permissions;
+}
+static uintptr_t fn_mmap(uintptr_t start, size_t size, bool read, bool write, bool exec) {
+  return (uintptr_t) mmap((void*) start, size, get_permissions_bitmask(read, write, exec), MAP_ANONYMOUS, 0, 0);
+}
+static bool fn_protect(uintptr_t start, size_t size, bool read, bool write, bool exec) {
+  mprotect((void*) start, size, get_permissions_bitmask(read, write, exec));
+  return true;
+}
 int main(int argc, char* argv[]) {
   if (!argc) {
     return 1;
@@ -22,38 +47,8 @@ int main(int argc, char* argv[]) {
   }
   uintptr_t tls = 0;
   size_t tls_size = 0;
-  for (size_t i = 0; i < header.npheaders; i++) {
-    fseek(file, header.pheader_offset + i * header.pheader_size, SEEK_SET);
-    struct elf_pheader pheader;
-    fread(&pheader, sizeof(struct elf_pheader), 1, file);
-    if (pheader.type != ELF_PHEADER_TYPE_LOAD && pheader.type != ELF_PHEADER_TYPE_TLS) {
-      continue;
-    }
-    void* mapped_address;
-    if (pheader.type == ELF_PHEADER_TYPE_LOAD) {
-      mapped_address = mmap((void*) (pheader.memory_address / 0x1000 * 0x1000), pheader.memory_size + pheader.memory_address % 0x1000, PROT_WRITE, MAP_ANONYMOUS, 0, 0);
-      if ((uintptr_t) mapped_address != pheader.memory_address / 0x1000 * 0x1000) {
-        return 1;
-      }
-    } else {
-      mapped_address = mmap(0, pheader.memory_size, PROT_WRITE, MAP_ANONYMOUS, 0, 0);
-      tls = (uintptr_t) mapped_address;
-      tls_size = pheader.memory_size;
-      pheader.memory_address = tls;
-    }
-    memset((void*) pheader.memory_address, 0, pheader.memory_size);
-    fseek(file, pheader.file_offset, SEEK_SET);
-    fread((void*) pheader.memory_address, 1, pheader.file_size, file);
-    int permissions = 0;
-    if (pheader.type == ELF_PHEADER_TYPE_LOAD) {
-      if (pheader.flags & ELF_PHEADER_FLAGS_WRITE) {
-        permissions |= PROT_WRITE;
-      }
-      if (pheader.flags & ELF_PHEADER_FLAGS_EXEC) {
-        permissions |= PROT_EXEC;
-      }
-    }
-    mprotect(mapped_address, pheader.memory_size + pheader.memory_address % 0x1000, permissions);
+  if (!elf_load(&header, fn_read, fn_mmap, fn_protect, file, &tls, &tls_size)) {
+    return 1;
   }
   fclose(file);
   asm volatile("mov %0, %%rdi; mov %1, %%rsi; jmp *%2"

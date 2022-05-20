@@ -10,6 +10,16 @@ size_t kernel_size;
 uint64_t kernel_entry;
 extern int _binary____public_key_start;
 
+static bool fn_read(void* buffer, void* handle, size_t offset, size_t size) {
+  memcpy(buffer, handle + offset, size);
+  return true;
+}
+static uintptr_t fn_mmap(uintptr_t start, __attribute__((unused)) size_t size, __attribute__((unused)) bool read, __attribute__((unused)) bool write, __attribute__((unused)) bool exec) {
+  return start - KERNEL_VIRTUAL_ADDRESS + loader_struct.kernel_physical_address;
+}
+static bool fn_protect(__attribute__((unused)) uintptr_t start, __attribute__((unused)) size_t size, __attribute__((unused)) bool read, __attribute__((unused)) bool write, __attribute__((unused)) bool exec) {
+  return true;
+}
 void load_kernel(uintptr_t addr, uintptr_t size) {
   bool verified = false;
   for (size_t i = 0; i < 64; i++) {
@@ -61,17 +71,8 @@ void load_kernel(uintptr_t addr, uintptr_t size) {
     panic("Couldn't find big enough memory segment to load kernel");
   }
   loader_struct.kernel_physical_address = physical_base;
-  for (size_t i = 0; i < header->npheaders; i++) {
-    struct elf_pheader* pheader = (struct elf_pheader*) (addr + (size_t) header->pheader_offset + i * header->pheader_size);
-    if (pheader->type != ELF_PHEADER_TYPE_LOAD) {
-      continue;
-    }
-    uintptr_t physical_addr = pheader->memory_address - KERNEL_VIRTUAL_ADDRESS + loader_struct.kernel_physical_address;
-    memset((void*) physical_addr, 0, pheader->memory_size);
-    memcpy((void*) physical_addr, (void*) addr + pheader->file_offset, pheader->file_size);
+  if (!elf_load(header, fn_read, fn_mmap, fn_protect, (void*) addr, 0, 0)) {
+    panic("Couldn't load kernel");
   }
   kernel_entry = header->entry;
-  if (kernel_entry < 0x8000000000000000) {
-    panic("Kernel isn't higher-half");
-  }
 }
