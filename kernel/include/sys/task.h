@@ -15,7 +15,7 @@ enum {
   PRIORITY_IDLE
 };
 struct task {
-  struct linked_list_member list_member;
+  struct linked_list_member state_list_member;
   struct process* process;
   struct isr_registers registers;
   bool blocked;

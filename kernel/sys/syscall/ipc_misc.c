@@ -5,7 +5,7 @@
 
 static void register_ipc(struct process* process) {
   if (!current_task()->process->accepts_syscalls) {
-    insert_linked_list(&ipc_handling_processes, &process->list_member);
+    insert_linked_list(&ipc_handling_processes, &process->ipc_list_member, process);
   }
   process->accepts_syscalls = true;
 }
@@ -74,7 +74,8 @@ void syscall_register_ipc_name(union syscall_args* args) {
 }
 void syscall_get_ipc_pid(union syscall_args* args) {
   struct process* ipc_process = 0;
-  for (struct process* process = (struct process*) ipc_handling_processes.first; process; process = (struct process*) process->list_member.next) {
+  for (struct linked_list_member* member = ipc_handling_processes.first; member; member = member->next) {
+    struct process* process = member->node;
     if (process->ipc_name[0] == (char) args->arg0 && process->ipc_name[1] == (char) args->arg1 && process->ipc_name[2] == (char) args->arg2 && process->ipc_name[3] == (char) args->arg3 && process->ipc_name[4] == (char) args->arg4) {
       ipc_process = process;
       break;

@@ -2,7 +2,8 @@
 #include <panic.h>
 
 // Scheduler: new entries must be added at the end
-void insert_linked_list(struct linked_list* list, struct linked_list_member* new_member) {
+void insert_linked_list(struct linked_list* list, struct linked_list_member* new_member, void* node) {
+  new_member->node = node;
   new_member->next = 0;
   if (!list->first) {
     list->first = new_member;
@@ -15,6 +16,7 @@ void insert_linked_list(struct linked_list* list, struct linked_list_member* new
   member->next = new_member;
 }
 void remove_linked_list(struct linked_list* list, struct linked_list_member* remove_member) {
+  remove_member->node = 0;
   struct linked_list_member* prev_member = 0;
   for (struct linked_list_member* member = list->first; member; member = member->next) {
     if (member == remove_member) {

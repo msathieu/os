@@ -1,10 +1,11 @@
 #include <sorted_list.h>
 
-void insert_sorted_list(struct sorted_list* list, struct linked_list_member* new_member) {
+void insert_sorted_list(struct sorted_list* list, struct linked_list_member* new_member, void* node) {
+  new_member->node = node;
   new_member->next = 0;
   struct linked_list_member* prev_member = 0;
   for (struct linked_list_member* member = list->first; member; member = member->next) {
-    if (list->compare(new_member, member) <= 0) {
+    if (list->compare(new_member->node, member->node) <= 0) {
       if (prev_member) {
         prev_member->next = new_member;
       } else {

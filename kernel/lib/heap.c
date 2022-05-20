@@ -14,7 +14,7 @@ struct heap_header {
   size_t size;
   bool free;
   long magic;
-};
+} __attribute__((aligned(16)));
 struct heap_footer {
   long magic;
   struct heap_header* header;
@@ -47,7 +47,7 @@ void setup_heap(void) {
   struct heap_footer* initial_footer = (struct heap_footer*) (HEAP_START + sizeof(struct heap_header) + initial_header->size);
   initial_footer->magic = heap_magic;
   initial_footer->header = initial_header;
-  insert_sorted_list(&heap_list, &initial_header->list_member);
+  insert_sorted_list(&heap_list, &initial_header->list_member, initial_header);
   heap_enabled = true;
   placeholder_alloc();
 }
@@ -57,7 +57,8 @@ void* heap_alloc(size_t requested_size, bool align) {
     requested_size += 0x1000;
   }
   struct heap_header* header = 0;
-  for (struct heap_header* header_i = (struct heap_header*) heap_list.first; header_i; header_i = (struct heap_header*) header_i->list_member.next) {
+  for (struct linked_list_member* member = heap_list.first; member; member = member->next) {
+    struct heap_header* header_i = member->node;
     if (header_i->magic != heap_magic) {
       panic("Invalid magic value");
     }
@@ -86,7 +87,7 @@ void* heap_alloc(size_t requested_size, bool align) {
       panic("Invalid magic value");
     }
     new_free_footer->header = new_free_header;
-    insert_sorted_list(&heap_list, &new_free_header->list_member);
+    insert_sorted_list(&heap_list, &new_free_header->list_member, new_free_header);
   }
   if (align) {
     // Should never be first allocation
@@ -154,5 +155,5 @@ void free(void* address) {
       footer->header = header;
     }
   }
-  insert_sorted_list(&heap_list, &header->list_member);
+  insert_sorted_list(&heap_list, &header->list_member, header);
 }

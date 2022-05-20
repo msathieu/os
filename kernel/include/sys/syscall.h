@@ -20,7 +20,7 @@ union syscall_args {
 extern struct process* ioports_process[0x10000];
 extern struct process* isa_irqs_process[16];
 extern struct process* sci_process;
-extern struct process* exit_listener_processes[64];
+extern struct linked_list exit_listener_processes;
 
 void syscall_change_memory_permissions(union syscall_args*);
 void syscall_change_priority(union syscall_args*);

@@ -19,7 +19,8 @@ enum {
 };
 
 struct process {
-  struct linked_list_member list_member;
+  struct linked_list_member ipc_list_member;
+  struct linked_list_member exit_listener_member;
   size_t pid;
   size_t uid;
   size_t ntasks;

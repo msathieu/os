@@ -4,7 +4,7 @@
 #include <sys/syscall.h>
 #include <sys/task.h>
 
-struct process* exit_listener_processes[64];
+struct linked_list exit_listener_processes;
 
 void syscall_listen_exits(union syscall_args* args) {
   if (!has_process_capability(current_task()->process, CAP_LISTEN_EXITS)) {
@@ -17,15 +17,8 @@ void syscall_listen_exits(union syscall_args* args) {
     terminate_current_task(&args->registers);
     return;
   }
-  for (size_t i = 0; i < 64; i++) {
-    if (!exit_listener_processes[i]) {
-      exit_listener_processes[i] = current_task()->process;
-      current_task()->process->exit_listener = true;
-      return;
-    }
-  }
-  puts("Maximum number of exit listener processes has already registered");
-  terminate_current_task(&args->registers);
+  insert_linked_list(&exit_listener_processes, &current_task()->process->exit_listener_member, current_task()->process);
+  current_task()->process->exit_listener = true;
 }
 void syscall_get_exited_pid(union syscall_args* args) {
   if (!current_task()->process->exit_listener) {

@@ -33,19 +33,21 @@ void destroy_process(struct process* process) {
     panic("init exited");
   }
   if (process->accepts_syscalls) {
-    remove_linked_list(&ipc_handling_processes, &process->list_member);
+    remove_linked_list(&ipc_handling_processes, &process->ipc_list_member);
   }
   if (process->syscall_queue.first) {
-    struct task* next_task;
-    for (struct task* task = (struct task*) process->syscall_queue.first; task; task = next_task) {
-      next_task = (struct task*) task->list_member.next;
+    struct linked_list_member* next_member;
+    for (struct linked_list_member* member = process->syscall_queue.first; member; member = next_member) {
+      struct task* task = member->node;
+      next_member = member->next;
       destroy_task(task);
     }
   }
   if (process->blocked_ipc_calls_queue.first) {
-    struct task* next_task;
-    for (struct task* task = (struct task*) process->blocked_ipc_calls_queue.first; task; task = next_task) {
-      next_task = (struct task*) task->list_member.next;
+    struct linked_list_member* next_member;
+    for (struct linked_list_member* member = process->blocked_ipc_calls_queue.first; member; member = next_member) {
+      struct task* task = member->node;
+      next_member = member->next;
       destroy_task(task);
     }
   }
@@ -74,9 +76,11 @@ void destroy_process(struct process* process) {
     free(exited_pid);
   }
   if (process->exit_listener) {
-    for (size_t i = 0; i < 64; i++) {
-      if (exit_listener_processes[i] == process) {
-        exit_listener_processes[i] = 0;
+    for (struct linked_list_member* member = exit_listener_processes.first; member; member = member->next) {
+      struct process* listener = member->node;
+      if (listener == process) {
+        remove_linked_list(&exit_listener_processes, member);
+        break;
       }
     }
   }
@@ -89,12 +93,11 @@ void destroy_process(struct process* process) {
       remove_process(child);
     }
   }
-  for (size_t i = 0; i < 64; i++) {
-    if (exit_listener_processes[i]) {
-      struct exited_pid* exited_pid = calloc(1, sizeof(struct exited_pid));
-      exited_pid->pid = process->pid;
-      insert_linked_list(&exit_listener_processes[i]->exited_pids_list, &exited_pid->list_member);
-    }
+  for (struct linked_list_member* member = exit_listener_processes.first; member; member = member->next) {
+    struct process* listener = member->node;
+    struct exited_pid* exited_pid = calloc(1, sizeof(struct exited_pid));
+    exited_pid->pid = process->pid;
+    insert_linked_list(&listener->exited_pids_list, &exited_pid->list_member, exited_pid);
   }
   if (!process->parent) {
     remove_process(process);
