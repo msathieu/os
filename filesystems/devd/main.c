@@ -83,6 +83,10 @@ static int64_t handle_transfer(uint64_t inode, uint64_t offset, __attribute__((u
   if (write) {
     call = IPC_VFSD_FS_WRITE;
   }
+  if (!devices[inode].pid) {
+    syslog(LOG_ERR, "File doesn't exist");
+    return -IPC_ERR_INVALID_ARGUMENTS;
+  }
   return send_pid_ipc_call(devices[inode].pid, call, offset, 0, 0, address, size);
 }
 static int64_t read_handler(uint64_t inode, uint64_t offset, uint64_t arg2, uint64_t address, uint64_t size) {

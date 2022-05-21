@@ -39,7 +39,8 @@ static int64_t get_env_size_handler(uint64_t num, __attribute__((unused)) uint64
 }
 static int64_t get_env_handler(uint64_t num, __attribute__((unused)) uint64_t arg1, __attribute__((unused)) uint64_t arg2, uint64_t address, uint64_t size) {
   pid_t caller_pid = get_ipc_caller_pid();
-  for (struct environment_var* env = (struct environment_var*) envs_list.first; env; env = (struct environment_var*) env->list_member.next) {
+  for (struct linked_list_member* member = envs_list.first; member; member = member->next) {
+    struct environment_var* env = member->node;
     if (env->pid == caller_pid && env->num == num) {
       if (env->size != size) {
         syslog(LOG_DEBUG, "Invalid environment variable size");
@@ -73,7 +74,8 @@ static int64_t add_env_handler(__attribute__((unused)) uint64_t arg0, __attribut
   struct environment_var* env = calloc(1, sizeof(struct environment_var));
   env->pid = pid;
   size_t num_envs = 0;
-  for (struct environment_var* env_i = (struct environment_var*) envs_list.first; env_i; env_i = (struct environment_var*) env_i->list_member.next) {
+  for (struct linked_list_member* member = envs_list.first; member; member = member->next) {
+    struct environment_var* env_i = member->node;
     if (env_i->pid == pid) {
       num_envs++;
     }
@@ -81,7 +83,7 @@ static int64_t add_env_handler(__attribute__((unused)) uint64_t arg0, __attribut
   env->num = num_envs;
   env->size = size;
   env->value = strdup(buffer);
-  insert_linked_list(&envs_list, &env->list_member);
+  insert_linked_list(&envs_list, &env->list_member, env);
   return 0;
 }
 int main(void) {

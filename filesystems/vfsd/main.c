@@ -195,7 +195,7 @@ static int64_t open_file_handler(uint64_t flags, __attribute__((unused)) uint64_
     }
     struct fs_node* child = calloc(1, sizeof(struct fs_node));
     child->parent = node;
-    insert_linked_list(&node->children, &child->list_member);
+    insert_linked_list(&node->children, &child->list_member, child);
     strcpy(child->name, part);
     child->inode = inode;
     send_pid_ipc_call(mounts[mount_i].pid, IPC_VFSD_FS_STAT, child->inode, 0, 0, (uintptr_t) &child->stat, sizeof(struct vfs_stat));
@@ -203,7 +203,8 @@ static int64_t open_file_handler(uint64_t flags, __attribute__((unused)) uint64_
   }
   pid_t caller_pid = get_ipc_caller_pid();
   struct process* process = 0;
-  for (struct process* loop_process = (struct process*) process_list.first; loop_process; loop_process = (struct process*) loop_process->list_member.next) {
+  for (struct linked_list_member* member = process_list.first; member; member = member->next) {
+    struct process* loop_process = member->node;
     if (loop_process->pid == caller_pid) {
       process = loop_process;
       break;
@@ -213,7 +214,7 @@ static int64_t open_file_handler(uint64_t flags, __attribute__((unused)) uint64_
     process = calloc(1, sizeof(struct process) + 128 * sizeof(struct fd));
     process->pid = caller_pid;
     process->nfds = 128;
-    insert_linked_list(&process_list, &process->list_member);
+    insert_linked_list(&process_list, &process->list_member, process);
   }
   struct fd* fd = 0;
   size_t fd_i;
@@ -239,7 +240,8 @@ static int64_t open_file_handler(uint64_t flags, __attribute__((unused)) uint64_
 }
 static int64_t close_file_handler(uint64_t fd_num, __attribute__((unused)) uint64_t arg1, __attribute__((unused)) uint64_t arg2, __attribute__((unused)) uint64_t arg3, __attribute__((unused)) uint64_t arg4) {
   pid_t caller_pid = get_ipc_caller_pid();
-  for (struct process* process = (struct process*) process_list.first; process; process = (struct process*) process->list_member.next) {
+  for (struct linked_list_member* member = process_list.first; member; member = member->next) {
+    struct process* process = member->node;
     if (process->pid == caller_pid) {
       if (fd_num >= process->nfds || !process->fds[fd_num].exists) {
         syslog(LOG_DEBUG, "File descriptor doesn't exist");
@@ -257,7 +259,8 @@ static int64_t close_file_handler(uint64_t fd_num, __attribute__((unused)) uint6
 }
 static int64_t handle_transfer(uint64_t fd_num, __attribute__((unused)) uint64_t arg1, __attribute__((unused)) uint64_t arg2, uint64_t address, uint64_t size, bool write) {
   pid_t caller_pid = get_ipc_caller_pid();
-  for (struct process* process = (struct process*) process_list.first; process; process = (struct process*) process->list_member.next) {
+  for (struct linked_list_member* member = process_list.first; member; member = member->next) {
+    struct process* process = member->node;
     if (process->pid == caller_pid) {
       if (fd_num >= process->nfds || !process->fds[fd_num].exists) {
         syslog(LOG_DEBUG, "File descriptor doesn't exist");
@@ -311,7 +314,8 @@ static int64_t seek_file_handler(uint64_t fd_num, uint64_t mode, uint64_t arg_po
     return -IPC_ERR_INVALID_ARGUMENTS;
   }
   pid_t caller_pid = get_ipc_caller_pid();
-  for (struct process* process = (struct process*) process_list.first; process; process = (struct process*) process->list_member.next) {
+  for (struct linked_list_member* member = process_list.first; member; member = member->next) {
+    struct process* process = member->node;
     if (process->pid == caller_pid) {
       if (fd_num >= process->nfds || !process->fds[fd_num].exists) {
         syslog(LOG_DEBUG, "File descriptor doesn't exist");
@@ -344,7 +348,8 @@ static int64_t clone_fds_handler(uint64_t fork, __attribute__((unused)) uint64_t
   }
   pid_t pid = get_ipc_caller_pid();
   struct process* cloned_process = 0;
-  for (struct process* process = (struct process*) process_list.first; process; process = (struct process*) process->list_member.next) {
+  for (struct linked_list_member* member = process_list.first; member; member = member->next) {
+    struct process* process = member->node;
     if (process->pid == pid) {
       cloned_process = process;
       break;
@@ -354,7 +359,8 @@ static int64_t clone_fds_handler(uint64_t fork, __attribute__((unused)) uint64_t
     return 0;
   }
   struct process* spawned_process = 0;
-  for (struct process* process = (struct process*) process_list.first; process; process = (struct process*) process->list_member.next) {
+  for (struct linked_list_member* member = process_list.first; member; member = member->next) {
+    struct process* process = member->node;
     if (process->pid == spawned_pid) {
       spawned_process = process;
       break;
@@ -371,7 +377,7 @@ static int64_t clone_fds_handler(uint64_t fork, __attribute__((unused)) uint64_t
   spawned_process = calloc(1, sizeof(struct process) + nfds * sizeof(struct fd));
   spawned_process->pid = spawned_pid;
   spawned_process->nfds = nfds;
-  insert_linked_list(&process_list, &spawned_process->list_member);
+  insert_linked_list(&process_list, &spawned_process->list_member, spawned_process);
   size_t clone_until = 3;
   if (fork) {
     clone_until = nfds;
@@ -401,9 +407,10 @@ int main(void) {
     handle_ipc();
     pid_t pid;
     while ((pid = get_exited_pid())) {
-      struct process* next_process;
-      for (struct process* process = (struct process*) process_list.first; process; process = next_process) {
-        next_process = (struct process*) process->list_member.next;
+      struct linked_list_member* next_member;
+      for (struct linked_list_member* member = process_list.first; member; member = next_member) {
+        next_member = member->next;
+        struct process* process = member->node;
         if (process->pid == pid) {
           for (size_t i = 0; i < process->nfds; i++) {
             if (process->fds[i].exists) {

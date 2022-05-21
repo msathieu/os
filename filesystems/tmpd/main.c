@@ -39,7 +39,7 @@ static int64_t open_handler(uint64_t flags, __attribute__((unused)) uint64_t par
     struct file* file = calloc(1, sizeof(struct file));
     file->inode = next_inode++;
     file->path = strdup(buffer);
-    insert_linked_list(&files_list, &file->list_member);
+    insert_linked_list(&files_list, &file->list_member, file);
     return file->inode;
   } else {
     return -IPC_ERR_INVALID_ARGUMENTS;
@@ -59,12 +59,17 @@ static int64_t read_handler(uint64_t inode, uint64_t offset, __attribute__((unus
     syslog(LOG_DEBUG, "Not allowed to read file");
     return -IPC_ERR_INSUFFICIENT_PRIVILEGE;
   }
-  struct file* file;
-  for (struct file* file_i = (struct file*) files_list.first;; file_i = (struct file*) file_i->list_member.next) {
+  struct file* file = 0;
+  for (struct linked_list_member* member = files_list.first->node; member; member = member->next) {
+    struct file* file_i = member->node;
     if (file_i->inode == inode) {
       file = file_i;
       break;
     }
+  }
+  if (!file) {
+    syslog(LOG_ERR, "File doesn't exist");
+    return -IPC_ERR_INVALID_ARGUMENTS;
   }
   if (offset >= file->size) {
     return 0;
@@ -84,12 +89,17 @@ static int64_t write_handler(uint64_t inode, uint64_t offset, __attribute__((unu
     syslog(LOG_DEBUG, "Offset is too big");
     return -IPC_ERR_INVALID_ARGUMENTS;
   }
-  struct file* file;
-  for (struct file* file_i = (struct file*) files_list.first;; file_i = (struct file*) file_i->list_member.next) {
+  struct file* file = 0;
+  for (struct linked_list_member* member = files_list.first->node; member; member = member->next) {
+    struct file* file_i = member->node;
     if (file_i->inode == inode) {
       file = file_i;
       break;
     }
+  }
+  if (!file) {
+    syslog(LOG_ERR, "File doesn't exist");
+    return -IPC_ERR_INVALID_ARGUMENTS;
   }
   size_t total_size = offset + size;
   if (total_size > file->size) {

@@ -29,7 +29,8 @@ static int64_t get_num_args_handler(__attribute__((unused)) uint64_t arg0, __att
 }
 static int64_t get_arg_size_handler(uint64_t num, __attribute__((unused)) uint64_t arg1, __attribute__((unused)) uint64_t arg2, __attribute__((unused)) uint64_t arg3, __attribute__((unused)) uint64_t arg4) {
   pid_t caller_pid = get_ipc_caller_pid();
-  for (struct argument* arg = (struct argument*) args_list.first; arg; arg = (struct argument*) arg->list_member.next) {
+  for (struct linked_list_member* member = args_list.first; member; member = member->next) {
+    struct argument* arg = member->node;
     if (arg->pid == caller_pid && arg->num == num) {
       return arg->size;
     }
@@ -43,7 +44,8 @@ static int64_t get_arg_handler(uint64_t num, uint64_t noremove, __attribute__((u
     return -IPC_ERR_INVALID_ARGUMENTS;
   }
   pid_t caller_pid = get_ipc_caller_pid();
-  for (struct argument* arg = (struct argument*) args_list.first; arg; arg = (struct argument*) arg->list_member.next) {
+  for (struct linked_list_member* member = args_list.first; member; member = member->next) {
+    struct argument* arg = member->node;
     if (arg->pid == caller_pid && arg->num == num) {
       if (arg->size != size) {
         syslog(LOG_DEBUG, "Invalid argument size");
@@ -83,7 +85,7 @@ static int64_t add_arg_handler(__attribute__((unused)) uint64_t arg0, __attribut
   arg->num = num_args;
   arg->size = size;
   arg->value = strdup(buffer);
-  insert_linked_list(&args_list, &arg->list_member);
+  insert_linked_list(&args_list, &arg->list_member, arg);
   return 0;
 }
 int main(void) {

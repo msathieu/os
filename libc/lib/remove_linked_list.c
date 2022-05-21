@@ -1,18 +1,19 @@
 #include <linked_list.h>
-#include <stdlib.h>
 
 void remove_linked_list(struct linked_list* list, struct linked_list_member* remove_member) {
-  struct linked_list_member* prev_member = 0;
-  for (struct linked_list_member* member = list->first; member; member = member->next) {
-    if (member == remove_member) {
-      if (prev_member) {
-        prev_member->next = remove_member->next;
-      } else {
-        list->first = remove_member->next;
-      }
-      return;
-    }
-    prev_member = member;
+  remove_member->node = 0;
+  if (list->first == remove_member) {
+    list->first = remove_member->next;
   }
-  exit(1);
+  if (list->last == remove_member) {
+    list->last = remove_member->prev;
+  }
+  if (remove_member->prev) {
+    remove_member->prev->next = remove_member->next;
+  }
+  if (remove_member->next) {
+    remove_member->next->prev = remove_member->prev;
+  }
+  remove_member->prev = 0;
+  remove_member->next = 0;
 }

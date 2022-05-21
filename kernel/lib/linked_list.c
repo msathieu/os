@@ -1,5 +1,4 @@
 #include <linked_list.h>
-#include <panic.h>
 
 void insert_linked_list(struct linked_list* list, struct linked_list_member* new_member, void* node) {
   new_member->node = node;
