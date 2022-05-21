@@ -4,15 +4,15 @@ jobs:
   toolchain:
     strategy:
       matrix:
-        os: [ubuntu-20.04, macos-11]
+        os: [ubuntu-22.04, macos-12]
       fail-fast: false
     runs-on: ${{ matrix.os }}
     steps:
       - name: Install dependencies (Ubuntu)
-        if: ${{ matrix.os == 'ubuntu-20.04' }}
+        if: ${{ matrix.os == 'ubuntu-22.04' }}
         run: sudo apt-get update && sudo apt-get install -y ninja-build
       - name: Install dependencies (macOS)
-        if: ${{ matrix.os == 'macos-11' }}
+        if: ${{ matrix.os == 'macos-12' }}
         run: brew install ninja
       - name: Checkout
         uses: actions/checkout@v2
@@ -32,13 +32,13 @@ jobs:
   build:
     strategy:
       matrix:
-        os: [ubuntu-20.04, macos-11]
+        os: [ubuntu-22.04, macos-12]
       fail-fast: false
     runs-on: ${{ matrix.os }}
     needs: toolchain
     steps:
       - name: Install dependencies
-        if: ${{ matrix.os == 'ubuntu-20.04' }}
+        if: ${{ matrix.os == 'ubuntu-22.04' }}
         run: sudo apt-get update && sudo apt-get install -y qemu-system-x86 mtools
       - name: Checkout
         uses: actions/checkout@v2
@@ -52,10 +52,10 @@ jobs:
       - name: Build OS
         run: make build -j2
       - name: Build OS image with GRUB
-        if: ${{ matrix.os == 'ubuntu-20.04' }}
+        if: ${{ matrix.os == 'ubuntu-22.04' }}
         run: make build-grub -j2
   style:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     needs: toolchain
     steps:
       - name: Checkout
@@ -65,14 +65,14 @@ jobs:
       - name: Cache toolchain
         uses: actions/cache@v2
         with:
-          key: toolchain-ubuntu-20.04-${{ hashFiles('tools/Makefile') }}
+          key: toolchain-ubuntu-22.04-${{ hashFiles('tools/Makefile') }}
           path: tools/toolchain
       - name: Format code
         run: make format
       - name: Check if there are any changes
         run: git diff --exit-code --ignore-submodules
   analyze:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     needs: toolchain
     steps:
       - name: Install dependencies
@@ -84,7 +84,7 @@ jobs:
       - name: Cache toolchain
         uses: actions/cache@v2
         with:
-          key: toolchain-ubuntu-20.04-${{ hashFiles('tools/Makefile') }}
+          key: toolchain-ubuntu-22.04-${{ hashFiles('tools/Makefile') }}
           path: tools/toolchain
       - name: Analyze
         run: make analyze -j2
