@@ -5,6 +5,7 @@ typedef int (*sorted_list_compare)(void*, void*);
 
 struct sorted_list {
   struct linked_list_member* first;
+  struct linked_list_member* last;
   sorted_list_compare compare;
 };
 

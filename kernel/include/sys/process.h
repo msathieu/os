@@ -21,6 +21,8 @@ enum {
 struct process {
   struct linked_list_member ipc_list_member;
   struct linked_list_member exit_listener_member;
+  struct linked_list children_list;
+  struct linked_list_member siblings_list_member;
   size_t pid;
   size_t uid;
   size_t ntasks;
@@ -34,8 +36,6 @@ struct process {
   bool irqs_assigned;
   size_t capabilities[64];
   struct process* parent;
-  struct process* first_child;
-  struct process* next_sibling;
   bool exited;
   struct task* waiting_task;
   struct linked_list blocked_ipc_calls_queue;

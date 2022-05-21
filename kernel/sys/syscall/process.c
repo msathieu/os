@@ -111,7 +111,8 @@ void syscall_get_pid(union syscall_args* args) {
   }
 }
 void syscall_wait(union syscall_args* args) {
-  for (struct process* child = current_task()->process->first_child; child; child = child->next_sibling) {
+  for (struct linked_list_member* member = current_task()->process->children_list.first; member; member = member->next) {
+    struct process* child = member->node;
     if (child->exited) {
       args->return_value = child->pid;
       remove_process(child);

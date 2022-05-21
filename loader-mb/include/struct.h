@@ -27,7 +27,7 @@ struct loader_struct {
   uint64_t kernel_physical_address;
   struct loader_memory_map memory_map[1024];
   struct acpi_rsdp_extended rsdp;
-  struct loader_file files[128];
+  struct loader_file files[64];
   uint64_t fb_address;
   uint32_t fb_width;
   uint32_t fb_height;

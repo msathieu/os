@@ -16,7 +16,7 @@ loop:
   for (size_t i = 0; i <= max_priority; i++) {
     if (scheduler_list[i].first) {
       struct task* task = scheduler_list[i].first->node;
-      scheduler_list[i].first = scheduler_list[i].first->next;
+      remove_linked_list(&scheduler_list[i], scheduler_list[i].first);
       if (task->process->should_exit) {
         destroy_task(task);
         goto loop;

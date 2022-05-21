@@ -36,7 +36,8 @@ void syscall_get_ipc_caller_capabilities(union syscall_args* args) {
   }
 }
 static bool has_child_with_pid(size_t pid, struct process* process) {
-  for (struct process* child = process->first_child; child; child = child->next_sibling) {
+  for (struct linked_list_member* member = process->children_list.first; member; member = member->next) {
+    struct process* child = member->node;
     if (!child->exited) {
       if (child->pid == pid || has_child_with_pid(pid, child)) {
         return 1;

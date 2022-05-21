@@ -23,8 +23,7 @@ struct process* create_process(bool clone) {
 struct process* spawn_child(bool clone) {
   current_task()->spawned_process = create_process(clone);
   current_task()->spawned_process->parent = current_task()->process;
-  current_task()->spawned_process->next_sibling = current_task()->process->first_child;
-  current_task()->process->first_child = current_task()->spawned_process;
+  insert_linked_list(&current_task()->process->children_list, &current_task()->spawned_process->siblings_list_member, current_task()->spawned_process);
   current_task()->spawned_process->uid = current_task()->process->uid;
   return current_task()->spawned_process;
 }
@@ -76,18 +75,13 @@ void destroy_process(struct process* process) {
     free(exited_pid);
   }
   if (process->exit_listener) {
-    for (struct linked_list_member* member = exit_listener_processes.first; member; member = member->next) {
-      struct process* listener = member->node;
-      if (listener == process) {
-        remove_linked_list(&exit_listener_processes, member);
-        break;
-      }
-    }
+    remove_linked_list(&exit_listener_processes, &process->exit_listener_member);
   }
   destroy_pml4(process->address_space);
-  struct process* next_child;
-  for (struct process* child = process->first_child; child; child = next_child) {
-    next_child = child->next_sibling;
+  struct linked_list_member* next_member;
+  for (struct linked_list_member* member = process->children_list.first; member; member = next_member) {
+    struct process* child = member->node;
+    next_member = member->next;
     child->parent = 0;
     if (child->exited) {
       remove_process(child);
@@ -114,18 +108,7 @@ void destroy_process(struct process* process) {
 }
 void remove_process(struct process* process) {
   if (process->parent) {
-    struct process* prev_sibling = 0;
-    for (struct process* sibling = process->parent->first_child; sibling; sibling = sibling->next_sibling) {
-      if (sibling == process) {
-        if (prev_sibling) {
-          prev_sibling->next_sibling = process->next_sibling;
-        } else {
-          process->parent->first_child = process->next_sibling;
-        }
-        break;
-      }
-      prev_sibling = sibling;
-    }
+    remove_linked_list(&process->parent->children_list, &process->siblings_list_member);
   }
   free(process);
 }

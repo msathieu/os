@@ -1,33 +1,32 @@
 #include <linked_list.h>
 #include <panic.h>
 
-// Scheduler: new entries must be added at the end
 void insert_linked_list(struct linked_list* list, struct linked_list_member* new_member, void* node) {
   new_member->node = node;
+  new_member->prev = list->last;
   new_member->next = 0;
+  if (list->last) {
+    list->last->next = new_member;
+  }
+  list->last = new_member;
   if (!list->first) {
     list->first = new_member;
-    return;
   }
-  struct linked_list_member* member = list->first;
-  while (member->next) {
-    member = member->next;
-  }
-  member->next = new_member;
 }
 void remove_linked_list(struct linked_list* list, struct linked_list_member* remove_member) {
   remove_member->node = 0;
-  struct linked_list_member* prev_member = 0;
-  for (struct linked_list_member* member = list->first; member; member = member->next) {
-    if (member == remove_member) {
-      if (prev_member) {
-        prev_member->next = remove_member->next;
-      } else {
-        list->first = remove_member->next;
-      }
-      return;
-    }
-    prev_member = member;
+  if (list->first == remove_member) {
+    list->first = remove_member->next;
   }
-  panic("Can't remove member that isn't already in the list");
+  if (list->last == remove_member) {
+    list->last = remove_member->prev;
+  }
+  if (remove_member->prev) {
+    remove_member->prev->next = remove_member->next;
+  }
+  if (remove_member->next) {
+    remove_member->next->prev = remove_member->prev;
+  }
+  remove_member->prev = 0;
+  remove_member->next = 0;
 }
