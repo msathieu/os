@@ -27,7 +27,6 @@ struct service services[] = {
   {"/sbin/devd", false, 0, {[CAP_NAMESPACE_FILESYSTEMS] = 1 << CAP_DEVD}, "devd"},
   {"/sbin/dev-nulld", false, 0, {}, 0},
   {"/sbin/dev-zerod", false, 0, {}, 0},
-  {"/sbin/envd", false, 0, {[CAP_NAMESPACE_KERNEL] = 1 << CAP_KERNEL_LISTEN_EXITS}, "envd"},
   {"/sbin/fbd", false, 0, {[CAP_NAMESPACE_KERNEL] = 1 << CAP_KERNEL_GET_FB_INFO}, "fbd"},
   {"/sbin/kbdd", false, 0, {[CAP_NAMESPACE_SERVERS] = 1 << CAP_KBDD}, "kbdd"},
   {"/sbin/ps2d", false, 0, {[CAP_NAMESPACE_SERVERS] = 1 << CAP_KBDD_SEND_KEYPRESS}, 0},
@@ -105,7 +104,6 @@ int main(void) {
   spawn("/sbin/devd");
   spawn("/sbin/dev-nulld");
   spawn("/sbin/dev-zerod");
-  spawn("/sbin/envd");
   spawn("/sbin/fbd");
   spawn("/sbin/kbdd");
   spawn("/sbin/ttyd");

@@ -32,21 +32,21 @@ void _setup_libc(uintptr_t _tls_master, size_t tls_size) {
     _argc = send_ipc_call("argd", IPC_ARGD_GET_NUM, 0, 0, 0, 0, 0);
     _argv = malloc((_argc + 1) * sizeof(char*));
     for (size_t i = 0; i < _argc; i++) {
-      size_t size = send_ipc_call("argd", IPC_ARGD_GET_SIZE, i, 0, 0, 0, 0);
+      size_t size = send_ipc_call("argd", IPC_ARGD_GET_SIZE, 0, i, 0, 0, 0);
       _argv[i] = calloc(size, 1);
-      send_ipc_call("argd", IPC_ARGD_GET, i, (bool) &_noremove_args, 0, (uintptr_t) _argv[i], size);
+      send_ipc_call("argd", IPC_ARGD_GET, 0, i, (bool) &_noremove_args, (uintptr_t) _argv[i], size);
     }
     _argv[_argc] = 0;
   } else {
     _argv = calloc(1, sizeof(char*));
   }
   if (!&_noenvironment_vars && _syscall(_SYSCALL_HAS_ARGUMENTS, 1, 0, 0, 0, 0)) {
-    size_t nenvs = send_ipc_call("envd", IPC_ENVD_GET_NUM, 0, 0, 0, 0, 0);
+    size_t nenvs = send_ipc_call("argd", IPC_ARGD_GET_NUM, 1, 0, 0, 0, 0);
     environ = malloc((nenvs + 1) * sizeof(char*));
     for (size_t i = 0; i < nenvs; i++) {
-      size_t size = send_ipc_call("envd", IPC_ENVD_GET_SIZE, i, 0, 0, 0, 0);
+      size_t size = send_ipc_call("argd", IPC_ARGD_GET_SIZE, 1, i, 0, 0, 0);
       environ[i] = calloc(size, 1);
-      send_ipc_call("envd", IPC_ENVD_GET, i, 0, 0, (uintptr_t) environ[i], size);
+      send_ipc_call("argd", IPC_ARGD_GET, 1, i, 0, (uintptr_t) environ[i], size);
     }
     environ[nenvs] = 0;
   } else {

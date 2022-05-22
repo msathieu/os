@@ -33,6 +33,7 @@ struct task {
 };
 
 extern bool is_core_idle[256];
+extern size_t ncore_idle;
 
 _Noreturn void ap_jump_idle(void);
 void block_current_task(struct isr_registers*);

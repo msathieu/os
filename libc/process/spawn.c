@@ -18,7 +18,7 @@ void add_argument(const char* arg) {
 }
 void start_process(void) {
   for (size_t i = 0; environ[i]; i++) {
-    send_ipc_call("envd", IPC_ENVD_ADD, 0, 0, 0, (uintptr_t) environ[i], strlen(environ[i]) + 1);
+    send_ipc_call("argd", IPC_ARGD_ADD, 1, 0, 0, (uintptr_t) environ[i], strlen(environ[i]) + 1);
   }
   if (!&_noclonefds) {
     send_ipc_call("vfsd", IPC_VFSD_CLONE_FDS, 0, 0, 0, 0, 0);
