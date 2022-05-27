@@ -115,7 +115,7 @@ static int64_t finish_mount_handler(uint64_t inode, __attribute__((unused)) uint
 static void free_node(struct fs_node* node) {
   struct fs_node* parent = node->parent;
   if (!node->nfds && !node->children.first) {
-    remove_linked_list(&node->parent->children, &node->list_member);
+    linked_list_remove(&node->parent->children, &node->list_member);
     free(node);
   }
   if (parent) {
@@ -195,7 +195,7 @@ static int64_t open_file_handler(uint64_t flags, __attribute__((unused)) uint64_
     }
     struct fs_node* child = calloc(1, sizeof(struct fs_node));
     child->parent = node;
-    insert_linked_list(&node->children, &child->list_member, child);
+    linked_list_insert(&node->children, &child->list_member, child);
     strcpy(child->name, part);
     child->inode = inode;
     send_pid_ipc_call(mounts[mount_i].pid, IPC_VFSD_FS_STAT, child->inode, 0, 0, (uintptr_t) &child->stat, sizeof(struct vfs_stat));
@@ -214,7 +214,7 @@ static int64_t open_file_handler(uint64_t flags, __attribute__((unused)) uint64_
     process = calloc(1, sizeof(struct process) + 128 * sizeof(struct fd));
     process->pid = caller_pid;
     process->nfds = 128;
-    insert_linked_list(&process_list, &process->list_member, process);
+    linked_list_insert(&process_list, &process->list_member, process);
   }
   struct fd* fd = 0;
   size_t fd_i;
@@ -377,7 +377,7 @@ static int64_t clone_fds_handler(uint64_t fork, __attribute__((unused)) uint64_t
   spawned_process = calloc(1, sizeof(struct process) + nfds * sizeof(struct fd));
   spawned_process->pid = spawned_pid;
   spawned_process->nfds = nfds;
-  insert_linked_list(&process_list, &spawned_process->list_member, spawned_process);
+  linked_list_insert(&process_list, &spawned_process->list_member, spawned_process);
   size_t clone_until = 3;
   if (fork) {
     clone_until = nfds;
@@ -418,7 +418,7 @@ int main(void) {
               free_node(process->fds[i].node);
             }
           }
-          remove_linked_list(&process_list, &process->list_member);
+          linked_list_remove(&process_list, &process->list_member);
           free(process);
         }
       }

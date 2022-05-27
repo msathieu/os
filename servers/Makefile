@@ -3,6 +3,6 @@ PROGRAMS:=$(DESTDIR)/boot/argd $(DESTDIR)/sbin/kbdd $(DESTDIR)/boot/logd $(DESTD
 all: $(PROGRAMS)
 .SECONDEXPANSION:
 $(PROGRAMS): $$(patsubst %.c, %.o, $$(wildcard $$(notdir $$@)/*.c))
-	$(CC) -s -o $@ $^
+	$(CC) -s -o $@ $^ -lds
 -include $(wildcard */*.d)
 .DELETE_ON_ERROR:

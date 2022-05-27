@@ -23,7 +23,7 @@ struct process* create_process(bool clone) {
 struct process* spawn_child(bool clone) {
   current_task()->spawned_process = create_process(clone);
   current_task()->spawned_process->parent = current_task()->process;
-  insert_linked_list(&current_task()->process->children_list, &current_task()->spawned_process->siblings_list_member, current_task()->spawned_process);
+  linked_list_insert(&current_task()->process->children_list, &current_task()->spawned_process->siblings_list_member, current_task()->spawned_process);
   current_task()->spawned_process->uid = current_task()->process->uid;
   return current_task()->spawned_process;
 }
@@ -32,7 +32,7 @@ void destroy_process(struct process* process) {
     panic("init exited");
   }
   if (process->accepts_syscalls) {
-    remove_linked_list(&ipc_handling_processes, &process->ipc_list_member);
+    linked_list_remove(&ipc_handling_processes, &process->ipc_list_member);
   }
   if (process->syscall_queue.first) {
     struct linked_list_member* next_member;
@@ -75,7 +75,7 @@ void destroy_process(struct process* process) {
     free(exited_pid);
   }
   if (process->exit_listener) {
-    remove_linked_list(&exit_listener_processes, &process->exit_listener_member);
+    linked_list_remove(&exit_listener_processes, &process->exit_listener_member);
   }
   destroy_pml4(process->address_space);
   struct linked_list_member* next_member;
@@ -91,7 +91,7 @@ void destroy_process(struct process* process) {
     struct process* listener = member->node;
     struct exited_pid* exited_pid = calloc(1, sizeof(struct exited_pid));
     exited_pid->pid = process->pid;
-    insert_linked_list(&listener->exited_pids_list, &exited_pid->list_member, exited_pid);
+    linked_list_insert(&listener->exited_pids_list, &exited_pid->list_member, exited_pid);
   }
   if (!process->parent) {
     remove_process(process);
@@ -108,7 +108,7 @@ void destroy_process(struct process* process) {
 }
 void remove_process(struct process* process) {
   if (process->parent) {
-    remove_linked_list(&process->parent->children_list, &process->siblings_list_member);
+    linked_list_remove(&process->parent->children_list, &process->siblings_list_member);
   }
   free(process);
 }

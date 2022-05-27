@@ -16,7 +16,7 @@ loop:
   for (size_t i = 0; i <= max_priority; i++) {
     if (scheduler_list[i].first) {
       struct task* task = scheduler_list[i].first->node;
-      remove_linked_list(&scheduler_list[i], scheduler_list[i].first);
+      linked_list_remove(&scheduler_list[i], scheduler_list[i].first);
       if (task->process->should_exit) {
         destroy_task(task);
         goto loop;
@@ -34,7 +34,7 @@ loop:
   }
 }
 void schedule_task(struct task* new_task, struct isr_registers* registers) {
-  insert_linked_list(&scheduler_list[new_task->priority], &new_task->state_list_member, new_task);
+  linked_list_insert(&scheduler_list[new_task->priority], &new_task->state_list_member, new_task);
   if (registers && new_task->priority < current_task()->priority) {
     scheduler(registers);
   }

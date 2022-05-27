@@ -149,9 +149,9 @@ _Noreturn void ap_jump_idle(void) {
   is_core_idle[get_current_lapic_id()] = 1;
 get_idle:
   current_tasks[get_current_lapic_id()] = scheduler_list[PRIORITY_IDLE].first->node;
-  remove_linked_list(&scheduler_list[PRIORITY_IDLE], &current_task()->state_list_member);
+  linked_list_remove(&scheduler_list[PRIORITY_IDLE], &current_task()->state_list_member);
   if (current_task()->cpu != get_current_lapic_id()) {
-    insert_linked_list(&scheduler_list[PRIORITY_IDLE], &current_task()->state_list_member, current_task());
+    linked_list_insert(&scheduler_list[PRIORITY_IDLE], &current_task()->state_list_member, current_task());
     goto get_idle;
   }
   release_lock();

@@ -5,7 +5,7 @@
 
 static void register_ipc(struct process* process) {
   if (!current_task()->process->accepts_syscalls) {
-    insert_linked_list(&ipc_handling_processes, &process->ipc_list_member, process);
+    linked_list_insert(&ipc_handling_processes, &process->ipc_list_member, process);
   }
   process->accepts_syscalls = true;
 }

@@ -56,18 +56,18 @@ static void handler(struct isr_registers* isr_registers) {
   } else {
     struct linked_list_member* next_member;
     size_t current_time = get_time();
-    for (struct linked_list_member* member = sleeping_list.first; member; member = next_member) {
+    for (struct linked_list_member* member = sleeping_list.list.first; member; member = next_member) {
       struct task* task = member->node;
       if (current_time < task->sleep_until) {
         break;
       }
       next_member = member->next;
-      remove_sorted_list(&sleeping_list, &task->state_list_member);
+      sorted_list_remove(&sleeping_list, &task->state_list_member);
       task->blocked = false;
       schedule_task(task, isr_registers);
     }
-    if (sleeping_list.first) {
-      struct task* task = sleeping_list.first->node;
+    if (sleeping_list.list.first) {
+      struct task* task = sleeping_list.list.first->node;
       size_t duration = task->sleep_until - current_time;
       if (duration < 50) {
         duration = 50;
@@ -100,8 +100,8 @@ void sleep_current_task(size_t duration, struct isr_registers* isr_registers) {
   struct task* task = current_task();
   block_current_task(isr_registers);
   task->sleep_until = get_time() + duration;
-  insert_sorted_list(&sleeping_list, &task->state_list_member, task);
-  if (sleeping_list.first && sleeping_list.first->node == task) {
+  sorted_list_insert(&sleeping_list, &task->state_list_member, task);
+  if (sleeping_list.list.first && sleeping_list.list.first->node == task) {
     if (duration < 50) {
       duration = 50;
     }

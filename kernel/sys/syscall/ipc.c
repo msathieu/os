@@ -40,7 +40,7 @@ void syscall_wait_ipc(union syscall_args* args) {
       }
     }
     current_task()->servicing_syscall_requester = requester_task;
-    remove_linked_list(&current_task()->process->syscall_queue, &requester_task->state_list_member);
+    linked_list_remove(&current_task()->process->syscall_queue, &requester_task->state_list_member);
     if (args->syscall & IPC_CALL_MEMORY_SHARING) {
       current_task()->sharing_memory = true;
       args->arg3 = virtual_address + requester_task->registers.r8 % 0x1000;
@@ -103,7 +103,7 @@ void syscall_handle_ipc(union syscall_args* args) {
     }
   }
   if (!called_process->syscall_handler) {
-    insert_linked_list(&called_process->syscall_queue, &current_task()->state_list_member, current_task());
+    linked_list_insert(&called_process->syscall_queue, &current_task()->state_list_member, current_task());
     block_current_task(&args->registers);
     return;
   }
@@ -194,7 +194,7 @@ void syscall_block_ipc_call(union syscall_args* args) {
     }
     current_task()->sharing_memory = false;
   }
-  insert_linked_list(&current_task()->process->blocked_ipc_calls_queue, &requester->state_list_member, requester);
+  linked_list_insert(&current_task()->process->blocked_ipc_calls_queue, &requester->state_list_member, requester);
   current_task()->servicing_syscall_requester = false;
 }
 void syscall_unblock_ipc_call(union syscall_args* args) {
@@ -213,8 +213,8 @@ void syscall_unblock_ipc_call(union syscall_args* args) {
   }
   struct task* syscall_handler = current_task()->process->syscall_handler;
   if (!syscall_handler) {
-    remove_linked_list(&current_task()->process->blocked_ipc_calls_queue, &syscall_requester->state_list_member);
-    insert_linked_list(&current_task()->process->syscall_queue, &syscall_requester->state_list_member, syscall_requester);
+    linked_list_remove(&current_task()->process->blocked_ipc_calls_queue, &syscall_requester->state_list_member);
+    linked_list_insert(&current_task()->process->syscall_queue, &syscall_requester->state_list_member, syscall_requester);
     return;
   }
   uintptr_t virtual_address, mapping_start, mapping_end;
@@ -249,6 +249,6 @@ void syscall_unblock_ipc_call(union syscall_args* args) {
   } else {
     syscall_handler->registers.r8 = syscall_requester->registers.r8;
   }
-  remove_linked_list(&current_task()->process->blocked_ipc_calls_queue, &syscall_requester->state_list_member);
+  linked_list_remove(&current_task()->process->blocked_ipc_calls_queue, &syscall_requester->state_list_member);
   schedule_task(syscall_handler, &args->registers);
 }

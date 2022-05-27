@@ -68,7 +68,7 @@ static int64_t get_arg_handler(uint64_t env, uint64_t num, uint64_t noremove, ui
       memcpy((void*) address, arg->value, size);
       if (!noremove) {
         free(arg->value);
-        remove_linked_list(&args_list, &arg->list_member);
+        linked_list_remove(&args_list, &arg->list_member);
         free(arg);
       }
       return 0;
@@ -109,7 +109,7 @@ static int64_t add_arg_handler(uint64_t env, __attribute__((unused)) uint64_t ar
   arg->num = num_args;
   arg->size = size;
   arg->value = strdup(buffer);
-  insert_linked_list(&args_list, &arg->list_member, arg);
+  linked_list_insert(&args_list, &arg->list_member, arg);
   return 0;
 }
 int main(void) {
@@ -131,7 +131,7 @@ int main(void) {
         next_arg = (struct argument*) arg->list_member.next;
         if (arg->pid == pid) {
           free(arg->value);
-          remove_linked_list(&args_list, &arg->list_member);
+          linked_list_remove(&args_list, &arg->list_member);
           free(arg);
         }
       }

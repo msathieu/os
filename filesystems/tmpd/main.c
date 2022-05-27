@@ -39,7 +39,7 @@ static int64_t open_handler(uint64_t flags, __attribute__((unused)) uint64_t par
     struct file* file = calloc(1, sizeof(struct file));
     file->inode = next_inode++;
     file->path = strdup(buffer);
-    insert_linked_list(&files_list, &file->list_member, file);
+    linked_list_insert(&files_list, &file->list_member, file);
     return file->inode;
   } else {
     return -IPC_ERR_INVALID_ARGUMENTS;

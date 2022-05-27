@@ -17,7 +17,7 @@ void syscall_listen_exits(union syscall_args* args) {
     terminate_current_task(&args->registers);
     return;
   }
-  insert_linked_list(&exit_listener_processes, &current_task()->process->exit_listener_member, current_task()->process);
+  linked_list_insert(&exit_listener_processes, &current_task()->process->exit_listener_member, current_task()->process);
   current_task()->process->exit_listener = true;
 }
 void syscall_get_exited_pid(union syscall_args* args) {
@@ -29,7 +29,7 @@ void syscall_get_exited_pid(union syscall_args* args) {
   struct exited_pid* exited_pid = (struct exited_pid*) current_task()->process->exited_pids_list.first;
   if (exited_pid) {
     args->return_value = exited_pid->pid;
-    remove_linked_list(&current_task()->process->exited_pids_list, &exited_pid->list_member);
+    linked_list_remove(&current_task()->process->exited_pids_list, &exited_pid->list_member);
     free(exited_pid);
   } else {
     args->return_value = 0;

@@ -19,3 +19,9 @@
 [submodule "libraries/elf"]
   path = libraries/elf
   url = https://git.strypsteen.me/libelf
+[submodule "kernel/libds"]
+  path = kernel/libds
+  url = https://git.strypsteen.me/libds
+[submodule "libraries/ds"]
+  path = libraries/ds
+  url = https://git.strypsteen.me/libds
