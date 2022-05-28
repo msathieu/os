@@ -9,7 +9,7 @@
   url = https://git.strypsteen.me/freestanding-libc
 [submodule "acpid/lai"]
   path = acpid/lai
-  url = https://github.com/msathieu/lai
+  url = ../lai
 [submodule "kernel/libelf"]
   path = kernel/libelf
   url = https://git.strypsteen.me/libelf

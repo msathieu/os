@@ -157,3 +157,17 @@ void free(void* address) {
   }
   sorted_list_insert(&heap_list, &header->list_member, header);
 }
+void* realloc(void* ptr, size_t size) {
+  if (!ptr) {
+    return malloc(size);
+  } else {
+    void* new_ptr = malloc(size);
+    struct heap_header* header = ptr - sizeof(struct heap_header);
+    if (header->size < size) {
+      size = header->size;
+    }
+    memcpy(new_ptr, ptr, size);
+    free(ptr);
+    return new_ptr;
+  }
+}

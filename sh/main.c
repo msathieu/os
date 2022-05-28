@@ -20,8 +20,8 @@ struct parsed_line {
 };
 
 static char* read_line(void) {
-  char* buffer = malloc(512);
-  size_t bufsize = 512;
+  char* buffer = malloc(256);
+  size_t bufsize = 256;
   size_t len = 0;
   while (true) {
     buffer[len] = getchar();
@@ -31,7 +31,7 @@ static char* read_line(void) {
     }
     len++;
     if (len == bufsize) {
-      bufsize += 512;
+      bufsize += 256;
       buffer = realloc(buffer, bufsize);
     }
   }
